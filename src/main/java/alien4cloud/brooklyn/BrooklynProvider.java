@@ -1,8 +1,12 @@
 package alien4cloud.brooklyn;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
+import lombok.SneakyThrows;
+
+import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +21,21 @@ import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.MaintenanceModeException;
 import alien4cloud.paas.exception.OperationExecutionException;
 import alien4cloud.paas.exception.PluginConfigurationException;
-import alien4cloud.paas.model.*;
+import alien4cloud.paas.model.AbstractMonitorEvent;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.InstanceInformation;
+import alien4cloud.paas.model.NodeOperationExecRequest;
+import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import brooklyn.rest.client.BrooklynApi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+
+/**
+ *
+ */
 @Component
 @Scope(value = "prototype")
 public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration> {
@@ -27,27 +43,81 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
 
     private Configuration configuration;
     private BrooklynApi brooklynApi;
+    // TODO mock cache while we flesh out the impl
+    protected Map<String,Object> knownDeployments = Maps.newLinkedHashMap();
 
     @Autowired
     private BrooklynCatalogMapper catalogMapper;
 
+    ThreadLocal<ClassLoader> oldContextClassLoader = new ThreadLocal<ClassLoader>();
+    private void useLocalContextClassLoader() {
+        if (oldContextClassLoader.get()==null) {
+            oldContextClassLoader.set( Thread.currentThread().getContextClassLoader() );
+        }
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+    }
+    private void revertContextClassLoader() {
+        if (oldContextClassLoader.get()==null) {
+            log.warn("No local context class loader to revert");
+        }
+        Thread.currentThread().setContextClassLoader(oldContextClassLoader.get());
+        oldContextClassLoader.remove();
+    }
+    
     @Override
     public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
-        log.info("INIT: " + activeDeployments);
-        brooklynApi = new BrooklynApi(configuration.getUrl(), configuration.getUsername(), configuration.getPassword());
-        // TODO Not great way to go but that's a POC for now ;)
-        catalogMapper.mapBrooklynEntity(brooklynApi, "brooklyn.entity.webapp.tomcat.TomcatServer", "0.0.0-SNAPSHOT");
+        useLocalContextClassLoader();
+        try {
+            log.info("INIT: " + activeDeployments);
+            brooklynApi = new BrooklynApi(configuration.getUrl(), configuration.getUser(), configuration.getPassword());
+
+            // TODO Not great way to go but that's a POC for now ;)
+            catalogMapper.mapBrooklynEntity(brooklynApi, "brooklyn.entity.webapp.tomcat.TomcatServer", "0.0.0-SNAPSHOT");
+            
+        } finally { revertContextClassLoader(); }
     }
 
     @Override
+    @SneakyThrows
     public void deploy(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
-        log.info("DEPLOY " + deploymentContext + " / " + callback);
-        callback.onSuccess(null);
-    }
+        log.info("DEPLOY "+deploymentContext+" / "+callback+" -- but ignoring what you asked for and just deploying a mock for now... :)");
+        
+        // TODO only does node templates
+        // and for now it builds up camp yaml
+        Map<String,Object> campYaml = Maps.newLinkedHashMap();
+//        for (NodeTemplate nt: deploymentContext.getTopology().getNodeTemplates().values()) {
+//            nt.getType()
+//        }
 
+        List<Object> svcs = Lists.newArrayList();
+        
+        Map<String,Object> svc1 = Maps.newLinkedHashMap();
+        svc1.put("type", "brooklyn.entity.webapp.tomcat.TomcatServer");
+        svc1.put("war", "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0-M2/brooklyn-example-hello-world-sql-webapp-0.6.0-M2.war");
+        svc1.put("httpPort", 80);
+        svcs.add(svc1);
+        
+        knownDeployments.put(deploymentContext.getDeploymentId(), deploymentContext);
+        
+        campYaml.put("services", svcs);  
+        campYaml.put("location", "localhost");
+        campYaml.put("brooklyn.config", ImmutableMap.of("tosca.id", deploymentContext.getDeploymentId()));
+        
+        useLocalContextClassLoader();
+        try {
+            useLocalContextClassLoader();
+            brooklynApi.getApplicationApi().createFromYaml( new ObjectMapper().writeValueAsString(campYaml) );
+        } finally { revertContextClassLoader(); }
+        
+        if (callback!=null) callback.onSuccess(null);
+    }
+    
     @Override
     public void undeploy(PaaSDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
-        log.info("UNDEPLOY " + deploymentContext + " / " + callback);
+        knownDeployments.remove(deploymentContext.getDeploymentId());
+        log.info("UNDEPLOY "+deploymentContext+" / "+callback);
+        
+        if (callback!=null) callback.onSuccess(null);
     }
 
     @Override
@@ -57,8 +127,9 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
 
     @Override
     public void getStatus(PaaSDeploymentContext deploymentContext, IPaaSCallback<DeploymentStatus> callback) {
-        log.info("GET STATUS");
-        callback.onSuccess(DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+        Object dep = knownDeployments.get(deploymentContext.getDeploymentId());
+        log.info("GET STATUS - "+dep);
+        if (callback!=null) callback.onSuccess(dep==null ? DeploymentStatus.UNDEPLOYED : DeploymentStatus.DEPLOYED);
     }
 
     @Override
@@ -106,7 +177,7 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
 
     @Override
     public void setConfiguration(Configuration configuration) throws PluginConfigurationException {
-        log.info("Setting configuration " + configuration);
+        log.info("Setting configuration: " + configuration);
         this.configuration = configuration;
     }
 }

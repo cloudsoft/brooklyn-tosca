@@ -13,10 +13,10 @@ description: Mapping types out of brooklyn to Alien 4 Cloud
 node_types:
   brooklyn.nodes.Tomcat:
     tags:
-      brooklyn_property_map:port: http.port   # alias is httpPort, not port
+      brooklyn_property_map__port: http.port   # alias is httpPort, not port
       brooklyn_blueprint_catalog_id: brooklyn.entity.webapp.tomcat.TomcatServer
     derived_from: alien.nodes.Tomcat
-      description: Brooklyn implementation of tomcat webserver.
+    description: Brooklyn implementation of tomcat webserver.
     properties:
       port:
         type: integer

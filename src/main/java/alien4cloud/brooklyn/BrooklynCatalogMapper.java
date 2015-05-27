@@ -8,7 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import alien4cloud.model.components.*;
+import alien4cloud.model.components.AttributeDefinition;
+import alien4cloud.model.components.CSARDependency;
+import alien4cloud.model.components.IValue;
+import alien4cloud.model.components.IndexedNodeType;
+import alien4cloud.model.components.Interface;
+import alien4cloud.model.components.Operation;
+import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.tosca.ArchiveIndexer;
 import alien4cloud.tosca.model.ArchiveRoot;
 import brooklyn.rest.client.BrooklynApi;
@@ -59,7 +65,7 @@ public class BrooklynCatalogMapper {
 
         try {
             IndexedNodeType tomcatType = new IndexedNodeType();
-            CatalogEntitySummary tomcatEntity = brooklynApi.getCatalogApi().getEntity(entityName);
+            CatalogEntitySummary tomcatEntity = loadEntity(brooklynApi, entityName);
 
             // tomcatEntity.getIconUrl()
 
@@ -81,10 +87,16 @@ public class BrooklynCatalogMapper {
         }
     }
 
-    private void addPropertyDefinitions(CatalogEntitySummary tomcatEntity, IndexedNodeType tomcatType) {
-        Set<EntityConfigSummary> entityConfigSummaries = tomcatEntity.getConfig(); // properties in TOSCA
+    @SuppressWarnings("deprecation")
+    private CatalogEntitySummary loadEntity(BrooklynApi brooklynApi, String entityName) throws Exception {
+        // deprecated method doesn't require version to be set
+        return brooklynApi.getCatalogApi().getEntity(entityName);
+    }
+
+    private void addPropertyDefinitions(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+        Set<EntityConfigSummary> entityConfigSummaries = brooklynEntity.getConfig(); // properties in TOSCA
         Map<String, PropertyDefinition> properties = Maps.newHashMap();
-        tomcatType.setProperties(properties);
+        toscaType.setProperties(properties);
         for (EntityConfigSummary entityConfigSummary : entityConfigSummaries) {
             String propertyType = TYPE_MAPPING.get(entityConfigSummary.getType());
             if (propertyType == null) {
@@ -97,15 +109,15 @@ public class BrooklynCatalogMapper {
                     propertyDefinition.setDefault(entityConfigSummary.getDefaultValue().toString());
                 }
                 propertyDefinition.setRequired(false);
-                tomcatType.getProperties().put(entityConfigSummary.getName(), propertyDefinition);
+                toscaType.getProperties().put(entityConfigSummary.getName(), propertyDefinition);
             }
         }
     }
 
-    private void addAttributeDefinitions(CatalogEntitySummary tomcatEntity, IndexedNodeType tomcatType) {
-        Set<SensorSummary> sensorSummaries = tomcatEntity.getSensors();
+    private void addAttributeDefinitions(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+        Set<SensorSummary> sensorSummaries = brooklynEntity.getSensors();
         Map<String, IValue> attributes = Maps.newHashMap();
-        tomcatType.setAttributes(attributes);
+        toscaType.setAttributes(attributes);
         for (SensorSummary sensorSummary : sensorSummaries) {
             String attributeType = TYPE_MAPPING.get(sensorSummary.getType());
             if (attributeType == null) {
@@ -114,13 +126,13 @@ public class BrooklynCatalogMapper {
                 AttributeDefinition attributeDefinition = new AttributeDefinition();
                 attributeDefinition.setType(attributeType);
                 attributeDefinition.setDescription(sensorSummary.getDescription());
-                tomcatType.getAttributes().put(sensorSummary.getName(), attributeDefinition);
+                toscaType.getAttributes().put(sensorSummary.getName(), attributeDefinition);
             }
         }
     }
 
-    private void addInterfaces(CatalogEntitySummary tomcatEntity, IndexedNodeType tomcatType) {
-        Set<EffectorSummary> effectorSummaries = tomcatEntity.getEffectors();
+    private void addInterfaces(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+        Set<EffectorSummary> effectorSummaries = brooklynEntity.getEffectors();
 
         Interface interfaz = new Interface();
         interfaz.setDescription("Brooklyn effectors management operations.");
@@ -152,7 +164,7 @@ public class BrooklynCatalogMapper {
         }
 
         Map<String, Interface> interfaces = Maps.newHashMap();
-        tomcatType.setInterfaces(interfaces);
+        toscaType.setInterfaces(interfaces);
         interfaces.put("brooklyn_management", interfaz);
     }
 }

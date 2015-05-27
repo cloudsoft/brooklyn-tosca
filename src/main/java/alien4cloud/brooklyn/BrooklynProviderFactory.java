@@ -28,20 +28,20 @@ public class BrooklynProviderFactory implements IConfigurablePaaSProviderFactory
 
     @PostConstruct
     public void ready() {
-        log.info("Created brooklyn provider and beanFactory is ", beanFactory, catalogMapper, archiveIndexer);
+        log.info("Ready - created brooklyn provider, beanFactory is", beanFactory, catalogMapper, archiveIndexer);
     }
 
     @Override
     public IConfigurablePaaSProvider<Configuration> newInstance() {
         BrooklynProvider instance = beanFactory.getBean(BrooklynProvider.class);
-        log.info("NEW INSTANCE!", instance);
-        log.info("Init brooklyn provider and beanFactory is ", beanFactory, catalogMapper, archiveIndexer);
+        log.info("NEW INSTANCE", instance);
+        log.info("Init brooklyn provider and beanFactory is", beanFactory, catalogMapper, archiveIndexer);
         return instance;
     }
 
     @Override
     public void destroy(IConfigurablePaaSProvider<Configuration> instance) {
-        log.info("DESTROYING (noop): " + instance);
+        log.info("DESTROYING (noop)", instance);
     }
 
     @Override
@@ -51,6 +51,6 @@ public class BrooklynProviderFactory implements IConfigurablePaaSProviderFactory
 
     @Override
     public Configuration getDefaultConfiguration() {
-        return null;
+        return new Configuration();
     }
 }

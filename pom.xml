@@ -47,7 +47,7 @@
         <!-- Java coverage configuration -->
         <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
         <maven.compiler.version>2.3.2</maven.compiler.version>
-        <httpclient.version>4.3.2</httpclient.version>
+        <httpclient.version>4.4.1</httpclient.version>
     </properties>
 
     <dependencies>
@@ -61,6 +61,10 @@
                 <exclusion>
                     <artifactId>log4j-over-slf4j</artifactId>
                     <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>logback-classic</artifactId>
+                    <groupId>ch.qos.logback</groupId>
                 </exclusion>
                 <exclusion>
                     <artifactId>logback-classic</artifactId>
@@ -115,18 +119,15 @@
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.1.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <scope>test</scope>
             <version>${httpclient.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
-            <scope>test</scope>
             <version>${httpclient.version}</version>
         </dependency>
     </dependencies>

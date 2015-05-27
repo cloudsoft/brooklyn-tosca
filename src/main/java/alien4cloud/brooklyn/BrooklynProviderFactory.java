@@ -1,37 +1,56 @@
 package alien4cloud.brooklyn;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import alien4cloud.paas.IConfigurablePaaSProvider;
 import alien4cloud.paas.IConfigurablePaaSProviderFactory;
+import alien4cloud.tosca.ArchiveIndexer;
 
 /**
  * Created by lucboutier on 26/05/15.
  */
-public class BrooklynProviderFactory implements IConfigurablePaaSProviderFactory<Void> {
+@Slf4j
+@Component("brooklyn-provider-factory")
+public class BrooklynProviderFactory implements IConfigurablePaaSProviderFactory<Configuration> {
+    @Autowired
+    private BeanFactory beanFactory;
+    @Autowired
+    private BrooklynCatalogMapper catalogMapper;
+    @Resource
+    private ArchiveIndexer archiveIndexer;
 
-    private static final Logger log = LoggerFactory.getLogger(BrooklynProviderFactory.class);
-    
-    @Override
-    public IConfigurablePaaSProvider<Void> newInstance() {
-        BrooklynProvider result = new BrooklynProvider();
-        log.info("NEW INSTANCE: "+result);
-        return result;
+    @PostConstruct
+    public void ready() {
+        log.info("Created brooklyn provider and beanFactory is ", beanFactory, catalogMapper, archiveIndexer);
     }
 
     @Override
-    public void destroy(IConfigurablePaaSProvider<Void> instance) {
-        log.info("DESTROYING (noop): "+instance);
+    public IConfigurablePaaSProvider<Configuration> newInstance() {
+        BrooklynProvider instance = beanFactory.getBean(BrooklynProvider.class);
+        log.info("NEW INSTANCE!", instance);
+        log.info("Init brooklyn provider and beanFactory is ", beanFactory, catalogMapper, archiveIndexer);
+        return instance;
     }
 
     @Override
-    public Class<Void> getConfigurationType() {
-        return Void.class;
+    public void destroy(IConfigurablePaaSProvider<Configuration> instance) {
+        log.info("DESTROYING (noop): " + instance);
     }
 
     @Override
-    public Void getDefaultConfiguration() {
+    public Class<Configuration> getConfigurationType() {
+        return Configuration.class;
+    }
+
+    @Override
+    public Configuration getDefaultConfiguration() {
         return null;
     }
 }

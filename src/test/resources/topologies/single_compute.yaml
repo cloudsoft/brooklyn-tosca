@@ -1,0 +1,12 @@
+node_templates:
+  compute:
+    type: tosca.nodes.Compute
+    properties:
+      os_arch:
+        value: x86_64
+      os_type:
+        value: linux
+
+dependencies:
+  - name: tosca-normative-types
+    version: 1.0.0.wd03-SNAPSHOT

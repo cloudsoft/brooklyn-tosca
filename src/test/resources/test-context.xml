@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <context:annotation-config/>
+
+    <context:component-scan base-package="
+		alien4cloud.*,
+		org.elasticsearch.mapping">
+        <!-- alien4cloud.security.* to exclude ldap package is not working in component-scan -->
+        <context:exclude-filter type="regex" expression="alien4cloud\.brooklyn\.PluginContextConfiguration"/>
+        <context:exclude-filter type="regex" expression="alien4cloud\.ldap.*|alien4cloud\.initialization.*|alien4cloud\.documentation.*"/>
+        <context:exclude-filter type="regex" expression="alien4cloud\.security\.SecurityConfiguration"/>
+    </context:component-scan>
+
+    <bean id="alienconfigFactory" class="alien4cloud.utils.AlienConfigFactory"/>
+    <bean id="alienconfig" factory-bean="alienconfigFactory" factory-method="get"/>
+    <alias name="alienconfig" alias="elasticsearchConfig"/>
+    <context:property-placeholder properties-ref="alienconfig"/>
+
+    <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+
+    <!-- Configuration for the rest template deserializers -->
+    <util:list id="restTemplateDeserializerList">
+        <bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"></bean>
+        <bean class="org.springframework.http.converter.ResourceHttpMessageConverter"></bean>
+        <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+            <property name="objectMapper">
+                <bean class="com.fasterxml.jackson.databind.ObjectMapper">
+                    <property name="propertyNamingStrategy" value="CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES"/>
+                    <property name="dateFormat">
+                        <bean class="java.text.SimpleDateFormat">
+                            <constructor-arg value="yyyy-MM-dd HH:mm:ss"/>
+                        </bean>
+                    </property>
+                </bean>
+            </property>
+        </bean>
+    </util:list>
+
+    <bean id="syncRestTemplate" class="org.springframework.web.client.RestTemplate">
+        <constructor-arg name="messageConverters" ref="restTemplateDeserializerList"/>
+        <property name="errorHandler">
+            <bean class="alien4cloud.paas.cloudify3.error.CloudifyResponseErrorHandler"></bean>
+        </property>
+    </bean>
+
+    <bean id="asyncRestTemplate" class="org.springframework.web.client.AsyncRestTemplate">
+        <constructor-arg>
+            <bean class="org.springframework.http.client.SimpleClientHttpRequestFactory">
+                <property name="taskExecutor">
+                    <bean class="org.springframework.core.task.SimpleAsyncTaskExecutor"></bean>
+                </property>
+            </bean>
+        </constructor-arg>
+        <constructor-arg ref="syncRestTemplate"/>
+    </bean>
+
+</beans>

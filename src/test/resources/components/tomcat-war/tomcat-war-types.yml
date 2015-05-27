@@ -1,0 +1,138 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+template_name: tomcat-war-types
+template_author: Alien4cloud
+template_version: 2.0.0-SNAPSHOT
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+  - alien-base-types:1.0-SNAPSHOT
+
+description: Tomcat recipe, including war type and relationship.
+
+node_types:
+
+  alien.nodes.Java:
+    derived_from: tosca.nodes.SoftwareComponent
+    description: >
+      Installation of Java
+    tags:
+      icon: /images/java.png
+    properties:
+      java_url:
+        type: string
+        required: true
+        default: "http://download.oracle.com/otn-pub/java/jdk/7u75-b13/jdk-7u75-linux-x64.tar.gz"
+      java_home:
+        type: string
+        required: true
+        default: "/opt/java"
+    capabilities:
+      java:
+        type: alien.capabilities.Java
+        upper_bound: unbounded
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            JAVA_URL: { get_property: [SELF, java_url] }
+            JAVA_HOME: { get_property: [SELF, java_home] }
+          implementation: scripts/java_install.sh
+
+  alien.nodes.Tomcat:
+    derived_from: tosca.nodes.WebServer
+    description: >
+      Installation of Tomcat
+    tags:
+      icon: /images/tomcat.gif
+    properties:
+      tomcat_home:
+        type: string
+        required: true
+        default: "/opt/tomcat"
+      tomcat_port:
+        type: integer
+        required: true
+        default: 80
+      tomcat_url:
+        type: string
+        required: true
+        default: "http://apache.crihan.fr/dist/tomcat/tomcat-8/v8.0.20/bin/apache-tomcat-8.0.20.tar.gz"
+    requirements:
+      - java: alien.capabilities.Java
+    capabilities:
+        war_host:
+          type: alien.capabilities.WarHosting
+          upper_bound: unbounded
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            TOMCAT_HOME: { get_property: [SELF, tomcat_home] }
+            TOMCAT_PORT: { get_property: [SELF, tomcat_port] }
+            TOMCAT_URL: { get_property: [SELF, tomcat_url] }
+          implementation: scripts/tomcat_install.sh
+        start:
+          inputs:
+            TOMCAT_HOME: { get_property: [SELF, tomcat_home] }
+            TOMCAT_PORT: { get_property: [SELF, tomcat_port] }
+          implementation: scripts/tomcat_start.sh
+        stop:
+          inputs:
+            TOMCAT_HOME: { get_property: [SELF, tomcat_home] }
+          implementation: scripts/tomcat_stop.sh
+
+  alien.nodes.War:
+    derived_from: tosca.nodes.WebApplication
+    description: A war element
+    tags:
+      icon: /images/war.jpg
+    properties:
+      context_path:
+        description: "Context path to access the deployed war ( ex: www.server.com/<context_path>)"
+        type: string
+    requirements:
+      - host: alien.capabilities.WarHosting
+        lower_bound: 1
+        upper_bound: 1
+    artifacts:
+      - war_file: warFiles/helloWorld.war
+        type: alien.artifacts.WarFile
+    interfaces:
+      custom:
+        update_war_file:
+          inputs:
+            CONTEXT_PATH: { get_property: [SELF, context_path] }
+            TOMCAT_HOME: { get_property: [HOST, tomcat_home] }
+            WAR_URL:
+              type: string
+              description: url of the war to upload to update the current one
+              required: true
+          implementation: scripts/tomcat_install_war.sh
+
+relationship_types:
+
+  alien.relationships.WarHostedOnTomcat:
+    derived_from: tosca.relationships.HostedOn
+    description: Relationship that allows to deploy a war on tomcat.
+    valid_sources: [ alien.capabilities.WarHosting ]
+    valid_targets: [ alien.capabilities.WarHosting ]
+    interfaces:
+      configure:
+        post_configure_source:
+          inputs:
+            CONTEXT_PATH: { get_property: [SOURCE, context_path] }
+            TOMCAT_HOME: { get_property: [TARGET, tomcat_home] }
+          implementation: scripts/tomcat_install_war.sh
+  alien.relationships.RunOnJVM:
+    derived_from: tosca.relationships.DependsOn
+    description: Relationship between a Java SoftwareComponent and its RunOnJVM
+    valid_sources: [ alien.capabilities.Java ]
+    valid_targets: [ alien.capabilities.Java ]
+
+capability_types:
+
+  alien.capabilities.WarHosting:
+    derived_from: tosca.capabilities.Container
+  alien.capabilities.Java:
+    derived_from: tosca.capabilities.Root

@@ -1,5 +1,6 @@
 package alien4cloud.brooklyn;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -8,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import alien4cloud.component.repository.ICsarRepositry;
+import alien4cloud.csar.services.CsarService;
 import alien4cloud.model.components.AttributeDefinition;
 import alien4cloud.model.components.CSARDependency;
 import alien4cloud.model.components.IValue;
@@ -15,6 +18,7 @@ import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.PropertyDefinition;
+import alien4cloud.tosca.ArchiveImageLoader;
 import alien4cloud.tosca.ArchiveIndexer;
 import alien4cloud.tosca.model.ArchiveRoot;
 import brooklyn.rest.client.BrooklynApi;
@@ -39,6 +43,12 @@ public class BrooklynCatalogMapper {
 
     @Autowired
     private ArchiveIndexer archiveIndexer;
+    @Autowired
+    private ArchiveImageLoader imageLoader;
+    @Autowired
+    private ICsarRepositry archiveRepository;
+    @Autowired
+    private CsarService csarService;
 
     public BrooklynCatalogMapper() {
         TYPE_MAPPING.put(Boolean.class.getName(), "boolean");
@@ -50,40 +60,68 @@ public class BrooklynCatalogMapper {
         TYPE_MAPPING.put(Duration.class.getName(), "scalar-unit.time");
     }
 
-    public void mapBrooklynEntity(BrooklynApi brooklynApi, String entityName, String entityVersion) {
+    public void mapBrooklynEntities(BrooklynApi brooklynApi) {
         ArchiveRoot archiveRoot = new ArchiveRoot();
         // Brooklyn actually depends on normative types and alien types
         archiveRoot.getArchive().setToscaDefinitionsVersion("tosca_simple_yaml_1_0_0_wd03");
-        archiveRoot.getArchive().setName("brooklyn-types");
-        archiveRoot.getArchive().setVersion("1.0.0-SNAPSHOT");
-        archiveRoot.getArchive().setTemplateAuthor("Alien4cloud Brooklyn");
+        // TODO need a uid or a brooklyn server identifier
+        archiveRoot.getArchive().setName("brooklyn-types-autoimport");
+        
+        String brooklynVersion = brooklynApi.getServerApi().getVersion().getVersion();
+        archiveRoot.getArchive().setVersion(brooklynVersion);
+        archiveRoot.getArchive().setTemplateAuthor("A4C-Brooklyn auto-import");
         archiveRoot.getArchive().setDescription("Mapping types out of brooklyn to Alien 4 Cloud");
 
         archiveRoot.getArchive().setDependencies(
-                Sets.newHashSet(new CSARDependency("tosca-normative-types", "1.0.0.wd03-SNAPSHOT"), new CSARDependency("alien4cloud-tomcat-types",
-                        "1.0.0-SNAPSHOT")));
+                Sets.newHashSet(
+                    new CSARDependency("tosca-normative-types", "1.0.0.wd03-SNAPSHOT"), 
+                    new CSARDependency("alien4cloud-tomcat-types", "1.0.0-SNAPSHOT")));
 
+        mapBrooklynEntity(brooklynApi, archiveRoot, "brooklyn.entity.webapp.tomcat.TomcatServer", "0.0.0-SNAPSHOT");
+        // TODO Not great way to go but that's a POC for now ;)
+        List<CatalogEntitySummary> entities = brooklynApi.getCatalogApi().listEntities(null, null, false);
+        for (CatalogEntitySummary entity: entities) {
+            mapBrooklynEntity(brooklynApi, archiveRoot, entity.getSymbolicName(), entity.getVersion());
+        }
+        
+        // this is what ArchiveUploadService does:
+        csarService.save(archiveRoot.getArchive());
+        // save the archive in the repository
+//        archiveRepository.storeCSAR(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), Path);
+        // manage images before archive storage in the repository
+//        imageLoader.importImages(path, parsingResult);
+        
+        archiveIndexer.indexArchive(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), archiveRoot, true);
+    }
+
+    public void mapBrooklynEntity(BrooklynApi brooklynApi, ArchiveRoot archiveRoot, String entityName, String entityVersion) {
         try {
-            IndexedNodeType tomcatType = new IndexedNodeType();
-            CatalogEntitySummary tomcatEntity = loadEntity(brooklynApi, entityName);
+            IndexedNodeType toscaType = new IndexedNodeType();
+            CatalogEntitySummary brooklynEntity = loadEntity(brooklynApi, entityName);
 
+            // TODO use icon
             // tomcatEntity.getIconUrl()
 
-            tomcatType.setElementId(tomcatEntity.getId());
-            tomcatType.setArchiveVersion(archiveRoot.getArchive().getVersion());
+            toscaType.setElementId(brooklynEntity.getSymbolicName());
 
-            addPropertyDefinitions(tomcatEntity, tomcatType);
-            addAttributeDefinitions(tomcatEntity, tomcatType);
-            addInterfaces(tomcatEntity, tomcatType);
+            toscaType.setArchiveName(archiveRoot.getArchive().getName());
+            toscaType.setArchiveVersion(archiveRoot.getArchive().getVersion());
+            // TODO types are versioned separately to brooklyn version -
+            // archive is set as brooklynVersion, whereas the node type should have some kind of entityVersion
+//            toscaType.setNodeTypeVersion(entityVersion); ???
+            
+            addPropertyDefinitions(brooklynEntity, toscaType);
+            addAttributeDefinitions(brooklynEntity, toscaType);
+            addInterfaces(brooklynEntity, toscaType);
 
-            // override the host requirement in order to say that none is required.
-            //tomcatType.getRequirements().add()
+            // TODO override the host requirement in order to say that none is required.
+            // or say it requires some type of cloud/server/location/etc
+//            toscaType.getRequirements().add(...)
 
-            archiveRoot.getNodeTypes().put(tomcatEntity.getId(), tomcatType);
+            archiveRoot.getNodeTypes().put(brooklynEntity.getSymbolicName(), toscaType);
 
-            archiveIndexer.indexArchive(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), archiveRoot, true);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed auto-import: "+entityName+"; ignoring", e);
         }
     }
 
@@ -100,7 +138,7 @@ public class BrooklynCatalogMapper {
         for (EntityConfigSummary entityConfigSummary : entityConfigSummaries) {
             String propertyType = TYPE_MAPPING.get(entityConfigSummary.getType());
             if (propertyType == null) {
-                log.warn("Skipping entityConfigSummary as type is not recognized", entityConfigSummary, entityConfigSummary.getType());
+                log.warn("Skipping entityConfigSummary {} as type {} is not recognized", entityConfigSummary, entityConfigSummary.getType());
             } else {
                 PropertyDefinition propertyDefinition = new PropertyDefinition();
                 propertyDefinition.setDescription(entityConfigSummary.getDescription());
@@ -121,7 +159,7 @@ public class BrooklynCatalogMapper {
         for (SensorSummary sensorSummary : sensorSummaries) {
             String attributeType = TYPE_MAPPING.get(sensorSummary.getType());
             if (attributeType == null) {
-                log.warn("Skipping sensorSummary as type is not recognized", sensorSummary, sensorSummary.getType());
+                log.warn("Skipping sensorSummary {} as type {} is not recognized", sensorSummary, sensorSummary.getType());
             } else {
                 AttributeDefinition attributeDefinition = new AttributeDefinition();
                 attributeDefinition.setType(attributeType);
@@ -167,4 +205,5 @@ public class BrooklynCatalogMapper {
         toscaType.setInterfaces(interfaces);
         interfaces.put("brooklyn_management", interfaz);
     }
+
 }

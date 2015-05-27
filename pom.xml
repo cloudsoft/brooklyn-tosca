@@ -18,6 +18,10 @@
             <name>OpenSpaces</name>
             <url>http://maven-repository.openspaces.org</url>
         </repository>
+        <repository>
+            <id>apache</id>
+            <url>http://repository.apache.org/content/repositories/snapshots</url>
+        </repository>
     </repositories>
 
     <distributionManagement>
@@ -63,6 +67,11 @@
                     <groupId>ch.qos.logback</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.brooklyn</groupId>
+            <artifactId>brooklyn-rest-client</artifactId>
+            <version>0.7.0-SNAPSHOT</version>
         </dependency>
         <!-- others -->
         <dependency>

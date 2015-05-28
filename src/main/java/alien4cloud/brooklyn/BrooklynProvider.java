@@ -115,7 +115,12 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
             useLocalContextClassLoader();
             String campYamlString = new ObjectMapper().writeValueAsString(campYaml);
             log.info("DEPLOYING: "+campYamlString);
-            validate(brooklynApi.getApplicationApi().createFromYaml( campYamlString ));
+            Response result = brooklynApi.getApplicationApi().createFromYaml( campYamlString );
+            log.info("RESULT: "+result.getEntity());
+            validate(result);
+            // (the result is a 204 creating, whose entity is a TaskSummary 
+            // with an entityId of the entity which is created and id of the task)
+            // TODO set the brooklyn entityId somewhere that it can be recorded in A4C for easy cross-referencing
         } catch (Throwable e) {
             log.warn("ERROR DEPLOYING", e);
             throw e;

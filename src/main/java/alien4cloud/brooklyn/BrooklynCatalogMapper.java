@@ -1,5 +1,6 @@
 package alien4cloud.brooklyn;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,6 +114,10 @@ public class BrooklynCatalogMapper {
             addPropertyDefinitions(brooklynEntity, toscaType);
             addAttributeDefinitions(brooklynEntity, toscaType);
             addInterfaces(brooklynEntity, toscaType);
+            toscaType.setDerivedFrom(Arrays.asList("tosca.nodes.Root"
+                // TODO could introduce this type to mark items from brooklyn (and to give a "b" icon default)
+                //, "brooklyn.tosca.entity.Root"
+                ));
 
             // TODO override the host requirement in order to say that none is required.
             // or say it requires some type of cloud/server/location/etc

@@ -11,9 +11,9 @@ imports:
 description: Mapping tomcat in an abstract way.
 
 node_types:
-  alien.nodes.Tomcat
+  alien.nodes.Tomcat:
     derived_from: tosca.nodes.WebServer
-      description: Abstraction of tomcat webserver.
+    description: Abstraction of tomcat webserver.
     abstract: true
     tags:
       icon: /images/tomcat.gif

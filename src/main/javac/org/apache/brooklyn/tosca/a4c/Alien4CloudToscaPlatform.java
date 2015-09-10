@@ -40,7 +40,12 @@ import com.google.common.base.Stopwatch;
 
 import alien4cloud.csar.services.CsarService;
 import alien4cloud.model.components.Csar;
+import alien4cloud.model.templates.TopologyTemplate;
+import alien4cloud.model.templates.TopologyTemplateVersion;
+import alien4cloud.model.topology.Topology;
 import alien4cloud.security.model.Role;
+import alien4cloud.topology.TopologyServiceCore;
+import alien4cloud.topology.TopologyTemplateVersionService;
 import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
@@ -157,34 +162,66 @@ public class Alien4CloudToscaPlatform implements Closeable {
         }
     }
 
-    public ParsingResult<Csar> uploadSingleYaml(InputStream resourceFromUrl, String nameO) {
+    public ParsingResult<Csar> uploadSingleYaml(InputStream resourceFromUrl, String callerReferenceName) {
         try {
-            String name = Strings.makeValidFilename(nameO);
-            File tmpBase = new File(tmpRoot, name+"_"+Identifiers.makeRandomId(6));
-            File tmpExpanded = new File(tmpBase, name+"_"+Identifiers.makeRandomId(6));
+            String nameCleaned = Strings.makeValidFilename(callerReferenceName);
+            File tmpBase = new File(tmpRoot, nameCleaned+"_"+Identifiers.makeRandomId(6));
+            File tmpExpanded = new File(tmpBase, nameCleaned+"_"+Identifiers.makeRandomId(6));
             File tmpTarget = new File(tmpExpanded.toString()+".csar.zip");
             tmpExpanded.mkdir();
 
-            FileUtils.copyInputStreamToFile(resourceFromUrl, new File(tmpExpanded, name));
+            FileUtils.copyInputStreamToFile(resourceFromUrl, new File(tmpExpanded, nameCleaned));
             ArchiveBuilder.archive(tmpTarget.toString()).addDirContentsAt(tmpExpanded, "").create();
 
-            ParsingResult<Csar> result = getArchiveUploadService().upload(Paths.get(tmpTarget.toString()));
-            
-            Os.deleteRecursively(tmpBase);
-            
-            if (ArchiveUploadService.hasError(result, null)) {
-                log.debug("A4C parse notes for "+nameO+":\n  "+Strings.join(result.getContext().getParsingErrors(), "\n  "));
+            try {
+                return uploadArchive(tmpTarget, callerReferenceName);
+            } finally {
+                Os.deleteRecursively(tmpBase);
             }
-            if (ArchiveUploadService.hasError(result, ParsingErrorLevel.ERROR)) {
-                throw new IllegalArgumentException("Errors parsing "+name+"; archive will not be installed:\n  "
-                    +Strings.join(result.getContext().getParsingErrors(), "\n  "));
-            }
-            
-            return result;
 
         } catch (Exception e) {
             throw Exceptions.propagate(e);
         }
+    }
+
+    public ParsingResult<Csar> uploadArchive(InputStream resourceFromUrl, String callerReferenceName) {
+        try {
+            File f = new File(tmpRoot, callerReferenceName+"_"+Identifiers.makeRandomId(8));
+            Streams.copy(resourceFromUrl, new FileOutputStream(f));
+            return uploadArchive(f, callerReferenceName);
+            
+        } catch (Exception e) {
+            throw Exceptions.propagate(e);
+        }
+    }
+    
+    public ParsingResult<Csar> uploadArchive(File zipFile, String callerReferenceName) {
+        try {
+            String nameCleaned = Strings.makeValidFilename(callerReferenceName);
+            
+            ParsingResult<Csar> result = getArchiveUploadService().upload(Paths.get(zipFile.toString()));
+
+            if (ArchiveUploadService.hasError(result, null)) {
+                log.debug("A4C parse notes for "+nameCleaned+":\n  "+Strings.join(result.getContext().getParsingErrors(), "\n  "));
+            }
+            if (ArchiveUploadService.hasError(result, ParsingErrorLevel.ERROR)) {
+                throw new IllegalArgumentException("Errors parsing "+callerReferenceName+"; archive will not be installed:\n  "
+                    +Strings.join(result.getContext().getParsingErrors(), "\n  "));
+            }
+
+            return result;
+            
+        } catch (Exception e) {
+            throw Exceptions.propagate(e);
+        }
+    }
+
+    public Topology getTopologyOfCsar(Csar cs) {
+        TopologyTemplate tt = getBean(TopologyServiceCore.class).searchTopologyTemplateByName(cs.getName());
+        if (tt==null) return null;
+        TopologyTemplateVersion[] ttv = getBean(TopologyTemplateVersionService.class).getByDelegateId(tt.getId());
+        if (ttv==null || ttv.length==0) return null;
+        return getBean(TopologyServiceCore.class).getTopology( ttv[0].getTopologyId() );
     }
     
 }

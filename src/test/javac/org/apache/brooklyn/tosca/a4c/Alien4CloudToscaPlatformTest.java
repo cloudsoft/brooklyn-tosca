@@ -11,15 +11,11 @@ import alien4cloud.component.CSARRepositorySearchService;
 import alien4cloud.model.components.CSARDependency;
 import alien4cloud.model.components.Csar;
 import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.templates.TopologyTemplate;
-import alien4cloud.model.templates.TopologyTemplateVersion;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.plan.TopologyTreeBuilderService;
-import alien4cloud.topology.TopologyServiceCore;
-import alien4cloud.topology.TopologyTemplateVersionService;
 import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
@@ -51,20 +47,17 @@ public class Alien4CloudToscaPlatformTest {
         Csar cs = tp.getResult();
         System.out.println(cs);
 
-        //ArchiveUploadService
         Set<CSARDependency> deps = MutableSet.<CSARDependency>builder().addAll(cs.getDependencies()).add(new CSARDependency(cs.getName(), cs.getVersion())).build();
         IndexedNodeType hello = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "my.Hello", deps);
         IndexedNodeType dbms = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "tosca.nodes.DBMS", deps);
-        // topo ID is null :(
-        TopologyTemplate tt = platform.getBean(TopologyServiceCore.class).searchTopologyTemplateByName(cs.getName());
-        TopologyTemplateVersion[] ttv = platform.getBean(TopologyTemplateVersionService.class).getByDelegateId(tt.getId());
-        Topology topo = platform.getBean(TopologyServiceCore.class).getTopology( ttv[0].getTopologyId() );
+
+        Topology topo = platform.getTopologyOfCsar(cs);
+        
         PaaSTopology paasTopo = platform.getBean(TopologyTreeBuilderService.class).buildPaaSTopology(topo);
         NodeTemplate nt = topo.getNodeTemplates().get("script_hello");
         PaaSNodeTemplate pnt = paasTopo.getAllNodes().get("script_hello");
         
-        System.out.println(tt);
-//        Topology topo = platform.getBean(TopologyService.class).getTopology(cs.getTopologyId());
+        System.out.println(topo);
     }
 
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {

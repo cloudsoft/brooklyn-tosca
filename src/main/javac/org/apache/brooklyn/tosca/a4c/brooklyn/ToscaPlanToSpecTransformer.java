@@ -19,12 +19,16 @@ import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableMap;
+import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
+import org.apache.brooklyn.util.net.Urls;
 import org.apache.brooklyn.util.stream.Streams;
 import org.apache.brooklyn.util.text.Strings;
+import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import alien4cloud.model.components.Csar;
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
@@ -32,7 +36,6 @@ import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Requirement;
 import alien4cloud.model.topology.Topology;
-import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
 
@@ -76,114 +79,170 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return getShortDescription().equals(planType);
     }
 
+    public static class PlanTypeChecker {
+
+        Object obj;
+        boolean isTosca = false;
+        String csarLink;
+        
+        public PlanTypeChecker(String plan) {
+            try {
+                obj = Yamls.parseAll(plan).iterator().next();
+            } catch (Exception e) {
+                Exceptions.propagateIfFatal(e);
+                log.trace("Not YAML", e);
+                return;
+            }
+            if (!(obj instanceof Map)) {
+                log.trace("Not a map");
+                // is it a one-line URL?
+                plan = plan.trim();
+                if (!plan.contains("\n") && Urls.isUrlWithProtocol(plan)) {
+                    csarLink = plan;
+                }
+                return;
+            }
+            
+            if (isTosca((Map<?,?>)obj)) {
+                isTosca = true;
+                return;
+            }
+            
+            if (((Map<?,?>)obj).size()==1) {
+                csarLink = (String) ((Map<?,?>)obj).get("csar_link");
+                return;
+            }
+        }
+
+        private static boolean isTosca(Map<?,?> obj) {
+            if (obj.containsKey("topology_template")) return true;
+            if (obj.containsKey("topology_name")) return true;
+            if (obj.containsKey("node_types")) return true;
+            if (obj.containsKey("tosca_definitions_version")) return true;
+            log.trace("Not TOSCA - no recognized keys");
+            return false;
+        }
+    }
+    
     @Override
     public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
+            ParsingResult<Csar> tp;
             
-            ParsingResult<ArchiveRoot> tp = platform.getToscaParser().parseFile("<submitted>", "submitted-tosca-plan",
-                Streams.newInputStreamWithContents(plan), null);
+            PlanTypeChecker type = new PlanTypeChecker(plan);
+            if (!type.isTosca) {
+                if (type.csarLink==null) {
+                    throw new PlanNotRecognizedException("Does not look like TOSCA");
+                }
+                tp = platform.uploadArchive(new ResourceUtils(this).getResourceFromUrl(type.csarLink), "submitted-tosca-archive");
+                
+            } else {
+                tp = platform.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
+            }
 
             if (!tp.getContext().getParsingErrors().isEmpty()) {
                 throw new IllegalStateException("Could not parse TOSCA plan: "+Strings.join(tp.getContext().getParsingErrors(), ", ") );
             }
             
-            ArchiveRoot root = tp.getResult();
-            Topology topo = root.getTopology();
+            String name = tp.getResult().getName();
+            Topology topo = platform.getTopologyOfCsar(tp.getResult());
             
-            EntitySpec<BasicApplication> result = EntitySpec.create(BasicApplication.class);
-            
-            String name = null;
-            if (tp.getResult().getArchive()!=null && tp.getResult().getArchive().getName()!=null) {
-                name = tp.getResult().getArchive().getName();
-            } else {
-                name = root.getTopologyTemplateDescription();
-            }
-            result.displayName(name);
-
-            // get COMPUTE nodes
-            Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
-            Map<String,EntitySpec<?>> computeNodeSpecs = MutableMap.of();
-            Map<String,NodeTemplate> otherNodes = MutableMap.of();
-            for (Entry<String,NodeTemplate> templateE: topo.getNodeTemplates().entrySet()) {
-                String templateId = templateE.getKey();
-                NodeTemplate template = templateE.getValue();
-                
-                if ("tosca.nodes.Compute".equals(template.getType())) {
-                    EntitySpec<VanillaSoftwareProcess> spec = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template, root);
-                    computeNodeSpecs.put(templateId, spec);
-                    allNodeSpecs.put(templateId, spec);
-                } else {
-                    otherNodes.put(templateId, template);
-                }
-            }
-            
-            // get OTHER nodes, putting as children of the relevant compute node for now
-            // TODO this is hokey, won't support nested types, etc;
-            // we should support Relationships and have an OtherEntityMachineLocation ?
-            if (!otherNodes.isEmpty()) {
-                for (Entry<String,NodeTemplate> templateE: otherNodes.entrySet()) {
-                    String templateId = templateE.getKey();
-                    NodeTemplate template = templateE.getValue();
-                    
-                    EntitySpec<VanillaSoftwareProcess> thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template, root);
-                    
-                    String hostNodeId = null;
-                    Requirement hostR = template.getRequirements()==null ? null : template.getRequirements().get("host");
-                    if (hostR!=null) {
-                        for (RelationshipTemplate r: template.getRelationships().values()) {
-                            if (r.getRequirementName().equals("host")) {
-                                hostNodeId = r.getTarget();
-                                break;
-                            }
-                        }
-                    }
-                    if (hostNodeId==null) {
-                        // temporarily, fall back to looking for a *property* called 'host'
-                        hostNodeId = ToscaComputeToVanillaConverter.resolve(template.getProperties(), "host");
-                        if (hostNodeId!=null) {
-                            log.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
-                        }
-                    }
-                    
-                    if (hostNodeId!=null) {
-                        EntitySpec<?> parent = computeNodeSpecs.get(hostNodeId);
-                        if (parent!=null) {
-                            parent.child(thisNode);
-                            parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
-                        } else {
-                            throw new IllegalStateException("Can't find parent '"+hostNodeId+"'");
-                        }
-                    } else {
-                        // TODO for now if no host relationship, treat as compute (assume derived from compute, but note children can't be on it)
-                        computeNodeSpecs.put(templateId, thisNode);
-                    }
-                    allNodeSpecs.put(templateId, thisNode);
-                }
-            }
-            
-            result.children(computeNodeSpecs.values());
-            
-            for (NodeGroup g: topo.getGroups().values()) {
-                for (AbstractPolicy p: g.getPolicies()) {
-                    if ("brooklyn.location".equals(p.getName())) {
-                        for (String id: g.getMembers()) {
-                            EntitySpec<?> spec = allNodeSpecs.get(id);
-                            if (spec==null) throw new IllegalStateException("No node '"+id+"' found, when setting locations");
-                            spec.location(mgmt.getLocationRegistry().resolve( (String)((GenericPolicy)p).getData().get(GroupPolicyParser.VALUE) ));
-                        }
-                    }
-                    // other policies ignored
-                }
-            }
-            
-            log.debug("Created entity from TOSCA spec: "+ result);
-            return result;
+            return createApplicationSpec(name, topo);
             
         } catch (Exception e) {
             log.debug("Failed to create entity from TOSCA spec:\n" + plan);
             throw Exceptions.propagate(e);
         }
+    }
+    
+    protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
+//        ArchiveRoot root = tp.getResult();
+
+//        Topology topo = root.getTopology();
+
+        EntitySpec<BasicApplication> result = EntitySpec.create(BasicApplication.class);
+
+        result.displayName(name);
+
+        // get COMPUTE nodes
+        Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
+        Map<String,EntitySpec<?>> computeNodeSpecs = MutableMap.of();
+        Map<String,NodeTemplate> otherNodes = MutableMap.of();
+        for (Entry<String,NodeTemplate> templateE: topo.getNodeTemplates().entrySet()) {
+            String templateId = templateE.getKey();
+            NodeTemplate template = templateE.getValue();
+
+            if ("tosca.nodes.Compute".equals(template.getType())) {
+                EntitySpec<VanillaSoftwareProcess> spec = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
+                computeNodeSpecs.put(templateId, spec);
+                allNodeSpecs.put(templateId, spec);
+            } else {
+                otherNodes.put(templateId, template);
+            }
+        }
+
+        // get OTHER nodes, putting as children of the relevant compute node for now
+        // TODO this is hokey, won't support nested types, etc;
+        // we should support Relationships and have an OtherEntityMachineLocation ?
+        if (!otherNodes.isEmpty()) {
+            for (Entry<String,NodeTemplate> templateE: otherNodes.entrySet()) {
+                String templateId = templateE.getKey();
+                NodeTemplate template = templateE.getValue();
+
+                EntitySpec<VanillaSoftwareProcess> thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
+
+                String hostNodeId = null;
+                Requirement hostR = template.getRequirements()==null ? null : template.getRequirements().get("host");
+                if (hostR!=null) {
+                    for (RelationshipTemplate r: template.getRelationships().values()) {
+                        if (r.getRequirementName().equals("host")) {
+                            hostNodeId = r.getTarget();
+                            break;
+                        }
+                    }
+                }
+                if (hostNodeId==null) {
+                    // temporarily, fall back to looking for a *property* called 'host'
+                    hostNodeId = ToscaComputeToVanillaConverter.resolve(template.getProperties(), "host");
+                    if (hostNodeId!=null) {
+                        log.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
+                    }
+                }
+
+                if (hostNodeId!=null) {
+                    EntitySpec<?> parent = computeNodeSpecs.get(hostNodeId);
+                    if (parent!=null) {
+                        parent.child(thisNode);
+                        parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
+                    } else {
+                        throw new IllegalStateException("Can't find parent '"+hostNodeId+"'");
+                    }
+                } else {
+                    // TODO for now if no host relationship, treat as compute (assume derived from compute, but note children can't be on it)
+                    computeNodeSpecs.put(templateId, thisNode);
+                }
+                allNodeSpecs.put(templateId, thisNode);
+            }
+        }
+
+        result.children(computeNodeSpecs.values());
+
+        for (NodeGroup g: topo.getGroups().values()) {
+            for (AbstractPolicy p: g.getPolicies()) {
+                if ("brooklyn.location".equals(p.getName())) {
+                    for (String id: g.getMembers()) {
+                        EntitySpec<?> spec = allNodeSpecs.get(id);
+                        if (spec==null) throw new IllegalStateException("No node '"+id+"' found, when setting locations");
+                        spec.location(mgmt.getLocationRegistry().resolve( (String)((GenericPolicy)p).getData().get(GroupPolicyParser.VALUE) ));
+                    }
+                }
+                // other policies ignored
+            }
+        }
+
+        log.debug("Created entity from TOSCA spec: "+ result);
+        return result;
     }
 
     @Override

@@ -32,6 +32,10 @@ and the following at deploy time:
 * Other node types which define `standard` lifecycle `interfaces` as scripts by URL, 
   optionally declaring their `host` requirement pointing at a compute node template
 
+As Brooklyn expects a YAML, if you want to install a ZIP CSAR, 
+simply host that somewhere with a URL and supply the URL as the plan,
+or as the value in a single-entry map, keyed against `csar_link`.
+
 
 ### Illustration
 
@@ -55,8 +59,6 @@ Locations where Brookln should deploy an application can be specified as follows
 ## TODO Tasks
 
 ### Very Soon
-
-* add CSAR by reference
 
 * add catalog items from TOSCA specs, one by one or by import
 

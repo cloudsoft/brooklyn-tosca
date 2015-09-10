@@ -18,12 +18,10 @@ import org.slf4j.LoggerFactory;
 
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ImplementationArtifact;
-import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.tosca.model.ArchiveRoot;
 
 public class ToscaComputeToVanillaConverter {
 
@@ -35,7 +33,7 @@ public class ToscaComputeToVanillaConverter {
         this.mgmt = mgmt;
     }
     
-    public EntitySpec<VanillaSoftwareProcess> toSpec(String id, NodeTemplate t, ArchiveRoot root) {
+    public EntitySpec<VanillaSoftwareProcess> toSpec(String id, NodeTemplate t) {
         EntitySpec<VanillaSoftwareProcess> spec = EntitySpec.create(VanillaSoftwareProcess.class);
         
         if (Strings.isNonBlank( t.getName() )) {
@@ -53,7 +51,7 @@ public class ToscaComputeToVanillaConverter {
         spec.configure(VanillaSoftwareProcess.STOP_COMMAND, "true");
         spec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND, "true");
         
-        applyLifecyle(id, t, root, spec);
+        applyLifecyle(id, t, spec);
         
         return spec;
     }
@@ -73,7 +71,7 @@ public class ToscaComputeToVanillaConverter {
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
     }
 
-    private void applyLifecyle(String id, NodeTemplate t, ArchiveRoot root, EntitySpec<VanillaSoftwareProcess> spec) {
+    private void applyLifecyle(String id, NodeTemplate t, EntitySpec<VanillaSoftwareProcess> spec) {
         
 //  C.6.3.1 Definition
 //
@@ -88,54 +86,55 @@ public class ToscaComputeToVanillaConverter {
 //      description: Standard lifecycle stop operation.
 //    delete:
 //      description: Standard lifecycle delete operation.
+        
+        Map<String, Operation> ops = MutableMap.of();
 
       // first get interface operations on type (may not be necessary if A4C is smart about merging them?)
-      Map<String, Operation> ops = MutableMap.of();
-      if (root.getNodeTypes()!=null) {
-          IndexedNodeType type = root.getNodeTypes().get(t.getType());
-          if (type!=null && type.getInterfaces()!=null) {
-              MutableMap<String, Interface> ifs = MutableMap.copyOf(type.getInterfaces());
-              Interface ifa = null;
-              if (ifa==null) ifa = ifs.remove("tosca.interfaces.node.lifecycle.Standard");
-              if (ifa==null) ifa = ifs.remove("standard");
-              if (ifa==null) ifs.remove("Standard");
-              
-              if (ifa!=null) {
-                  ops.putAll(ifa.getOperations());
-              }
-              
-              if (!ifs.isEmpty()) {
-                  log.warn("Could not translate some interfaces for "+id+": "+ifs.keySet());
-              }
-          }
-      }
+      // will have to look them up on platform however
+//      if (root.getNodeTypes()!=null) {
+//          IndexedNodeType type = root.getNodeTypes().get(t.getType());
+//          if (type!=null && type.getInterfaces()!=null) {
+//              MutableMap<String, Interface> ifs = MutableMap.copyOf(type.getInterfaces());
+//              Interface ifa = null;
+//              if (ifa==null) ifa = ifs.remove("tosca.interfaces.node.lifecycle.Standard");
+//              if (ifa==null) ifa = ifs.remove("standard");
+//              if (ifa==null) ifs.remove("Standard");
+//              
+//              if (ifa!=null) {
+//                  ops.putAll(ifa.getOperations());
+//              }
+//              
+//              if (!ifs.isEmpty()) {
+//                  log.warn("Could not translate some interfaces for "+id+": "+ifs.keySet());
+//              }
+//          }
+//      }
 
-      // then get interface operations from node template
-      if (t.getInterfaces()!=null) {
-          MutableMap<String, Interface> ifs = MutableMap.copyOf(t.getInterfaces());
-          Interface ifa = null;
-          if (ifa==null) ifa = ifs.remove("tosca.interfaces.node.lifecycle.Standard");
-          if (ifa==null) ifa = ifs.remove("standard");
-          if (ifa==null) ifs.remove("Standard");
-          
-          if (ifa!=null) {
-              ops.putAll(ifa.getOperations());
-          }
-          
-          if (!ifs.isEmpty()) {
-              log.warn("Could not translate some interfaces for "+id+": "+ifs.keySet());
-          }          
-      }
-      
-      applyLifecycle(ops, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
-      applyLifecycle(ops, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
-      applyLifecycle(ops, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
-      applyLifecycle(ops, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
-      
-      if (!ops.isEmpty()) {
-          log.warn("Could not translate some operations for "+id+": "+ops.keySet());
-      }
+        // then get interface operations from node template
+        if (t.getInterfaces()!=null) {
+            MutableMap<String, Interface> ifs = MutableMap.copyOf(t.getInterfaces());
+            Interface ifa = null;
+            if (ifa==null) ifa = ifs.remove("tosca.interfaces.node.lifecycle.Standard");
+            if (ifa==null) ifa = ifs.remove("standard");
+            if (ifa==null) ifs.remove("Standard");
 
+            if (ifa!=null) {
+                ops.putAll(ifa.getOperations());
+            }
+
+            if (!ifs.isEmpty()) {
+                log.warn("Could not translate some interfaces for "+id+": "+ifs.keySet());
+            }          
+        }
+
+        applyLifecycle(ops, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
+        applyLifecycle(ops, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
+        applyLifecycle(ops, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
+        applyLifecycle(ops, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
+
+        if (!ops.isEmpty()) {
+            log.warn("Could not translate some operations for "+id+": "+ops.keySet());
+        }
 
     }
 

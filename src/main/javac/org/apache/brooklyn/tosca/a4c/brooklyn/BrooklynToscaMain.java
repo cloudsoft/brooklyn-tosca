@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
  * <p>
  * It inherits the standard Brooklyn CLI options from {@link Main},
  * with the TOSCA module loaded as a {@link PlanToSpecTransformer}.
+ * <p>
+ * It is also fine to drop the TOSCA JAR into your brooklyn drop-ins.
  */
 public class BrooklynToscaMain extends Main {
     

@@ -1,38 +1,28 @@
 
 tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
-#tosca_definitions_version: tosca_simple_yaml_1_0_0
 
 imports:
   - tosca-normative-types:1.0.0.wd03-SNAPSHOT
 
-#metadata:
-#  template_name: Sample with Script
+template_name: brooklyn.a4c.sample.script1
+template_version: 1.0.0-SNAPSHOT
 
 description: Template for deploying a single server with predefined properties.
-
-node_types:
-  my.Hello:
-      derived_from: tosca.nodes.Root
-      interfaces:
-        Standard:
-          create: file:///tmp/scripts/create.sh
-          configure: file:///tmp/scripts/configure.sh
-          start: file:///tmp/scripts/start.sh
-          stop: file:///tmp/scripts/stop.sh
-      properties:
-        host:
-          type: string
 
 topology_template:
   description: Sample with Script
 
   node_templates:
     script_hello:
-      type: my.Hello
-#      requirements:
-#        host: a_server
-      properties:
-        host: a_server
+      type: tosca.nodes.SoftwareComponent
+      requirements:
+      - host: a_server
+      interfaces:
+        Standard:
+          create: file:///tmp/scripts/create.sh
+          configure: file:///tmp/scripts/configure.sh
+          start: file:///tmp/scripts/start.sh
+          stop: file:///tmp/scripts/stop.sh
         
     a_server:
       type: tosca.nodes.Compute

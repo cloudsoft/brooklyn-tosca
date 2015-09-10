@@ -1,13 +1,25 @@
 package org.apache.brooklyn.tosca.a4c;
 
-import org.apache.brooklyn.util.collections.MutableList;
+import java.util.Set;
+
+import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
-import org.apache.brooklyn.util.text.Strings;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import alien4cloud.component.CSARRepositorySearchService;
+import alien4cloud.model.components.CSARDependency;
+import alien4cloud.model.components.Csar;
+import alien4cloud.model.components.IndexedNodeType;
+import alien4cloud.model.templates.TopologyTemplate;
+import alien4cloud.model.templates.TopologyTemplateVersion;
 import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.topology.TopologyService;
+import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.model.PaaSTopology;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import alien4cloud.topology.TopologyServiceCore;
+import alien4cloud.topology.TopologyTemplateVersionService;
 import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
@@ -23,45 +35,36 @@ public class Alien4CloudToscaPlatformTest {
         Alien4CloudToscaPlatform.grantAdminAuth();
         Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance(args);
         
-        ParsingResult<ArchiveRoot> tp = new Alien4CloudToscaPlatformTest().sampleParseTosca(platform);
+        platform.loadNormativeTypes();
         
-        System.out.println(tp);
-
-        Alien4CloudToscaPlatform.loadNormativeTypes(platform);
+        String name = "script1.tosca.yaml";
+        String url = "classpath:/org/apache/brooklyn/tosca/a4c/" + name;
+        ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
         
-        tp = platform.getToscaParser().parseFile("<classpath>", "basic-compute.tosca",
-            new ResourceUtils(platform).getResourceFromUrl("classpath:/org/apache/brooklyn/tosca/a4c/"
-//                + "sample/basic-compute.tosca"
-                + "script1.tosca.yaml"
-                ), null);
-
-        if (!tp.getContext().getParsingErrors().isEmpty()) {
-            System.out.println("ERRORS:\n  "+Strings.join(tp.getContext().getParsingErrors(), "\n  "));
-        }
-        ArchiveRoot t = tp.getResult();
-        // TODO complains if archive doesn't have name (which it won't with the above parse)
-//        platform.getCsarService().save(t.getArchive());
-        TopologyService ts = platform.getBean(TopologyService.class);
-        
-        System.out.println("Topology is:\n"+ts.getYaml(t.getTopology()));
-        
-        MutableList<NodeTemplate> templates = MutableList.copyOf(t.getTopology().getNodeTemplates().values());
-        System.out.println("Node templates "+templates);
-        
-        System.out.println("Node types "+t.getNodeTypes());
-        
-        t.getArchive().setName("on-the-go");
-        t.getArchive().setVersion("1.0.0");
-        platform.getCsarService().save(t.getArchive());
-
-//        t.getNodeTypes().values().iterator().next().setArchiveName(t.getArchive().getName());
-//        t.getNodeTypes().values().iterator().next().setArchiveVersion(t.getArchive().getVersion());
-//        ts.loadType(t.getTopology(), t.getNodeTypes().values().iterator().next());
-//        t.getTopology().getDependencies().add(new CSARDependency(t.getArchive().getName(), t.getArchive().getVersion()));
-//        TopologyDTO td = ts.buildTopologyDTO(t.getTopology());
-//        System.out.println("DTO toplogy:\n"+td.getYaml());
+        explore(platform, tp);
         
         platform.close();
+    }
+
+    @SuppressWarnings("unused")
+    private static void explore(Alien4CloudToscaPlatform platform, ParsingResult<Csar> tp) {
+        Csar cs = tp.getResult();
+        System.out.println(cs);
+
+        //ArchiveUploadService
+        Set<CSARDependency> deps = MutableSet.<CSARDependency>builder().addAll(cs.getDependencies()).add(new CSARDependency(cs.getName(), cs.getVersion())).build();
+        IndexedNodeType hello = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "my.Hello", deps);
+        IndexedNodeType dbms = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "tosca.nodes.DBMS", deps);
+        // topo ID is null :(
+        TopologyTemplate tt = platform.getBean(TopologyServiceCore.class).searchTopologyTemplateByName(cs.getName());
+        TopologyTemplateVersion[] ttv = platform.getBean(TopologyTemplateVersionService.class).getByDelegateId(tt.getId());
+        Topology topo = platform.getBean(TopologyServiceCore.class).getTopology( ttv[0].getTopologyId() );
+        PaaSTopology paasTopo = platform.getBean(TopologyTreeBuilderService.class).buildPaaSTopology(topo);
+        NodeTemplate nt = topo.getNodeTemplates().get("script_hello");
+        PaaSNodeTemplate pnt = paasTopo.getAllNodes().get("script_hello");
+        
+        System.out.println(tt);
+//        Topology topo = platform.getBean(TopologyService.class).getTopology(cs.getTopologyId());
     }
 
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {

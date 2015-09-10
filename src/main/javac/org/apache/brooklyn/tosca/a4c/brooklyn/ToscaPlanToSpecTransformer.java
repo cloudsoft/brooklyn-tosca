@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import alien4cloud.model.topology.NodeTemplate;
+import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Requirement;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.tosca.model.ArchiveRoot;
@@ -53,7 +54,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     Alien4CloudToscaPlatform.grantAdminAuth();
                     platform = Alien4CloudToscaPlatform.newInstance();
                     ((LocalManagementContext)mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
-                    Alien4CloudToscaPlatform.loadNormativeTypes(platform);
+                    platform.loadNormativeTypes();
                 }
             }
         } catch (Exception e) {
@@ -88,7 +89,13 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             
             EntitySpec<BasicApplication> result = EntitySpec.create(BasicApplication.class);
             
-            result.displayName(root.getTopologyTemplateDescription());
+            String name = null;
+            if (tp.getResult().getArchive()!=null && tp.getResult().getArchive().getName()!=null) {
+                name = tp.getResult().getArchive().getName();
+            } else {
+                name = root.getTopologyTemplateDescription();
+            }
+            result.displayName(name);
 
             // get COMPUTE nodes
             Map<String,EntitySpec<?>> computeNodeSpecs = MutableMap.of();
@@ -114,25 +121,35 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     
                     EntitySpec<VanillaSoftwareProcess> thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template, root);
                     
-                    // TODO doesn't set requirements
+                    String hostNodeId = null;
                     Requirement hostR = template.getRequirements()==null ? null : template.getRequirements().get("host");
-                    if (hostR==null) {
-                        String hostP = ToscaComputeToVanillaConverter.resolve(template.getProperties(), "host");
-                        if (hostP!=null) {
-                            EntitySpec<?> parent = computeNodeSpecs.get(hostP);
-                            if (parent!=null) {
-                                parent.child(thisNode);
-                                parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
-                            } else {
-                                throw new IllegalStateException("Can't find parent '"+hostP+"'");
+                    if (hostR!=null) {
+                        for (RelationshipTemplate r: template.getRelationships().values()) {
+                            if (r.getRequirementName().equals("host")) {
+                                hostNodeId = r.getTarget();
+                                break;
                             }
+                        }
+                    }
+                    if (hostNodeId==null) {
+                        // temporarily, fall back to looking for a *property* called 'host'
+                        hostNodeId = ToscaComputeToVanillaConverter.resolve(template.getProperties(), "host");
+                        if (hostNodeId!=null) {
+                            log.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
+                        }
+                    }
+                    
+                    if (hostNodeId!=null) {
+                        EntitySpec<?> parent = computeNodeSpecs.get(hostNodeId);
+                        if (parent!=null) {
+                            parent.child(thisNode);
+                            parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
                         } else {
-                            // treat as compute, but TODO children can't be on it
-                            computeNodeSpecs.put(templateId, thisNode);
+                            throw new IllegalStateException("Can't find parent '"+hostNodeId+"'");
                         }
                     } else {
-                        // TODO sometimes set as string?
-//                        hostR.getProperties("node");
+                        // TODO for now if no host relationship, treat as compute (assume derived from compute, but note children can't be on it)
+                        computeNodeSpecs.put(templateId, thisNode);
                     }
                 }
             }

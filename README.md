@@ -3,16 +3,21 @@ brooklyn-tosca
 
 # TODO Tasks
 
-* Alien understands
-  * host as a capability
-  * interfaces on a node template
-  * requirements, specified on template, and when value is a string (e.g. node)
-  * anonymous properties
-  * metadata
+### Very Soon
 
-* Brooklyn interpret topology templates
-  * tosca.nodes.Compute type
-  * interfaces
+* how to handle locations inline
+* reference TOSCA items from CAMP
+* document above
+
+* use pre-existing ES server / allow ES configuration
+
+### Then
+
+* Alien issues
+  * metadata tag not supported
+  * anonymous properties can't be retrieved (nice to have)
+  * derived_from not working (without abstract)
 
 * Brooklyn support uploading CSAR files
-* Brooklyn types registered as TOSCA types
+
+* Deal with reqs/relationships properly (not the host cheat)

@@ -72,12 +72,12 @@ public class ToscaComputeToVanillaConverter {
         prov.putIfNotNull(JcloudsLocationConfig.MIN_RAM, resolve(props, "mem_size"));
         prov.putIfNotNull(JcloudsLocationConfig.MIN_DISK, resolve(props, "disk_size"));
         prov.putIfNotNull(JcloudsLocationConfig.MIN_CORES, TypeCoercions.coerce(resolve(props, "num_cpus"), Integer.class));
+        // TODO support OS selection
         
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
     }
 
     private void applyLifecyle(String id, NodeTemplate t, ArchiveRoot root, EntitySpec<VanillaSoftwareProcess> spec) {
-        // TODO Auto-generated method stub
         
 //  C.6.3.1 Definition
 //
@@ -93,7 +93,8 @@ public class ToscaComputeToVanillaConverter {
 //    delete:
 //      description: Standard lifecycle delete operation.
 
-      // TODO interfaces are taken from a type, if defined; A4C should combine these, but how?
+      // first get interface operations on type (may not be necessary if A4C is smart about merging them?)
+      Map<String, Operation> ops = MutableMap.of();
       if (root.getNodeTypes()!=null) {
           IndexedNodeType type = root.getNodeTypes().get(t.getType());
           if (type!=null && type.getInterfaces()!=null) {
@@ -104,15 +105,7 @@ public class ToscaComputeToVanillaConverter {
               if (ifa==null) ifs.remove("Standard");
               
               if (ifa!=null) {
-                  Map<String, Operation> ops = MutableMap.copyOf(ifa.getOperations());
-                  applyLifecycle(ops, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
-                  applyLifecycle(ops, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
-                  applyLifecycle(ops, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
-                  applyLifecycle(ops, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
-                  
-                  if (!ops.isEmpty()) {
-                      log.warn("Could not translate some operations for "+id+": "+ops.keySet());
-                  }
+                  ops.putAll(ifa.getOperations());
               }
               
               if (!ifs.isEmpty()) {
@@ -120,6 +113,33 @@ public class ToscaComputeToVanillaConverter {
               }
           }
       }
+
+      // then get interface operations from node template
+      if (t.getInterfaces()!=null) {
+          MutableMap<String, Interface> ifs = MutableMap.copyOf(t.getInterfaces());
+          Interface ifa = null;
+          if (ifa==null) ifa = ifs.remove("tosca.interfaces.node.lifecycle.Standard");
+          if (ifa==null) ifa = ifs.remove("standard");
+          if (ifa==null) ifs.remove("Standard");
+          
+          if (ifa!=null) {
+              ops.putAll(ifa.getOperations());
+          }
+          
+          if (!ifs.isEmpty()) {
+              log.warn("Could not translate some interfaces for "+id+": "+ifs.keySet());
+          }          
+      }
+      
+      applyLifecycle(ops, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
+      applyLifecycle(ops, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
+      applyLifecycle(ops, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
+      applyLifecycle(ops, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
+      
+      if (!ops.isEmpty()) {
+          log.warn("Could not translate some operations for "+id+": "+ops.keySet());
+      }
+
 
     }
 
@@ -130,6 +150,7 @@ public class ToscaComputeToVanillaConverter {
         if (artifact!=null) {
             String ref = artifact.getArtifactRef();
             if (ref!=null) {
+                // TODO get script/artifact relative to CSAR
                 String script = new ResourceUtils(this).getResourceAsString(ref);
                 String setScript = (String) spec.getConfig().get(VanillaSoftwareProcess.INSTALL_COMMAND);
                 if (Strings.isBlank(setScript) || setScript.trim().equals("true")) {

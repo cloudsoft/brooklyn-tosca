@@ -28,6 +28,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 public class ToscaComputeToVanillaConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaComputeToVanillaConverter.class);
+    @SuppressWarnings("unused")
     private ManagementContext mgmt;
     
     public ToscaComputeToVanillaConverter(ManagementContext mgmt) {
@@ -46,11 +47,6 @@ public class ToscaComputeToVanillaConverter {
         applyProvisioningProperties(t, spec);
         
         spec.configure("tosca.node.type", t.getType());
-        
-        String location = resolve(t.getProperties(), "location", "os_distribution");
-        if (Strings.isNonBlank(location)) {
-            spec.location(mgmt.getLocationRegistry().resolve(location));
-        }
         
         // just assume it's running
         spec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND, "true");

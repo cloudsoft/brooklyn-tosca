@@ -25,12 +25,16 @@ import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import alien4cloud.model.topology.AbstractPolicy;
+import alien4cloud.model.topology.GenericPolicy;
+import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Requirement;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingResult;
+import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
 
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
@@ -98,6 +102,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             result.displayName(name);
 
             // get COMPUTE nodes
+            Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
             Map<String,EntitySpec<?>> computeNodeSpecs = MutableMap.of();
             Map<String,NodeTemplate> otherNodes = MutableMap.of();
             for (Entry<String,NodeTemplate> templateE: topo.getNodeTemplates().entrySet()) {
@@ -105,7 +110,9 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 NodeTemplate template = templateE.getValue();
                 
                 if ("tosca.nodes.Compute".equals(template.getType())) {
-                    computeNodeSpecs.put(templateId, new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template, root));
+                    EntitySpec<VanillaSoftwareProcess> spec = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template, root);
+                    computeNodeSpecs.put(templateId, spec);
+                    allNodeSpecs.put(templateId, spec);
                 } else {
                     otherNodes.put(templateId, template);
                 }
@@ -151,10 +158,24 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                         // TODO for now if no host relationship, treat as compute (assume derived from compute, but note children can't be on it)
                         computeNodeSpecs.put(templateId, thisNode);
                     }
+                    allNodeSpecs.put(templateId, thisNode);
                 }
             }
             
             result.children(computeNodeSpecs.values());
+            
+            for (NodeGroup g: topo.getGroups().values()) {
+                for (AbstractPolicy p: g.getPolicies()) {
+                    if ("brooklyn.location".equals(p.getName())) {
+                        for (String id: g.getMembers()) {
+                            EntitySpec<?> spec = allNodeSpecs.get(id);
+                            if (spec==null) throw new IllegalStateException("No node '"+id+"' found, when setting locations");
+                            spec.location(mgmt.getLocationRegistry().resolve( (String)((GenericPolicy)p).getData().get(GroupPolicyParser.VALUE) ));
+                        }
+                    }
+                    // other policies ignored
+                }
+            }
             
             log.debug("Created entity from TOSCA spec: "+ result);
             return result;

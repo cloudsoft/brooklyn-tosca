@@ -7,10 +7,10 @@ imports:
 template_name: brooklyn.a4c.sample.script1
 template_version: 1.0.0-SNAPSHOT
 
-description: Template for deploying a single server with predefined properties.
+description: Sample TOSCA plan referencing scripts to create a web server
 
 topology_template:
-  description: Sample with Script
+  description: Web Server Sample with Script
 
   node_templates:
     script_hello:
@@ -26,5 +26,11 @@ topology_template:
         
     a_server:
       type: tosca.nodes.Compute
-      properties:
-        os_distribution: localhost
+
+  # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
+  # it can also be done with camp, referencing this topology template.
+  groups:
+    add_brooklyn_location:
+      members: [ a_server ]
+      policies:
+      - brooklyn.location: localhost

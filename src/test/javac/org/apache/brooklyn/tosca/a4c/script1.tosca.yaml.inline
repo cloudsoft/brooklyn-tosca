@@ -1,0 +1,22 @@
+
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+#tosca_definitions_version: tosca_simple_yaml_1_0_0
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+ 
+description: Template for deploying a single server with predefined properties.
+
+topology_template:
+
+  node_templates:
+    script_hello:
+      type: tosca.nodes.Root
+      requirements:
+        - host: a_server
+      interfaces:
+        Standard:
+          configure: scripts/write_hello.sh
+ 
+    a_server:
+      type: tosca.nodes.Compute

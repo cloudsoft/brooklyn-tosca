@@ -1,0 +1,16 @@
+
+IGNORE:
+
+ index:
+  number_of_shards: 1
+  number_of_replicas: 0
+
+ path:
+  data: ~/.brooklyn/alien/elasticsearch/data
+  work: ~/.brooklyn/alien/elasticsearch/work
+  logs: ~/.brooklyn/alien/elasticsearch/logs
+  conf: conf/
+
+ gateway:
+  recover_after_nodes: 1
+  expected_nodes: 1

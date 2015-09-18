@@ -20,7 +20,30 @@ compare with the version at [ahgittin/alien4cloud misc branch](https://github.co
 
 Then simply:
 
-    mvn clean assembly:single
+    mvn clean install assembly:single
+
+
+## Running
+
+In the unpacked archive, it is recommended to run with:
+
+    nohup ./start.sh launch
+
+This will install Alien4Cloud, using `~/.brooklyn/alien4cloud/` as the repository.
+
+You can override the config location by modifying `conf/alien4cloud-config.yml`
+(and if you want to use a different alien4cloud config file, simply set
+the `alien4cloud-config.file` property in your `brooklyn.properties`.
+
+To override this to use an existing A4C installation,
+set `client: false` and `host: <other-alien-es-backend-ip>` 
+in the `alien4cloud-config.yml` used by this launch.
+Note that A4C launches ES with no credentials required, 
+so the ES instance should be secured at the network level.
+
+Any ElasticSearch data stored by this instance will use default ES file locations.
+The recommended way to configure ES data is by launching a separate Alien4Cloud instance 
+configured as desired, with this instance pointing at that.
 
 
 ## Supported TOSCA Syntax
@@ -67,17 +90,23 @@ Locations where Brookln should deploy an application can be specified as follows
 * use pre-existing ES server / allow use of A4C to create into the ES
 
 
-### Then
+### Long-term Brooklyn Items
 
-* Brooklyn support uploading CSAR files
+* OtherEntityMachineLocation
 
-* Implementation artifacts and others in local bundles
+* Brooklyn support uploading ZIPs, and references in them
+
+
+### Long-term TOSCA Support
+
+
+* Brooklyn find implementation artifacts as artifacts declared in CSAR
 
 * Icons and Tags
 
 * Publish sensors as attributes
 
-* Get inputs and attributes
+* Support inputs, and `get_input` and `get_attribute` syntax
 
 * Deal with reqs/relationships properly (not the host cheat)
 
@@ -92,3 +121,4 @@ Locations where Brookln should deploy an application can be specified as follows
 * `derived_from` not working (without abstract), issue #67
 * `metadata` tag not recognized
 * would be nice to be able to set and retrieve anonymous properties
+* next rev of TOSCA spec

@@ -21,6 +21,7 @@ import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
+import org.apache.brooklyn.util.exceptions.UserFacingException;
 import org.apache.brooklyn.util.net.Urls;
 import org.apache.brooklyn.util.stream.Streams;
 import org.apache.brooklyn.util.text.Strings;
@@ -36,6 +37,8 @@ import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Requirement;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.tosca.ArchiveUploadService;
+import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
 
@@ -141,8 +144,9 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 tp = platform.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
             }
 
-            if (!tp.getContext().getParsingErrors().isEmpty()) {
-                throw new IllegalStateException("Could not parse TOSCA plan: "+Strings.join(tp.getContext().getParsingErrors(), ", ") );
+            if (ArchiveUploadService.hasError(tp, ParsingErrorLevel.ERROR)) {
+                throw new UserFacingException("Could not parse TOSCA plan: "
+                    +Strings.join(tp.getContext().getParsingErrors(), "\n  "));
             }
             
             String name = tp.getResult().getName();
@@ -151,15 +155,20 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             return createApplicationSpec(name, topo);
             
         } catch (Exception e) {
-            log.debug("Failed to create entity from TOSCA spec:\n" + plan);
+            if (e instanceof PlanNotRecognizedException) {
+                if (log.isTraceEnabled())
+                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
+            } else {
+                if (log.isDebugEnabled())
+                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
+            }
             throw Exceptions.propagate(e);
         }
     }
     
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
-//        ArchiveRoot root = tp.getResult();
 
-//        Topology topo = root.getTopology();
+        // TODO we should support Relationships and have an OtherEntityMachineLocation ?
 
         EntitySpec<BasicApplication> result = EntitySpec.create(BasicApplication.class);
 
@@ -167,7 +176,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
         // get COMPUTE nodes
         Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
-        Map<String,EntitySpec<?>> computeNodeSpecs = MutableMap.of();
+        Map<String,EntitySpec<?>> topLevelNodeSpecs = MutableMap.of();
         Map<String,NodeTemplate> otherNodes = MutableMap.of();
         for (Entry<String,NodeTemplate> templateE: topo.getNodeTemplates().entrySet()) {
             String templateId = templateE.getKey();
@@ -175,7 +184,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
             if ("tosca.nodes.Compute".equals(template.getType())) {
                 EntitySpec<VanillaSoftwareProcess> spec = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
-                computeNodeSpecs.put(templateId, spec);
+                topLevelNodeSpecs.put(templateId, spec);
                 allNodeSpecs.put(templateId, spec);
             } else {
                 otherNodes.put(templateId, template);
@@ -183,8 +192,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
 
         // get OTHER nodes, putting as children of the relevant compute node for now
-        // TODO this is hokey, won't support nested types, etc;
-        // we should support Relationships and have an OtherEntityMachineLocation ?
+        // (only supporting explicit compute, and always requiring it)
         if (!otherNodes.isEmpty()) {
             for (Entry<String,NodeTemplate> templateE: otherNodes.entrySet()) {
                 String templateId = templateE.getKey();
@@ -211,7 +219,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 }
 
                 if (hostNodeId!=null) {
-                    EntitySpec<?> parent = computeNodeSpecs.get(hostNodeId);
+                    EntitySpec<?> parent = topLevelNodeSpecs.get(hostNodeId);
                     if (parent!=null) {
                         parent.child(thisNode);
                         parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
@@ -219,25 +227,32 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                         throw new IllegalStateException("Can't find parent '"+hostNodeId+"'");
                     }
                 } else {
-                    // TODO for now if no host relationship, treat as compute (assume derived from compute, but note children can't be on it)
-                    computeNodeSpecs.put(templateId, thisNode);
+                    // temporarily, if no host relationship, treat as top-level (assume derived from compute, but note children can't be on it)
+                    topLevelNodeSpecs.put(templateId, thisNode);
                 }
                 allNodeSpecs.put(templateId, thisNode);
             }
         }
 
-        result.children(computeNodeSpecs.values());
+        result.children(topLevelNodeSpecs.values());
 
-        for (NodeGroup g: topo.getGroups().values()) {
-            for (AbstractPolicy p: g.getPolicies()) {
-                if ("brooklyn.location".equals(p.getName())) {
-                    for (String id: g.getMembers()) {
-                        EntitySpec<?> spec = allNodeSpecs.get(id);
-                        if (spec==null) throw new IllegalStateException("No node '"+id+"' found, when setting locations");
-                        spec.location(mgmt.getLocationRegistry().resolve( (String)((GenericPolicy)p).getData().get(GroupPolicyParser.VALUE) ));
+        if (topo.getGroups()!=null) {
+            for (NodeGroup g: topo.getGroups().values()) {
+                if (g.getPolicies()!=null) {
+                    for (AbstractPolicy p: g.getPolicies()) {
+                        if (p==null) {
+                            throw new NullPointerException("Null policy found in topology.");
+                        }
+                        if ("brooklyn.location".equals(p.getName())) {
+                            for (String id: g.getMembers()) {
+                                EntitySpec<?> spec = allNodeSpecs.get(id);
+                                if (spec==null) throw new IllegalStateException("No node '"+id+"' found, when setting locations");
+                                spec.location(mgmt.getLocationRegistry().resolve( (String)((GenericPolicy)p).getData().get(GroupPolicyParser.VALUE) ));
+                            }
+                        }
+                        // other policies ignored
                     }
                 }
-                // other policies ignored
             }
         }
 
@@ -245,11 +260,21 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T, SpecT extends AbstractBrooklynObjectSpec<T, SpecT>> AbstractBrooklynObjectSpec<T, SpecT> createCatalogSpec(
-            CatalogItem<T, SpecT> item) throws PlanNotRecognizedException {
-        // TODO Auto-generated method stub
-        return null;
+    public <T, SpecT extends AbstractBrooklynObjectSpec<? extends T, SpecT>> SpecT createCatalogSpec(CatalogItem<T, SpecT> item) throws PlanNotRecognizedException {
+        switch (item.getCatalogItemType()) {
+        case TEMPLATE:
+        case ENTITY:
+            // unwrap? any other processing?
+            return (SpecT) createApplicationSpec(item.getPlanYaml());
+            
+        case LOCATION: 
+        case POLICY:
+            throw new PlanNotRecognizedException("TOSCA does not support: "+item.getCatalogItemType());
+        default:
+            throw new IllegalStateException("Unknown CI Type "+item.getCatalogItemType());
+        }
     }
 
 }

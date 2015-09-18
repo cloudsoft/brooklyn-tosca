@@ -11,6 +11,7 @@ import alien4cloud.component.CSARRepositorySearchService;
 import alien4cloud.model.components.CSARDependency;
 import alien4cloud.model.components.Csar;
 import alien4cloud.model.components.IndexedNodeType;
+import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.model.PaaSNodeTemplate;
@@ -77,6 +78,27 @@ public class Alien4CloudToscaPlatformTest {
             ParsingResult<ArchiveRoot> tp = new Alien4CloudToscaPlatformTest().sampleParseTosca(platform);
             
             Assert.assertTrue( tp.getResult().getNodeTypes().containsKey("tosca.nodes.WebApplication.PayPalPizzaStore") );
+            
+        } finally {
+            if (platform!=null) platform.close();
+        }
+    }
+    
+    @Test
+    public void testCanLoadArchiveWithPolicy() throws Exception {
+        Alien4CloudToscaPlatform platform = null;
+        try {
+            Alien4CloudToscaPlatform.grantAdminAuth();
+            platform = Alien4CloudToscaPlatform.newInstance();
+            String name = "script1.tosca.yaml";
+            String url = "classpath:/org/apache/brooklyn/tosca/a4c/" + name;
+            ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
+            Topology t = platform.getTopologyOfCsar(tp.getResult());
+            NodeGroup g1 = t.getGroups().values().iterator().next();
+            Assert.assertNotNull(g1);
+            Assert.assertNotNull(g1.getPolicies());
+            Assert.assertEquals(g1.getPolicies().size(), 1);
+            Assert.assertNotNull(g1.getPolicies().get(0));
             
         } finally {
             if (platform!=null) platform.close();

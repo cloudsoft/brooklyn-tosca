@@ -36,7 +36,7 @@ components.search.boost:
   default: 10
 
 elasticSearch:
-  clusterName: brooklyn-alien-es-cluster
+  clusterName: brooklyn-alien-es-test-cluster
   local: true
   client: false
   resetData: false

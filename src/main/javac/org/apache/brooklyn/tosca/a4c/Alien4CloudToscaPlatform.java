@@ -10,10 +10,13 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
 
+import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.file.ArchiveBuilder;
 import org.apache.brooklyn.util.exceptions.Exceptions;
+import org.apache.brooklyn.util.exceptions.UserFacingException;
 import org.apache.brooklyn.util.os.Os;
 import org.apache.brooklyn.util.text.Identifiers;
 import org.apache.brooklyn.util.text.Strings;
@@ -23,6 +26,7 @@ import org.elasticsearch.common.collect.Iterables;
 import org.elasticsearch.common.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -50,7 +54,6 @@ import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
-import alien4cloud.utils.AlienYamlPropertiesFactoryBeanFactory;
 import alien4cloud.utils.FileUtil;
 
 public class Alien4CloudToscaPlatform implements Closeable {
@@ -61,15 +64,22 @@ public class Alien4CloudToscaPlatform implements Closeable {
     public static final String TOSCA_NORMATIVE_TYPES_GITHUB_URL = "https://github.com/alien4cloud/tosca-normative-types/archive/master.zip";
 
     public static Alien4CloudToscaPlatform newInstance(String ...args) throws Exception {
+        return newInstance((ManagementContext)new LocalManagementContext(), args);
+    }
+    
+    public static Alien4CloudToscaPlatform newInstance(ManagementContext mgmt, String ...args) throws Exception {
         log.info("Loading Alien4Cloud platform...");
-        // TODO support pre-existing ES instance
-        // TODO if ES cannot find its config file, it will hang waiting for peers; should warn if does not complete in 1m
+        // TODO if ES cannot find a config file, it will hang waiting for peers; should warn if does not complete in 1m
         try {
             Stopwatch s = Stopwatch.createStarted();
+
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-            // messy, manually loading the properties, but it works
+            
+            // messy, but seems we must manually load the properties before loading the beans; otherwise we get e.g.
+            // Caused by: java.lang.IllegalArgumentException: Could not resolve placeholder 'directories.alien' in string value "${directories.alien}/plugins"
             ctx.getEnvironment().getPropertySources().addFirst(new PropertiesPropertySource("user", 
-                A4CSpringConfig.alienConfig(ctx)));
+                AlienBrooklynYamlPropertiesFactoryBeanFactory.get(mgmt, ctx).getObject()));
+            ctx.getBeanFactory().registerSingleton("brooklynManagementContext", mgmt);
             ctx.register(A4CSpringConfig.class);
             ctx.refresh();
 
@@ -87,6 +97,26 @@ public class Alien4CloudToscaPlatform implements Closeable {
             MutableList.of(new SimpleGrantedAuthority(Role.ADMIN.name())) ));
     }
 
+    @Configuration
+    @EnableAutoConfiguration
+    @ComponentScan(basePackages = { "alien4cloud", "org.elasticsearch.mapping" }, excludeFilters={ 
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.security.*"),
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.audit.*"),
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.ldap.*") })
+    public static class A4CSpringConfig {
+        
+        // A4C code returns the YamlPropertiesFactoryBean, but that causes warnings at startup
+        @Bean(name={"alienconfig", "elasticsearchConfig"})
+        public static Properties alienConfig(BeanFactory beans, ResourceLoader resourceLoader) throws IOException {
+            ManagementContext mgmt = null;
+            if (beans.containsBean("brooklynManagementContext"))
+                mgmt = beans.getBean("brooklynManagementContext", ManagementContext.class);
+            return AlienBrooklynYamlPropertiesFactoryBeanFactory.get(mgmt, resourceLoader).getObject();
+        }
+
+    }
+
+    
     public void loadNormativeTypes() throws Exception {
         Path zpc;
         if (new ResourceUtils(this).doesUrlExist(TOSCA_NORMATIVE_TYPES_LOCAL_URL)) {
@@ -112,7 +142,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
         ParsingResult<Csar> normative = getBean(ArchiveUploadService.class).upload(zpc);
 
         if (ArchiveUploadService.hasError(normative, ParsingErrorLevel.ERROR))
-            throw new IllegalArgumentException("Errors parsing tosca normative types:\n"+Strings.join(normative.getContext().getParsingErrors(), "\n  "));
+            throw new UserFacingException("Errors parsing tosca normative types:\n"+Strings.join(normative.getContext().getParsingErrors(), "\n  "));
     }
 
     private ConfigurableApplicationContext ctx;   
@@ -147,21 +177,6 @@ public class Alien4CloudToscaPlatform implements Closeable {
         return getBean(ArchiveUploadService.class);
     }
 
-    
-    @Configuration
-    @EnableAutoConfiguration
-    @ComponentScan(basePackages = { "alien4cloud", "org.elasticsearch.mapping" }, excludeFilters={ 
-        @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.security.*"),
-        @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.audit.*"),
-        @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.ldap.*") })
-    public static class A4CSpringConfig {
-        // previously this returned the YamlPropertiesFactoryBean, but that causes warnings at startup
-        @Bean(name={"alienconfig", "elasticsearchConfig"}) 
-        public static Properties alienConfig(ResourceLoader resourceLoader) throws IOException {
-            return AlienYamlPropertiesFactoryBeanFactory.get(resourceLoader).getObject();
-        }
-    }
-
     public ParsingResult<Csar> uploadSingleYaml(InputStream resourceFromUrl, String callerReferenceName) {
         try {
             String nameCleaned = Strings.makeValidFilename(callerReferenceName);
@@ -170,7 +185,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
             File tmpTarget = new File(tmpExpanded.toString()+".csar.zip");
             tmpExpanded.mkdir();
 
-            FileUtils.copyInputStreamToFile(resourceFromUrl, new File(tmpExpanded, nameCleaned));
+            FileUtils.copyInputStreamToFile(resourceFromUrl, new File(tmpExpanded, nameCleaned+".yaml"));
             ArchiveBuilder.archive(tmpTarget.toString()).addDirContentsAt(tmpExpanded, "").create();
 
             try {
@@ -205,7 +220,8 @@ public class Alien4CloudToscaPlatform implements Closeable {
                 log.debug("A4C parse notes for "+nameCleaned+":\n  "+Strings.join(result.getContext().getParsingErrors(), "\n  "));
             }
             if (ArchiveUploadService.hasError(result, ParsingErrorLevel.ERROR)) {
-                throw new IllegalArgumentException("Errors parsing "+callerReferenceName+"; archive will not be installed:\n  "
+                // archive will not be installed in this case, so we should throw
+                throw new UserFacingException("Could not parse "+callerReferenceName+" as TOSCA:\n  "
                     +Strings.join(result.getContext().getParsingErrors(), "\n  "));
             }
 

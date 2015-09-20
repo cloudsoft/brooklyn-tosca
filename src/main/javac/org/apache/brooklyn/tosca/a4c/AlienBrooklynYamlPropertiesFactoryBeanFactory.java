@@ -8,7 +8,7 @@ import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
@@ -41,16 +41,17 @@ public class AlienBrooklynYamlPropertiesFactoryBeanFactory {
      */
     public static YamlPropertiesFactoryBean get(ManagementContext mgmt, ResourceLoader resourceLoader) {
         if (INSTANCE == null) {
-            if (mgmt!=null) {
-                String configFile = mgmt.getConfig().getConfig(ALIEN_CONFIG_FILE);
-                if (Strings.isNonBlank(configFile)) {
-                    log.info("Loading A4C config from "+configFile);
-                    Resource resource = new InputStreamResource(new ResourceUtils(AlienBrooklynYamlPropertiesFactoryBeanFactory.class).getResourceFromUrl(configFile),
-                        configFile);
-                    INSTANCE = new YamlPropertiesFactoryBean();
-                    INSTANCE.setResources(new Resource[] { resource });
-                    return INSTANCE;
-                }
+            String configFile = System.getProperty(ALIEN_CONFIG_FILE.getName());
+            if (configFile==null && mgmt!=null) {
+                configFile = mgmt.getConfig().getConfig(ALIEN_CONFIG_FILE);
+            }
+            if (Strings.isNonBlank(configFile)) {
+                log.info("Loading A4C config from "+configFile);
+                Resource resource = new ByteArrayResource(new ResourceUtils(AlienBrooklynYamlPropertiesFactoryBeanFactory.class).getResourceAsString(configFile).getBytes(),
+                    configFile);
+                INSTANCE = new YamlPropertiesFactoryBean();
+                INSTANCE.setResources(new Resource[] { resource });
+                return INSTANCE;
             }
             INSTANCE = AlienYamlPropertiesFactoryBeanFactory.get(resourceLoader);
         }

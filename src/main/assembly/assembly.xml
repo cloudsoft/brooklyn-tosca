@@ -45,25 +45,15 @@
        scripts are located to src/main/scripts directory as stated by Maven
        conventions.
     -->
-    <files>
-        <file>
-            <source>src/main/assembly/scripts/start.sh</source>
-            <outputDirectory></outputDirectory>
-            <fileMode>0755</fileMode>
-            <filtered>true</filtered>
-        </file>
-    </files>
     <fileSets>
         <fileSet>
             <directory>src/main/assembly/scripts</directory>
             <outputDirectory></outputDirectory>
             <fileMode>0755</fileMode>
+            <filtered>true</filtered>
             <includes>
-                <include>*</include>
+                <include>**</include>
             </includes>
-            <excludes>
-                <exclude>start.sh</exclude>
-            </excludes>
         </fileSet>
         <!--  add additional files (but not marked executable) -->
         <fileSet>
@@ -83,6 +73,14 @@
             <excludes>
                 <exclude>*-tests.jar</exclude>
             </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/overlay</directory>
+            <outputDirectory>.</outputDirectory>
+            <filtered>false</filtered>
+            <includes>
+                <include>**</include>
+            </includes>
         </fileSet>
     </fileSets>
 </assembly>

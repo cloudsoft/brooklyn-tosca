@@ -3,10 +3,10 @@ index:
   number_of_shards: 1
   number_of_replicas: 0
 path:
-  data: target/elasticsearch/data
-  work: target/elasticsearch/work
-  logs: target/elasticsearch/logs
-  conf: /src/test/resources
+  data: target/runtime/elasticsearch/data
+  work: target/runtime/elasticsearch/work
+  logs: target/runtime/elasticsearch/logs
+  conf: src/test/resources
 
 gateway:
   recover_after_nodes: 1

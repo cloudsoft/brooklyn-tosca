@@ -48,6 +48,8 @@
   <properties>
     <project.entry>org.apache.brooklyn.tosca.a4c.brooklyn.BrooklynToscaMain</project.entry>
     <alien.version>1.1.0-SM4-SNAPSHOT</alien.version>
+    <!-- <jetty-runner.version>8.1.17.v20150415</jetty.version> -->
+    <jetty-runner.version>8.1.16.v20140903</jetty-runner.version>
   </properties>
 
   <repositories>
@@ -159,6 +161,30 @@
             <descriptor>src/main/assembly/assembly.xml</descriptor>
           </descriptors>
         </configuration>
+      </plugin>
+      <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+                <execution>
+                    <phase>install</phase>
+                    <goals><goal>copy</goal></goals>
+                    <configuration>
+                        <artifactItems>
+                            <artifactItem>
+                                <groupId>alien4cloud</groupId>
+                                <artifactId>alien4cloud-ui</artifactId>
+                                <version>${alien.version}</version>
+                                <type>war</type>
+                                <classifier>standalone</classifier>
+                                
+                                <destFileName>alien4cloud-ui-${alien.version}.war</destFileName>
+                                <outputDirectory>${project.build.directory}/overlay/alien4cloud-standalone</outputDirectory>
+                            </artifactItem>
+                        </artifactItems>
+                    </configuration>
+                </execution>
+            </executions>
       </plugin>
     </plugins>
   </build>

@@ -90,6 +90,7 @@ public class Alien4CloudToscaPlatformTest {
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
             platform = Alien4CloudToscaPlatform.newInstance();
+            platform.loadNormativeTypes();
             String name = "script1.tosca.yaml";
             String url = "classpath:/org/apache/brooklyn/tosca/a4c/" + name;
             ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);

@@ -7,7 +7,7 @@ path:
   data: runtime/elasticsearch/data
   work: runtime/elasticsearch/work
   logs: runtime/elasticsearch/logs
-  conf: conf/
+  conf: .
 
 gateway:
   recover_after_nodes: 1

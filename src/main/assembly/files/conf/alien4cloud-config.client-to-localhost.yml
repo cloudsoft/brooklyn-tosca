@@ -36,8 +36,10 @@ components.search.boost:
   default: 10
 
 elasticSearch:
+  client: true
+  transportClient: true
+  hosts: localhost:9300
   clusterName: brooklyn-alien-es-cluster
-  client: false
   local: true
   resetData: false
   prefix_max_expansions: 10

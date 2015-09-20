@@ -25,58 +25,8 @@ Then simply:
 
 ## Running
 
-In the unpacked archive, it is recommended to run with:
-
-    nohup ./start.sh launch
-
-This will install Alien4Cloud, using `~/.brooklyn/alien4cloud/` as the repository.
-
-You can override the config location by modifying `conf/alien4cloud-config.yml`
-(and if you want to use a different alien4cloud config file, simply set
-the `alien4cloud-config.file` property in your `brooklyn.properties`.
-
-To override this to use an existing A4C installation,
-set `client: false` and `host: <other-alien-es-backend-ip>` 
-in the `alien4cloud-config.yml` used by this launch.
-Note that A4C launches ES with no credentials required, 
-so the ES instance should be secured at the network level.
-
-Any ElasticSearch data stored by this instance will use default ES file locations.
-The recommended way to configure ES data is by launching a separate Alien4Cloud instance 
-configured as desired, with this instance pointing at that.
-
-
-## Supported TOSCA Syntax
-
-This currently supports nearly all TOSCA elements at parse time, 
-and the following at deploy time:
-
-* `tosca.nodes.Compute` nodes for VM's
-* Other node types which define `standard` lifecycle `interfaces` as scripts by URL, 
-  optionally declaring their `host` requirement pointing at a compute node template
-
-As Brooklyn expects a YAML, if you want to install a ZIP CSAR, 
-simply host that somewhere with a URL and supply the URL as the plan,
-or as the value in a single-entry map, keyed against `csar_link`.
-
-
-### Illustration
-
-An example can be found at [ahgittin/tosca-demo](https://github.com/ahgittin/tosca-demo/).
-Just cut and paste `script1.tosca.yaml` into the Brooklyn "Add Application" YAML dialog.
-
-
-### Defining Locations
-
-Locations where Brookln should deploy an application can be specified as follows:
-
-```
-  groups:
-    add_brooklyn_location:
-      members: [ a_server ]
-      policies:
-      - brooklyn.location: localhost
-```
+See the README.md file in the resulting archive (in `target`) for runtime instructions.
+You may also find that file [here](src/main/assembly/files/README.md).
 
 
 ## TODO Tasks

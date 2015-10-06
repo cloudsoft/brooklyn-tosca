@@ -13,9 +13,12 @@ gateway:
   recover_after_nodes: 1
   expected_nodes: 1
 
-# don't use multicast; force it to use only local ES
-# change if you want to use multicast or point at a different host
-discovery.zen.ping.multicast.enabled: false
-discovery.zen.ping.unicast.enabled: false
-discovery.zen.ping.unicast.hosts: localhost
+# bind only to localhost, so we aren't visible and we don't multicast discover others
+network.host: localhost
+
+# could instead/also disable multicast discovery or even unicast discovery;
+# not necessary for localhost config but may be useful for cross-server deployment
+#discovery.zen.ping.multicast.enabled: false
+#discovery.zen.ping.unicast.enabled: false
+#discovery.zen.ping.unicast.hosts: localhost
 

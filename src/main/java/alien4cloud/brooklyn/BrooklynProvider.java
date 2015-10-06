@@ -9,12 +9,18 @@ import javax.ws.rs.core.Response;
 
 import lombok.SneakyThrows;
 
+import org.apache.brooklyn.rest.client.BrooklynApi;
+import org.apache.brooklyn.util.text.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.exception.NotFoundException;
@@ -37,12 +43,6 @@ import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSDeploymentContext;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import brooklyn.rest.client.BrooklynApi;
-import brooklyn.util.text.Strings;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 /**
  *
@@ -219,9 +219,10 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
     }
 
     @Override
-    public void getInstancesInformation(PaaSDeploymentContext deploymentContext, Topology topology,
-            IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
-        // TODO
+    public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext,
+        IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
+        // TODO Auto-generated method stub
+        
     }
 
     @Override

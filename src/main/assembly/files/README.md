@@ -10,17 +10,21 @@ using [Alien4Cloud](http://alien4cloud.github.io).
 
 ## Running
 
+### Quickstart: No Alien4Cloud UI
+
 In the unpacked archive, the simplest way to get started is to run with:
 
     nohup ./brooklyn.sh launch &
 
-This will launch the Alien4Cloud runtime, using `~/.brooklyn/alien4cloud/` as the repository.
+This will launch the Alien4Cloud core platform embedded, using `~/.brooklyn/alien4cloud/` as the repository.
 Brooklyn will be available on port 8081 by default.
 The process will be nohupped so you can exit the session (e.g. ssh on a remote machine).
 
 You can override the A4C config by modifying `conf/alien4cloud-config.yml`
 (and if you want to use a different alien4cloud config file, simply set
 the `alien4cloud-config.file` property in your `brooklyn.properties`.
+
+### Quickstart: With Alien4Cloud UI
 
 To launch a standalone A4C instance, edit the config file in
 `alien4cloud-standalone/` as desired then run:
@@ -39,7 +43,8 @@ use:
     nohup ./brooklyn.sh launch -Dalien4cloud-config.file=conf/alien4cloud-config.client-to-localhost.yml &
 
 Note that A4C launches ES with no credentials required, 
-so the ES instance should be secured at the network level.
+so the ES instance should be secured at the network level
+(which they are in this configuration as it is only bound to localhost).
 
 Any ElasticSearch data stored by this instance will use default ES file locations.
 The recommended way to configure ES data is by launching a separate Alien4Cloud instance 

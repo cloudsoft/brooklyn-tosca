@@ -5,10 +5,7 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.brooklyn.rest.client.BrooklynApi;
-import org.apache.brooklyn.rest.domain.CatalogLocationSummary;
 import org.apache.brooklyn.rest.domain.LocationSummary;
-import org.apache.brooklyn.util.text.Strings;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -57,7 +54,7 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
 
     @Override
     public List<Location> getLocations() {
-        List<LocationSummary> locations = getBrooklynApi().getLocationApi().list();
+        List<LocationSummary> locations = getNewBrooklynApi().getLocationApi().list();
         List<Location> newLocations = Lists.newArrayList();
         for (LocationSummary location : locations) {
         	log.info("location={}" + location);

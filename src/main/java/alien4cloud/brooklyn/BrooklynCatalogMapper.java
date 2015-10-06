@@ -7,8 +7,17 @@ import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.brooklyn.rest.client.BrooklynApi;
+import org.apache.brooklyn.rest.domain.CatalogEntitySummary;
+import org.apache.brooklyn.rest.domain.EffectorSummary;
+import org.apache.brooklyn.rest.domain.EntityConfigSummary;
+import org.apache.brooklyn.rest.domain.SensorSummary;
+import org.apache.brooklyn.util.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import alien4cloud.component.repository.ICsarRepositry;
 import alien4cloud.csar.services.CsarService;
@@ -22,15 +31,6 @@ import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.tosca.ArchiveImageLoader;
 import alien4cloud.tosca.ArchiveIndexer;
 import alien4cloud.tosca.model.ArchiveRoot;
-import brooklyn.rest.client.BrooklynApi;
-import brooklyn.rest.domain.CatalogEntitySummary;
-import brooklyn.rest.domain.EffectorSummary;
-import brooklyn.rest.domain.EntityConfigSummary;
-import brooklyn.rest.domain.SensorSummary;
-import brooklyn.util.time.Duration;
-
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 /**
  * This component is used to map components out of brooklyn to a4c.

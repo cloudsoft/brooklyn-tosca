@@ -10,13 +10,10 @@ import javax.ws.rs.core.Response;
 import lombok.SneakyThrows;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
-import org.apache.brooklyn.util.text.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.exception.NotFoundException;
@@ -39,7 +36,6 @@ import alien4cloud.paas.model.PaaSDeploymentContext;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 /**
@@ -93,20 +89,16 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         log.info("DEPLOY "+deploymentContext+" / "+callback);
         knownDeployments.put(deploymentContext.getDeploymentId(), deploymentContext);
         
-        // TODO only does node templates
-        // and for now it builds up camp yaml
-        Map<String,Object> campYaml = Maps.newLinkedHashMap();
-        Topology topology = deploymentContext.getDeploymentTopology();
+        String topologyId = deploymentContext.getDeploymentTopology().getId();
         
+        Map<String,Object> campYaml = Maps.newLinkedHashMap();
         addRootPropertiesAsCamp(deploymentContext, campYaml);
-        campYaml.put("brooklyn.config", ImmutableMap.of("tosca.id", deploymentContext.getDeploymentId()));
 
         List<Object> svcs = Lists.newArrayList();
-        addNodeTemplatesAsCampServicesList(svcs, topology);
+        Map<String, Object> svc = Maps.newHashMap();
+        svc.put("alien4cloud_deployment_topology", topologyId);
         campYaml.put("services", svcs); 
-        
-        if (Strings.isNonBlank(configuration.getLocation()))
-            campYaml.put("location", configuration.getLocation());
+        campYaml.put("location", "localhost");
         
         try {
             useLocalContextClassLoader();

@@ -3,6 +3,8 @@ package alien4cloud.brooklyn;
 import java.util.List;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.brooklyn.rest.domain.CatalogLocationSummary;
 
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
@@ -16,11 +18,13 @@ import alien4cloud.orchestrators.plugin.model.PluginArchive;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 @Component
 @Scope(value = "prototype")
+@Slf4j
 public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestratorPlugin<Configuration>, ILocationAutoConfigurer {
     
     @Override
@@ -54,6 +58,7 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
         List<CatalogLocationSummary> locations = getBrooklynApi().getCatalogApi().listLocations("", "", false);
         List<Location> newLocations = Lists.newArrayList();
         for (CatalogLocationSummary location : locations) {
+        	log.info("location={}" + location);
             Location l = new Location();
             l.setName(location.getName());
             l.setInfrastructureType("Brooklyn");

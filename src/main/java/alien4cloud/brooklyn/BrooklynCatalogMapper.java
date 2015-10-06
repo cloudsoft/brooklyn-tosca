@@ -78,7 +78,6 @@ public class BrooklynCatalogMapper {
                     new CSARDependency("tosca-normative-types", "1.0.0.wd03-SNAPSHOT"), 
                     new CSARDependency("alien4cloud-tomcat-types", "1.0.0-SNAPSHOT")));
 
-        mapBrooklynEntity(brooklynApi, archiveRoot, "brooklyn.entity.webapp.tomcat.TomcatServer", "0.0.0-SNAPSHOT");
         // TODO Not great way to go but that's a POC for now ;)
         List<CatalogEntitySummary> entities = brooklynApi.getCatalogApi().listEntities(null, null, false);
         for (CatalogEntitySummary entity: entities) {

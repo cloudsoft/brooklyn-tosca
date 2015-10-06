@@ -5,7 +5,7 @@ description: >
   Brookly plugin maps the brooklyn catalog into the TOSCA world allowing A4C to compose it's elements and deploy newly created topologies on top of Brooklyn.
 configuration_class: alien4cloud.brooklyn.PluginContextConfiguration
 component_descriptors:
-  - bean_name: brooklyn-provider-factory
+  - bean_name: brooklyn-orchestrator-factory
     name: Brooklyn provider
     description: >
       Provider that allows definition of Brooklyn managed deployment targets (clouds) within a4c.

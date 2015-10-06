@@ -18,15 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-
 import alien4cloud.application.ApplicationService;
 import alien4cloud.exception.NotFoundException;
 import alien4cloud.model.application.Application;
-import alien4cloud.model.cloud.CloudResourceMatcherConfig;
-import alien4cloud.model.cloud.CloudResourceType;
 import alien4cloud.model.common.Tag;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ScalarPropertyValue;
@@ -44,12 +38,16 @@ import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSDeploymentContext;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+
 /**
  *
  */
 @Component
 @Scope(value = "prototype")
-public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration> {
+public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Configuration> {
     private static final Logger log = LoggerFactory.getLogger(BrooklynProvider.class);
 
     private Configuration configuration;
@@ -62,7 +60,7 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
 
     @Autowired
     private BrooklynCatalogMapper catalogMapper;
-
+    
     ThreadLocal<ClassLoader> oldContextClassLoader = new ThreadLocal<ClassLoader>();
     private void useLocalContextClassLoader() {
         if (oldContextClassLoader.get()==null) {
@@ -84,8 +82,9 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
         try {
             log.info("INIT: " + activeDeployments);
             brooklynApi = new BrooklynApi(configuration.getUrl(), configuration.getUser(), configuration.getPassword());
-
+            // TODO synchronise locations
             catalogMapper.mapBrooklynEntities(brooklynApi);
+            
             
         } finally { revertContextClassLoader(); }
     }
@@ -99,7 +98,7 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
         // TODO only does node templates
         // and for now it builds up camp yaml
         Map<String,Object> campYaml = Maps.newLinkedHashMap();
-        Topology topology = deploymentContext.getTopology();
+        Topology topology = deploymentContext.getDeploymentTopology();
         
         addRootPropertiesAsCamp(deploymentContext, campYaml);
         campYaml.put("brooklyn.config", ImmutableMap.of("tosca.id", deploymentContext.getDeploymentId()));
@@ -237,21 +236,6 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
     }
 
     @Override
-    public String[] getAvailableResourceIds(CloudResourceType resourceType) {
-        return new String[0];
-    }
-
-    @Override
-    public String[] getAvailableResourceIds(CloudResourceType resourceType, String imageId) {
-        return new String[0];
-    }
-
-    @Override
-    public void updateMatcherConfig(CloudResourceMatcherConfig config) {
-        log.info("MATCHER CONFIG (ignored): " + config);
-    }
-
-    @Override
     public void switchMaintenanceMode(PaaSDeploymentContext deploymentContext, boolean maintenanceModeOn) throws MaintenanceModeException {
         log.info("MAINT MODE (ignored): " + maintenanceModeOn);
     }
@@ -267,4 +251,8 @@ public class BrooklynProvider implements IConfigurablePaaSProvider<Configuration
         log.info("Setting configuration: " + configuration);
         this.configuration = configuration;
     }
+    
+    protected BrooklynApi getBrooklynApi() {
+		return brooklynApi;
+	}
 }

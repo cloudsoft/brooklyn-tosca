@@ -47,7 +47,7 @@
 
   <properties>
     <project.entry>org.apache.brooklyn.tosca.a4c.brooklyn.BrooklynToscaMain</project.entry>
-    <alien.version>1.1.0-SM4-SNAPSHOT</alien.version>
+    <alien.version>1.1.0-SM5-SNAPSHOT</alien.version>
     <!-- <jetty-runner.version>8.1.17.v20150415</jetty.version> -->
     <jetty-runner.version>8.1.16.v20140903</jetty-runner.version>
   </properties>

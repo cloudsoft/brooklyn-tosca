@@ -5,7 +5,12 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.brooklyn.rest.client.BrooklynApi;
 import org.apache.brooklyn.rest.domain.CatalogLocationSummary;
+import org.apache.brooklyn.rest.domain.LocationSummary;
+import org.apache.brooklyn.util.text.Strings;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
 import alien4cloud.model.orchestrators.locations.Location;
@@ -18,9 +23,6 @@ import alien4cloud.orchestrators.plugin.model.PluginArchive;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 @Component
 @Scope(value = "prototype")
@@ -55,9 +57,9 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
 
     @Override
     public List<Location> getLocations() {
-        List<CatalogLocationSummary> locations = getBrooklynApi().getCatalogApi().listLocations("", "", false);
+        List<LocationSummary> locations = getBrooklynApi().getLocationApi().list();
         List<Location> newLocations = Lists.newArrayList();
-        for (CatalogLocationSummary location : locations) {
+        for (LocationSummary location : locations) {
         	log.info("location={}" + location);
             Location l = new Location();
             l.setName(location.getName());

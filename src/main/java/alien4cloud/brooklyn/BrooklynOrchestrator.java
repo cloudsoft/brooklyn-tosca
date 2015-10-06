@@ -62,6 +62,7 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
             Location l = new Location();
             l.setName(location.getName());
             l.setInfrastructureType("Brooklyn");
+            newLocations.add(l);
         }
         return newLocations;
     }

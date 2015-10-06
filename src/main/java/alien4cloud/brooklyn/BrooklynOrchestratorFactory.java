@@ -11,8 +11,10 @@ import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.model.orchestrators.ArtifactSupport;
 import alien4cloud.model.orchestrators.locations.LocationSupport;
 import alien4cloud.orchestrators.plugin.IOrchestratorPluginFactory;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component("brooklyn-orchestrator-factory")
 public class BrooklynOrchestratorFactory implements IOrchestratorPluginFactory<BrooklynOrchestrator, Configuration>{
 	
     @Autowired

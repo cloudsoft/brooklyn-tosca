@@ -16,45 +16,49 @@ import alien4cloud.orchestrators.plugin.model.PluginArchive;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
-public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestratorPlugin<Configuration>, ILocationAutoConfigurer{
+@Component
+@Scope(value = "prototype")
+public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestratorPlugin<Configuration>, ILocationAutoConfigurer {
+    
+    @Override
+    public ILocationConfiguratorPlugin getConfigurator(String locationType) {
+        return new ILocationConfiguratorPlugin() {
 
-	
-	@Override
-	public ILocationConfiguratorPlugin getConfigurator(String locationType) {
-		return new ILocationConfiguratorPlugin(){
+            @Override
+            public List<PluginArchive> pluginArchives() {
+                return Lists.newArrayList();
+            }
 
-			@Override
-			public List<PluginArchive> pluginArchives() {
-				return Lists.newArrayList();
-			}
+            @Override
+            public List<String> getResourcesTypes() {
+                return Lists.newArrayList();
+            }
 
-			@Override
-			public List<String> getResourcesTypes() {
-				return Lists.newArrayList();
-			}
+            @Override
+            public Map<String, MatchingConfiguration> getMatchingConfigurations() {
+                return Maps.newHashMap();
+            }
 
-			@Override
-			public Map<String, MatchingConfiguration> getMatchingConfigurations() {
-				return Maps.newHashMap();
-			}
+            @Override
+            public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
+                return Lists.newArrayList();
+            }
+        };
+    }
 
-			@Override
-			public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-				return Lists.newArrayList();
-			}};
-	}
-	
-	@Override
-	public List<Location> getLocations() {
-		List<CatalogLocationSummary> locations = getBrooklynApi().getCatalogApi().listLocations("", "", false);
-		List<Location> newLocations = Lists.newArrayList();
-		for(CatalogLocationSummary location : locations) {
-			Location l = new Location();
-			l.setName(location.getName());
-			l.setInfrastructureType("Brooklyn");
-		}
-		return newLocations;
-	}
+    @Override
+    public List<Location> getLocations() {
+        List<CatalogLocationSummary> locations = getBrooklynApi().getCatalogApi().listLocations("", "", false);
+        List<Location> newLocations = Lists.newArrayList();
+        for (CatalogLocationSummary location : locations) {
+            Location l = new Location();
+            l.setName(location.getName());
+            l.setInfrastructureType("Brooklyn");
+        }
+        return newLocations;
+    }
 
 }

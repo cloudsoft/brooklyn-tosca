@@ -45,8 +45,6 @@ import com.google.common.collect.Maps;
 /**
  *
  */
-@Component
-@Scope(value = "prototype")
 public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Configuration> {
     private static final Logger log = LoggerFactory.getLogger(BrooklynProvider.class);
 

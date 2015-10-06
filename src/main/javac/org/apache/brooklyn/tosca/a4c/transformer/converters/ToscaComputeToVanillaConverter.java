@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c.brooklyn;
+package org.apache.brooklyn.tosca.a4c.transformer.converters;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class ToscaComputeToVanillaConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaComputeToVanillaConverter.class);
     @SuppressWarnings("unused")
-    private ManagementContext mgmt;
+    protected ManagementContext mgmt;
     
     public ToscaComputeToVanillaConverter(ManagementContext mgmt) {
         this.mgmt = mgmt;

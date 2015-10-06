@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c.brooklyn;
+package org.apache.brooklyn.tosca.a4c.platform.main;
 
 import java.util.Arrays;
 
@@ -7,6 +7,7 @@ import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//TODO this should be moved to dist module
 /**
  * This class provides a static main entry point for launching Brooklyn with TOSCA support.
  * <p>

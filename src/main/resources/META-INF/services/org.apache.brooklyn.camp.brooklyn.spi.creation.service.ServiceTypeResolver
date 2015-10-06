@@ -16,4 +16,4 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-org.apache.brooklyn.tosca.a4c.brooklyn.Alien4CloudDeploymentTopologyServiceTypeResolver
+org.apache.brooklyn.tosca.a4c.platform.Alien4CloudDeploymentTopologyServiceTypeResolver

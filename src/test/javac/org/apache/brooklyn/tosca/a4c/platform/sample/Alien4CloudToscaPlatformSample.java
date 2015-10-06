@@ -1,7 +1,8 @@
-package org.apache.brooklyn.tosca.a4c;
+package org.apache.brooklyn.tosca.a4c.platform.sample;
 
 import java.util.Set;
 
+import org.apache.brooklyn.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.Assert;
@@ -11,7 +12,6 @@ import alien4cloud.component.CSARRepositorySearchService;
 import alien4cloud.model.components.CSARDependency;
 import alien4cloud.model.components.Csar;
 import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.model.PaaSNodeTemplate;
@@ -21,7 +21,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
 
-public class Alien4CloudToscaPlatformTest {
+public class Alien4CloudToscaPlatformSample {
 
     /**
      * Sample instantiation of Alien4Cloud platform.
@@ -32,9 +32,9 @@ public class Alien4CloudToscaPlatformTest {
         Alien4CloudToscaPlatform.grantAdminAuth();
         Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance(args);
         
-        platform.loadNormativeTypes();
+        platform.loadNodeTypes();
         
-        String name = "script1.tosca.yaml";
+        String name = "simple-policy-Node.yaml";
         String url = "classpath:/org/apache/brooklyn/tosca/a4c/" + name;
         ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
         
@@ -61,10 +61,11 @@ public class Alien4CloudToscaPlatformTest {
         System.out.println(topo);
     }
 
+
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {
         ToscaParser parser = platform.getToscaParser();
         ParsingResult<ArchiveRoot> tp = parser.parseFile("<classpath>", "pizza.tosca",
-            new ResourceUtils(this).getResourceFromUrl("classpath:/org/apache/brooklyn/tosca/a4c/sample/pizza.tosca"), null);
+                new ResourceUtils(this).getResourceFromUrl("classpath:/org/apache/brooklyn/tosca/a4c/platform/sample/pizza.tosca"), null);
         return tp;
     }
 
@@ -75,32 +76,10 @@ public class Alien4CloudToscaPlatformTest {
         Alien4CloudToscaPlatform platform = null;
         try {
             platform = Alien4CloudToscaPlatform.newInstance();
-            ParsingResult<ArchiveRoot> tp = new Alien4CloudToscaPlatformTest().sampleParseTosca(platform);
-            
+            ParsingResult<ArchiveRoot> tp = new Alien4CloudToscaPlatformSample().sampleParseTosca(platform);
+
             Assert.assertTrue( tp.getResult().getNodeTypes().containsKey("tosca.nodes.WebApplication.PayPalPizzaStore") );
-            
-        } finally {
-            if (platform!=null) platform.close();
-        }
-    }
-    
-    @Test
-    public void testCanLoadArchiveWithPolicy() throws Exception {
-        Alien4CloudToscaPlatform platform = null;
-        try {
-            Alien4CloudToscaPlatform.grantAdminAuth();
-            platform = Alien4CloudToscaPlatform.newInstance();
-            platform.loadNormativeTypes();
-            String name = "script1.tosca.yaml";
-            String url = "classpath:/org/apache/brooklyn/tosca/a4c/" + name;
-            ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
-            Topology t = platform.getTopologyOfCsar(tp.getResult());
-            NodeGroup g1 = t.getGroups().values().iterator().next();
-            Assert.assertNotNull(g1);
-            Assert.assertNotNull(g1.getPolicies());
-            Assert.assertEquals(g1.getPolicies().size(), 1);
-            Assert.assertNotNull(g1.getPolicies().get(0));
-            
+
         } finally {
             if (platform!=null) platform.close();
         }

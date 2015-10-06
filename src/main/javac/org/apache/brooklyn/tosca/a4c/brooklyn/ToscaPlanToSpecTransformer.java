@@ -29,7 +29,9 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.components.Csar;
+import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
@@ -166,13 +168,25 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
     
+    public EntitySpec<? extends Application> populateApplicationSpecFromDeploymentTopologyId(EntitySpec<BasicApplication> spec, String id) {
+        DeploymentTopology[] dt = platform.getBean(DeploymentTopologyService.class).getByTopologyId(id);
+        
+        // TODO when is this more than 1?
+        if (dt.length!=1) throw new IllegalStateException("Expected unique deployment topology for ID "+id);
+        
+        // TODO is there a name?
+        return populateApplicationSpec(spec, null, dt[0]);
+    }
+    
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
-
+        return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);
+    }
+    
+    protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo) {
+        
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
-
-        EntitySpec<BasicApplication> result = EntitySpec.create(BasicApplication.class);
-
-        result.displayName(name);
+        
+        rootSpec.displayName(name);
 
         // get COMPUTE nodes
         Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
@@ -234,7 +248,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             }
         }
 
-        result.children(topLevelNodeSpecs.values());
+        rootSpec.children(topLevelNodeSpecs.values());
 
         if (topo.getGroups()!=null) {
             for (NodeGroup g: topo.getGroups().values()) {
@@ -256,8 +270,8 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             }
         }
 
-        log.debug("Created entity from TOSCA spec: "+ result);
-        return result;
+        log.debug("Created entity from TOSCA spec: "+ rootSpec);
+        return rootSpec;
     }
 
     @SuppressWarnings("unchecked")

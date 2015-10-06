@@ -14,12 +14,9 @@
   <artifactId>brooklyn-tosca</artifactId>
   <packaging>jar</packaging>
 
-  <name>Sample Brooklyn Project org.apache.brooklyn.tosca:brooklyn-tosca v0.8.0-SNAPSHOT</name>
-  <description>
-    Sample optional description goes here.
-  </description>
+  <name>TOSCA support for Brooklyn plans leveraging Alien4Cloud</name>
 
-  <!-- Optional metadata (commented out in this sample) 
+<!-- Optional metadata (commented out in this sample) 
 
   <url>https://github.com/sample/sample</url>
 

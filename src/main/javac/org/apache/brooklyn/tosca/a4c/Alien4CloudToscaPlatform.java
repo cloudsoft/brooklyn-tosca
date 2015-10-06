@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
 
+import alien4cloud.security.ResourceRoleService;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.util.collections.MutableList;
@@ -85,7 +86,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
 
             log.info("Finished loading Alien4Cloud platform ("+Duration.of(s)+")");
             return new Alien4CloudToscaPlatform( ctx );
-            
+
         } catch (Throwable t) {
             log.warn("Errors loading Alien4Cloud platform (rethrowing): "+t, t);
             throw Exceptions.propagate(t);
@@ -99,12 +100,17 @@ public class Alien4CloudToscaPlatform implements Closeable {
 
     @Configuration
     @EnableAutoConfiguration
-    @ComponentScan(basePackages = { "alien4cloud", "org.elasticsearch.mapping" }, excludeFilters={ 
+    @ComponentScan(basePackages = { "alien4cloud", "org.elasticsearch.mapping" }, excludeFilters={
         @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.security.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.audit.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern="alien4cloud.ldap.*") })
     public static class A4CSpringConfig {
-        
+
+        @Bean
+        public ResourceRoleService getDummyRRS() {
+            return new ResourceRoleService();
+        }
+
         // A4C code returns the YamlPropertiesFactoryBean, but that causes warnings at startup
         @Bean(name={"alienconfig", "elasticsearchConfig"})
         public static Properties alienConfig(BeanFactory beans, ResourceLoader resourceLoader) throws IOException {

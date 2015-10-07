@@ -29,6 +29,7 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import alien4cloud.application.ApplicationService;
 import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.components.Csar;
 import alien4cloud.model.deployment.DeploymentTopology;
@@ -169,13 +170,9 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     }
     
     public EntitySpec<? extends Application> populateApplicationSpecFromDeploymentTopologyId(EntitySpec<BasicApplication> spec, String id) {
-        DeploymentTopology[] dt = platform.getBean(DeploymentTopologyService.class).getByTopologyId(id);
-        
-        // TODO when is this more than 1?
-        if (dt.length!=1) throw new IllegalStateException("Expected unique deployment topology for ID "+id);
-        
-        // TODO is there a name?
-        return populateApplicationSpec(spec, null, dt[0]);
+        DeploymentTopology dt = platform.getBean(DeploymentTopologyService.class).getOrFail(id);
+        alien4cloud.model.application.Application application = platform.getBean(ApplicationService.class).getOrFail(dt.getDelegateId());
+        return populateApplicationSpec(spec, application.getName(), dt);
     }
     
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {

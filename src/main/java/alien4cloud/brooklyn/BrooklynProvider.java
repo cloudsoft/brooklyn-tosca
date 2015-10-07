@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import javax.ws.rs.core.Response;
 
+import alien4cloud.orchestrators.locations.services.LocationService;
 import lombok.SneakyThrows;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
@@ -54,7 +55,11 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     private ApplicationService applicationService;
 
     @Autowired
+    private LocationService locationService;
+
+    @Autowired
     private BrooklynCatalogMapper catalogMapper;
+
     
     ThreadLocal<ClassLoader> oldContextClassLoader = new ThreadLocal<ClassLoader>();
     private void useLocalContextClassLoader() {
@@ -100,8 +105,11 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         svc.put("type", "alien4cloud_deployment_topology:" + topologyId);
         svcs.add(svc);
         campYaml.put("services", svcs);
-        if (Strings.isNonBlank(configuration.getLocation())) {
-            campYaml.put("location", configuration.getLocation());
+
+        String locationIds[] = deploymentContext.getDeployment().getLocationIds();
+
+        if (locationIds.length > 0) {
+            campYaml.put("location", locationService.getOrFail(locationIds[0]).getName());
         }
 
         try {

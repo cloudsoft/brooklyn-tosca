@@ -10,6 +10,7 @@ import javax.ws.rs.core.Response;
 import lombok.SneakyThrows;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
+import org.apache.brooklyn.util.text.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,10 +97,13 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
 
         List<Object> svcs = Lists.newArrayList();
         Map<String, Object> svc = Maps.newHashMap();
-        svc.put("alien4cloud_deployment_topology", topologyId);
-        campYaml.put("services", svcs); 
-        campYaml.put("location", "localhost");
-        
+        svc.put("type", "alien4cloud_deployment_topology:" + topologyId);
+        svcs.add(svc);
+        campYaml.put("services", svcs);
+        if (Strings.isNonBlank(configuration.getLocation())) {
+            campYaml.put("location", configuration.getLocation());
+        }
+
         try {
             useLocalContextClassLoader();
             String campYamlString = new ObjectMapper().writeValueAsString(campYaml);

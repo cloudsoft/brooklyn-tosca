@@ -50,7 +50,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaPlanToSpecTransformer.class);
     
-    ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
+    public static ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
         .name("tosca.a4c.platform").build();
     
     private ManagementContext mgmt;
@@ -155,8 +155,9 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             
             String name = tp.getResult().getName();
             Topology topo = platform.getTopologyOfCsar(tp.getResult());
+            String deploymentId = "";
             
-            return createApplicationSpec(name, topo);
+            return createApplicationSpec(name, topo, deploymentId);
             
         } catch (Exception e) {
             if (e instanceof PlanNotRecognizedException) {
@@ -173,19 +174,21 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     public EntitySpec<? extends Application> populateApplicationSpecFromDeploymentTopologyId(EntitySpec<BasicApplication> spec, String id) {
         DeploymentTopology dt = platform.getBean(DeploymentTopologyService.class).getOrFail(id);
         alien4cloud.model.application.Application application = platform.getBean(ApplicationService.class).getOrFail(dt.getDelegateId());
-        return populateApplicationSpec(spec, application.getName(), dt);
+        return populateApplicationSpec(spec, application.getName(), dt, id);
     }
     
-    protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
-        return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);
+    protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo, String deploymentId) {
+        return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo, deploymentId);
     }
     
-    protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo) {
+    protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo, String deploymentId) {
         
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
         
         rootSpec.displayName(name);
-
+        rootSpec.configure(ConfigKeys.newStringConfigKey("tosca.id"), topo.getId());
+        rootSpec.configure(ConfigKeys.newStringConfigKey("tosca.delegate.id"), topo.getDelegateId());
+        rootSpec.configure(ConfigKeys.newStringConfigKey("tosca.deployment.id"), deploymentId);
         // get COMPUTE nodes
         Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
         Map<String,EntitySpec<?>> topLevelNodeSpecs = MutableMap.of();
@@ -215,6 +218,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     // TODO: Brooklyn entities should be resolved through the catalog instead of looking up for the type.
                     // This works for now as a quick and dirty solution.
                     thisNode = EntitySpec.create((Class<Entity>) Class.forName(template.getType()));
+                    thisNode.configure("tosca.template.id", templateId);
                     topLevelNodeSpecs.put(templateId, thisNode);
                     allNodeSpecs.put(templateId, thisNode);
                     continue;

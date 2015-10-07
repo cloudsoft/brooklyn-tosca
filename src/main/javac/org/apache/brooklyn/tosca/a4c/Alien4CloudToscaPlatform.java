@@ -173,6 +173,10 @@ public class Alien4CloudToscaPlatform implements Closeable {
         return ctx.getBean(type);
     }
 
+    public Object getBean(String name) {
+        return ctx.getBean(name);
+    }
+
     public ToscaParser getToscaParser() {
         return getBean(ToscaParser.class);
     }

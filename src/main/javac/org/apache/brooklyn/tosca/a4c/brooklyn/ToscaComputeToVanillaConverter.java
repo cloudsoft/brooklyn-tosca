@@ -50,6 +50,7 @@ public class ToscaComputeToVanillaConverter {
         spec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND, "true");
         spec.configure(VanillaSoftwareProcess.STOP_COMMAND, "true");
         spec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND, "true");
+        spec.configure("tosca.template.id", id);
         
         applyLifecyle(id, t, spec);
         

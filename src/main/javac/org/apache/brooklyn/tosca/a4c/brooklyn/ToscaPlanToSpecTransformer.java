@@ -3,6 +3,7 @@ package org.apache.brooklyn.tosca.a4c.brooklyn;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.brooklyn.api.catalog.BrooklynCatalog;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
@@ -10,6 +11,7 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.config.ConfigKey;
+import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
@@ -179,6 +181,16 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
         return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);
     }
+
+    protected CatalogItem<?, EntitySpec<?>> getEntityCatalogItem(BrooklynCatalog catalog, String entityType) {
+        if (CatalogUtils.looksLikeVersionedId(entityType)) {
+            String id = CatalogUtils.getIdFromVersionedId(entityType);
+            String version = CatalogUtils.getVersionFromVersionedId(entityType);
+            return (CatalogItem<?, EntitySpec<?>>) catalog.getCatalogItem(id, version);
+        } else {
+            return (CatalogItem<?, EntitySpec<?>>) catalog.getCatalogItem(entityType, BrooklynCatalog.DEFAULT_VERSION);
+        }
+    }
     
     protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo) {
         
@@ -210,17 +222,20 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 String templateId = templateE.getKey();
                 NodeTemplate template = templateE.getValue();
 
-                EntitySpec<? extends Entity> thisNode = null;
-                try {
-                    // TODO: Brooklyn entities should be resolved through the catalog instead of looking up for the type.
-                    // This works for now as a quick and dirty solution.
-                    thisNode = EntitySpec.create((Class<Entity>) Class.forName(template.getType()));
+                EntitySpec<?> thisNode = null;
+
+                CatalogItem<?, EntitySpec<?>> catalogItem = getEntityCatalogItem(mgmt.getCatalog(), template.getType());
+                if (catalogItem != null) {
+                    log.info("Brooklyn node found: " + template.getType() + " - adding it to the tree");
+                    thisNode = (EntitySpec<?>) mgmt.getCatalog().createSpec((CatalogItem) catalogItem);
                     topLevelNodeSpecs.put(templateId, thisNode);
                     allNodeSpecs.put(templateId, thisNode);
                     continue;
-                } catch (ClassNotFoundException e) {
-                    log.info("Node " + template.getType() + " is not supported");
                 }
+
+                // If we reach this point, it means that there is no entity within the catalog that match the current
+                // node type. We then assume that it's a TOSCA node
+                log.info("Node " + template.getType() + " is not a Brooklyn entity. Converting it into a VanillaSoftwareProcess");
 
                 thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
 

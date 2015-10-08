@@ -5,17 +5,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.annotation.Resource;
 import javax.ws.rs.core.Response;
 
+import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.orchestrators.locations.services.LocationService;
 import lombok.SneakyThrows;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
+import org.apache.brooklyn.rest.domain.TaskSummary;
 import org.apache.brooklyn.util.text.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.exception.NotFoundException;
@@ -38,6 +42,7 @@ import alien4cloud.paas.model.PaaSDeploymentContext;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 /**
@@ -60,7 +65,10 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     @Autowired
     private BrooklynCatalogMapper catalogMapper;
 
-    
+    @Autowired
+    @Qualifier("alien-es-dao")
+    private IGenericSearchDAO alienDAO;
+
     ThreadLocal<ClassLoader> oldContextClassLoader = new ThreadLocal<ClassLoader>();
     private void useLocalContextClassLoader() {
         if (oldContextClassLoader.get()==null) {
@@ -117,11 +125,14 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             String campYamlString = new ObjectMapper().writeValueAsString(campYaml);
             log.info("DEPLOYING: "+campYamlString);
             Response result = brooklynApi.getApplicationApi().createFromYaml( campYamlString );
+            TaskSummary createAppSummary = BrooklynApi.getEntity(result, TaskSummary.class);
             log.info("RESULT: "+result.getEntity());
             validate(result);
-            // (the result is a 204 creating, whose entity is a TaskSummary 
+            String entityId = createAppSummary.getEntityId();
+            deploymentContext.getDeployment().setOrchestratorDeploymentId(entityId);
+            alienDAO.save(deploymentContext.getDeployment());
+            // (the result is a 204 creating, whose entity is a TaskSummary
             // with an entityId of the entity which is created and id of the task)
-            // TODO set the brooklyn entityId somewhere that it can be recorded in A4C for easy cross-referencing
         } catch (Throwable e) {
             log.warn("ERROR DEPLOYING", e);
             throw e;
@@ -203,7 +214,8 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     public void undeploy(PaaSDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
         knownDeployments.remove(deploymentContext.getDeploymentId());
         log.info("UNDEPLOY "+deploymentContext+" / "+callback);
-
+        Response result = brooklynApi.getApplicationApi().delete(deploymentContext.getDeployment().getOrchestratorDeploymentId());
+        validate(result);
         if (callback!=null) callback.onSuccess(null);
     }
 

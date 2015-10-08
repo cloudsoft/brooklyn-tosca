@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
+import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
@@ -209,7 +210,19 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 String templateId = templateE.getKey();
                 NodeTemplate template = templateE.getValue();
 
-                EntitySpec<VanillaSoftwareProcess> thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
+                EntitySpec<? extends Entity> thisNode = null;
+                try {
+                    // TODO: Brooklyn entities should be resolved through the catalog instead of looking up for the type.
+                    // This works for now as a quick and dirty solution.
+                    thisNode = EntitySpec.create((Class<Entity>) Class.forName(template.getType()));
+                    topLevelNodeSpecs.put(templateId, thisNode);
+                    allNodeSpecs.put(templateId, thisNode);
+                    continue;
+                } catch (ClassNotFoundException e) {
+                    log.info("Node " + template.getType() + " is not supported");
+                }
+
+                thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
 
                 String hostNodeId = null;
                 Requirement hostR = template.getRequirements()==null ? null : template.getRequirements().get("host");

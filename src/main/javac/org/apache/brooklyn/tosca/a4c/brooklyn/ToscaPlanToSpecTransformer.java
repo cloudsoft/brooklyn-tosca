@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
+import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
@@ -29,7 +30,10 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import alien4cloud.application.ApplicationService;
+import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.components.Csar;
+import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
@@ -166,13 +170,21 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
     
+    public EntitySpec<? extends Application> populateApplicationSpecFromDeploymentTopologyId(EntitySpec<BasicApplication> spec, String id) {
+        DeploymentTopology dt = platform.getBean(DeploymentTopologyService.class).getOrFail(id);
+        alien4cloud.model.application.Application application = platform.getBean(ApplicationService.class).getOrFail(dt.getDelegateId());
+        return populateApplicationSpec(spec, application.getName(), dt);
+    }
+    
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
-
+        return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);
+    }
+    
+    protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo) {
+        
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
-
-        EntitySpec<BasicApplication> result = EntitySpec.create(BasicApplication.class);
-
-        result.displayName(name);
+        
+        rootSpec.displayName(name);
 
         // get COMPUTE nodes
         Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
@@ -198,7 +210,19 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 String templateId = templateE.getKey();
                 NodeTemplate template = templateE.getValue();
 
-                EntitySpec<VanillaSoftwareProcess> thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
+                EntitySpec<? extends Entity> thisNode = null;
+                try {
+                    // TODO: Brooklyn entities should be resolved through the catalog instead of looking up for the type.
+                    // This works for now as a quick and dirty solution.
+                    thisNode = EntitySpec.create((Class<Entity>) Class.forName(template.getType()));
+                    topLevelNodeSpecs.put(templateId, thisNode);
+                    allNodeSpecs.put(templateId, thisNode);
+                    continue;
+                } catch (ClassNotFoundException e) {
+                    log.info("Node " + template.getType() + " is not supported");
+                }
+
+                thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
 
                 String hostNodeId = null;
                 Requirement hostR = template.getRequirements()==null ? null : template.getRequirements().get("host");
@@ -234,7 +258,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             }
         }
 
-        result.children(topLevelNodeSpecs.values());
+        rootSpec.children(topLevelNodeSpecs.values());
 
         if (topo.getGroups()!=null) {
             for (NodeGroup g: topo.getGroups().values()) {
@@ -256,8 +280,8 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             }
         }
 
-        log.debug("Created entity from TOSCA spec: "+ result);
-        return result;
+        log.debug("Created entity from TOSCA spec: "+ rootSpec);
+        return rootSpec;
     }
 
     @SuppressWarnings("unchecked")

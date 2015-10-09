@@ -36,9 +36,9 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import alien4cloud.deployment.DeploymentTopologyService;
+//import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.components.Csar;
-import alien4cloud.model.deployment.DeploymentTopology;
+//import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
@@ -175,13 +175,13 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
 
-
+/*
     public EntitySpec<? extends Application> populateApplicationSpecFromDeploymentTopologyId(EntitySpec<BasicApplication> spec, String id) {
         DeploymentTopology dt = platform.getBean(DeploymentTopologyService.class).getOrFail(id);
         alien4cloud.model.application.Application application = platform.getBean(ApplicationService.class).getOrFail(dt.getDelegateId());
         return populateApplicationSpec(spec, application.getName(), dt);
     }
-
+*/
     
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
         return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);

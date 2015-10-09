@@ -31,3 +31,5 @@ brooklyn*.log.*
 
 ignored
 runtime
+
+data/*

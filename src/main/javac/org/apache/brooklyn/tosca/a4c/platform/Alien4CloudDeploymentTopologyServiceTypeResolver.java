@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c.brooklyn;
+package org.apache.brooklyn.tosca.a4c.platform;
 
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
@@ -6,6 +6,7 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.service.BrooklynServiceTypeResolver;
 import org.apache.brooklyn.entity.stock.BasicApplication;
+import org.apache.brooklyn.tosca.a4c.transformer.ToscaPlanToSpecTransformer;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ public class Alien4CloudDeploymentTopologyServiceTypeResolver extends BrooklynSe
         // instead all we can do is return the type and populate it
         //EntitySpec<? extends Application> spec = transformer.createApplicationSpecFromDeploymentTopologyId(deploymentId);
         
-        transformer.populateApplicationSpecFromDeploymentTopologyId((EntitySpec)spec, deploymentId);
+        //transformer.populateApplicationSpecFromDeploymentTopologyId((EntitySpec)spec, deploymentId);
     }
 
 }

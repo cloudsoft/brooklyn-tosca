@@ -18,6 +18,7 @@ import static org.testng.Assert.assertNull;
 public class Alien4CloudToscaPlatformTest extends AbstractAlien4CloudPlatformTest {
 
     String COMPUTE_NODE_ID = "my_server";
+    String SAMESERVER_NODE = "my_server";
     String TOMCAT_NODE_ID= "tomcat_server";
     String COMPUTE_LOC_NODE= "compute_loc";
     String WAR_ROOT= "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
@@ -88,7 +89,28 @@ public class Alien4CloudToscaPlatformTest extends AbstractAlien4CloudPlatformTes
         assertNull(resolve(computeProperties, "os_type"));
         assertNull(resolve(computeProperties, "os_distribution"));
         assertNull(resolve(computeProperties, "os_version"));
-
     }
+
+    @Test
+    public void testSameServerTopologyParser(){
+        Topology topology=getTopolofyFromTemplateClassPath(SAMESERVER_TEMPLATE);
+
+        assertNotNull(topology);
+        assertEquals(topology.getNodeTemplates().size(), 1);
+
+        NodeTemplate computeNode = topology.getNodeTemplates().get(SAMESERVER_NODE);
+        assertEquals(computeNode.getType(), SAMESERVER_TYPE);
+
+        Map<String, AbstractPropertyValue> computeProperties = computeNode.getProperties();
+        assertEquals(resolve(computeProperties, "location"), "aws-ec2:eu-west-1");
+        assertEquals(resolve(computeProperties, "num_cpus"), "1");
+        assertEquals(resolve(computeProperties, "mem_size"), "4 MB");
+        assertEquals(resolve(computeProperties, "disk_size"), "10 GB");
+        assertNull(resolve(computeProperties, "os_arch"));
+        assertNull(resolve(computeProperties, "os_type"));
+        assertNull(resolve(computeProperties, "os_distribution"));
+        assertNull(resolve(computeProperties, "os_version"));
+    }
+
 
 }

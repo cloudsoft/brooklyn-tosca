@@ -21,12 +21,15 @@ public class AbstractAlien4CloudToscaTest {
     protected static final String COMPUTE_TEMPLATE ="compute-template.yaml";
     protected static final String TOMCAT_TEMPLATE ="tomcat-template.yaml";
     protected static final String COMPUTELOC_TEMPLATE="computeLoc-template.yaml";
+    protected static final String SAMESERVER_TEMPLATE="sameServer-template.yaml";
     protected static final String HW_COMPUTELOC_TEMPLATE="HelloWorld-App-ComputeLoc-template.yaml";
+    protected static final String HW_SS_TEMPLATE="HelloWorld-App-SS-template.yaml";
 
     protected static final String COMPUTE_NODETYPE = "tosca.nodes.Compute";
     protected static final String TOMCAT_NODETYPE= "org.apache.brooklyn.entity.webapp.tomcat.TomcatServer";
     protected static final String COMPUTELOC_NODETYPE= "tosca.nodes.ComputeLoc";
     protected static final String VANILLA_SP_TYPE = "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess";
+    protected static final String SAMESERVER_TYPE = "org.apache.brooklyn.entity.software.base.SameServerEntity";
 
     protected ManagementContext mgmt;
 

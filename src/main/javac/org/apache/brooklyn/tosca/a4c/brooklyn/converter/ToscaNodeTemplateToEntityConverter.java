@@ -5,6 +5,8 @@ import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
+import org.apache.brooklyn.api.location.Location;
+import org.apache.brooklyn.api.location.LocationDefinition;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
@@ -12,7 +14,9 @@ import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.core.flags.FlagUtils;
+import org.apache.brooklyn.util.exceptions.Exceptions;
 import org.apache.brooklyn.util.exceptions.PropagatedRuntimeException;
+import org.apache.brooklyn.util.guava.Maybe;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +29,6 @@ import java.util.Set;
 public class ToscaNodeTemplateToEntityConverter extends AbstractToscaConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaNodeTemplateToEntityConverter.class);
-
-    @SuppressWarnings("unused")
-    private ManagementContext mgmt;
 
     public ToscaNodeTemplateToEntityConverter(ManagementContext mgmt) {
         super(mgmt);
@@ -63,8 +64,8 @@ public class ToscaNodeTemplateToEntityConverter extends AbstractToscaConverter {
         Map<String, Object> templateProperties = getTemplateProperties(t);
 
         //these properties are not managed here for now
-        templateProperties.remove("host");
         templateProperties.remove("location");
+        templateProperties.remove("host");
 
         ConfigBag bag = ConfigBag.newInstance(templateProperties);
 
@@ -95,6 +96,18 @@ public class ToscaNodeTemplateToEntityConverter extends AbstractToscaConverter {
                 spec.configure(ConfigKeys.newConfigKey(Object.class, key.toString()), bag.getStringKey(key));
             }
         }
+        //manage location if NodeType allows to define this property
+        configureSpecLocation(t, spec);
+    }
+
+    public void configureSpecLocation(NodeTemplate template, EntitySpec<? extends Entity> spec){
+        //TODO: for now location is a string, next steps will use a map for using a location that it will be composed by several attributes
+        String locationId=resolve(template.getProperties(), "location");
+        Location location=null;
+        if(!Strings.isBlank(locationId)){
+            location=resolveLocationFromString(locationId);
+            spec.location(location);
+        }
     }
 
     public Map<String, Object> getTemplateProperties(NodeTemplate template) {
@@ -120,6 +133,28 @@ public class ToscaNodeTemplateToEntityConverter extends AbstractToscaConverter {
             allKeys.addAll(FlagUtils.findAllFlagsAndConfigKeys(null, iface, bagFlags));
         }
         return allKeys;
+    }
+
+
+    //TODO refactor this method was copied from BrooklynYamlLocationResolver
+    public Location resolveLocationFromString(String location) {
+        if (Strings.isBlank(location)) return null;
+        return resolveLocation(location, MutableMap.of());
+    }
+
+    //TODO refactor this method was copied from BrooklynYamlLocationResolver
+    protected Location resolveLocation(String spec, Map<?,?> flags) {
+        LocationDefinition ldef = mgmt.getLocationRegistry().getDefinedLocationByName((String)spec);
+        if (ldef!=null)
+            // found it as a named location
+            return mgmt.getLocationRegistry().resolve(ldef, null, flags).get();
+
+        Maybe<Location> l = mgmt.getLocationRegistry().resolve(spec, null, flags);
+        if (l.isPresent()) return l.get();
+
+        RuntimeException exception = ((Maybe.Absent<?>)l).getException();
+        throw new IllegalStateException("Illegal parameter for 'location' ("+spec+"); not resolvable: "+
+                Exceptions.collapseText(exception), exception);
     }
 
 }

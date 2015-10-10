@@ -1,0 +1,26 @@
+
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+  - brooklyn-custom-types:1.0.0-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.tomcat-hosted-computeloc
+template_version: 1.0.0-SNAPSHOT
+
+description: Sample TOSCA plan, a TomcatServer and a AWS location
+
+topology_template:
+  description: Web Server Sample with Script
+  node_templates:
+    tomcat_server:
+      type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
+      properties:
+        wars.root: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
+        http.port: "8080+"
+        host: compute_loc_aws
+
+    compute_loc_aws:
+      type: tosca.nodes.ComputeLoc
+      properties:
+        location: "aws-ec2:eu-west-1"

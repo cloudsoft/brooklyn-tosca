@@ -26,7 +26,7 @@ public class ToscaPlanToSpecTransformerTest extends AbstractPlanToSpecTransforme
         EntitySpec<VanillaSoftwareProcess> vanillaSpec =
                 (EntitySpec<VanillaSoftwareProcess>)app.getChildren().get(0);
         assertEquals(vanillaSpec.getType().getName(),
-                "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess");
+                VANILLA_SP_TYPE);
     }
 
     @Test
@@ -44,6 +44,23 @@ public class ToscaPlanToSpecTransformerTest extends AbstractPlanToSpecTransforme
                 (EntitySpec<TomcatServer>)app.getChildren().get(0);
         assertEquals(tomcatSpec.getType().getName(),
                 TOMCAT_NODETYPE);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testComputeLocTopologyParser() {
+        String templateUrl = getClasspathUrlForTemplateResource(COMPUTELOC_TEMPLATE);
+
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(app);
+
+        assertEquals(app.getChildren().size(), 1);
+        EntitySpec<VanillaSoftwareProcess> vanillaSpec =
+                (EntitySpec<VanillaSoftwareProcess>)app.getChildren().get(0);
+        assertEquals(vanillaSpec.getType().getName(),
+                VANILLA_SP_TYPE);
     }
 
 

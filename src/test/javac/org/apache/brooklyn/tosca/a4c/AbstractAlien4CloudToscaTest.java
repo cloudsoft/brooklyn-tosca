@@ -16,14 +16,17 @@ public class AbstractAlien4CloudToscaTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractAlien4CloudToscaTest.class);
 
-    private final String TEMPLATE_FOLDER ="templates/";
-    protected String POLICY_TEMPLATE= "script1.tosca.yaml";
-    protected String COMPUTE_TEMPLATE ="compute-template.yaml";
-    protected String TOMCAT_TEMPLATE ="tomcat-template.yaml";
+    private static final String TEMPLATE_FOLDER ="templates/";
+    protected static final String POLICY_TEMPLATE= "script1.tosca.yaml";
+    protected static final String COMPUTE_TEMPLATE ="compute-template.yaml";
+    protected static final String TOMCAT_TEMPLATE ="tomcat-template.yaml";
+    protected static final String COMPUTELOC_TEMPLATE="computeLoc-template.yaml";
+    protected static final String HW_COMPUTELOC_TEMPLATE="HelloWorld-App-ComputeLoc-template.yaml";
 
-
-    protected final String COMPUTE_NODETYPE = "tosca.nodes.Compute";
-    protected final String TOMCAT_NODETYPE= "org.apache.brooklyn.entity.webapp.tomcat.TomcatServer";
+    protected static final String COMPUTE_NODETYPE = "tosca.nodes.Compute";
+    protected static final String TOMCAT_NODETYPE= "org.apache.brooklyn.entity.webapp.tomcat.TomcatServer";
+    protected static final String COMPUTELOC_NODETYPE= "tosca.nodes.ComputeLoc";
+    protected static final String VANILLA_SP_TYPE = "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess";
 
     protected ManagementContext mgmt;
 

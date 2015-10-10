@@ -26,3 +26,12 @@ node_types:
       host:
         type: string
         required: true
+
+  tosca.nodes.ComputeLoc:
+    derived_from: tosca.nodes.Compute
+    description: >
+      Compute node that contains a property to specify the location
+    properties:
+      location:
+        type: string
+        required: true

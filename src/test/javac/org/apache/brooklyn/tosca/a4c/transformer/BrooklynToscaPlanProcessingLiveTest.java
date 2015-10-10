@@ -10,6 +10,7 @@ import org.apache.brooklyn.api.mgmt.Task;
 import org.apache.brooklyn.core.entity.Attributes;
 import org.apache.brooklyn.core.mgmt.BrooklynTaskTags;
 import org.apache.brooklyn.core.mgmt.EntityManagementUtils;
+import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
@@ -44,6 +45,24 @@ public class BrooklynToscaPlanProcessingLiveTest extends AbstractPlanToSpecTrans
         waitForApplicationTasks(mgmt, application);
 
         assertTrue(tomcat.getAttribute(TomcatServer.SERVICE_PROCESS_IS_RUNNING));
+        assertNotNull(tomcat.getAttribute(Attributes.MAIN_URI));
+    }
+
+    @Test(groups={"Live"})
+    public void testHwAppTopologyBrooklynToscaProcessing() {
+        String plan = new ResourceUtils(this)
+                .getResourceAsString(getClasspathUrlForTemplateResource(HW_COMPUTELOC_TEMPLATE));
+
+        EntitySpec<? extends Application> appSpec = transformer.createApplicationSpec(plan);
+        Application application=EntityManagementUtils.createUnstarted(mgmt, appSpec);
+        EntityManagementUtils.start(application);
+
+        final VanillaSoftwareProcess vanilla=(VanillaSoftwareProcess)application.getChildren().toArray()[0];
+        waitForApplicationTasks(mgmt, application);
+
+        TomcatServer tomcat = (TomcatServer) vanilla.getChildren().toArray()[0];
+
+        //doent't works
         assertNotNull(tomcat.getAttribute(Attributes.MAIN_URI));
     }
 

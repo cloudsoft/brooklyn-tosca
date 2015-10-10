@@ -40,7 +40,7 @@ public class Alien4CloudDeploymentTopologyServiceTypeResolver extends BrooklynSe
         // instead all we can do is return the type and populate it
         //EntitySpec<? extends Application> spec = transformer.createApplicationSpecFromDeploymentTopologyId(deploymentId);
         
-        transformer.populateApplicationSpecFromDeploymentTopologyId((EntitySpec)spec, deploymentId);
+        //transformer.populateApplicationSpecFromDeploymentTopologyId((EntitySpec)spec, deploymentId);
     }
 
 }

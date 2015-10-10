@@ -22,7 +22,7 @@ public class AbstractAlien4CloudPlatformTest extends AbstractAlien4CloudToscaTes
         super.setup();
         Alien4CloudToscaPlatform.grantAdminAuth();
         platform = Alien4CloudToscaPlatform.newInstance();
-        platform.loadNormativeTypes();
+        platform.loadNodeTypes();
     }
 
     @AfterMethod

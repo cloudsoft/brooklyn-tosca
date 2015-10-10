@@ -17,7 +17,9 @@ import static org.testng.Assert.assertNull;
 //TODO:This class is named as sample/Alien4CloudToscaPlatformTest so it should be renamed
 public class Alien4CloudToscaPlatformTest extends AbstractAlien4CloudPlatformTest {
 
-    protected String COMPUTE_NODE_ID = "my_server";
+    String COMPUTE_NODE_ID = "my_server";
+    String TOMCAT_NODE_ID= "tomcat_server";
+    String WAR_ROOT= "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war";
 
     @Test
     public void testCanLoadArchiveWithPolicy() throws Exception {
@@ -50,5 +52,19 @@ public class Alien4CloudToscaPlatformTest extends AbstractAlien4CloudPlatformTes
         assertNull(resolve(computeProperties, "os_version"));
     }
 
+    @Test
+    public void testTomcatTopologyParser(){
+        Topology topology=getTopolofyFromTemplateClassPath(TOMCAT_TEMPLATE);
+
+        assertNotNull(topology);
+        assertEquals(topology.getNodeTemplates().size(), 1);
+
+        NodeTemplate tomcatNode = topology.getNodeTemplates().get(TOMCAT_NODE_ID);
+        assertEquals(tomcatNode.getType(),TOMCAT_NODETYPE);
+
+        Map<String, AbstractPropertyValue> tomcatProperties = tomcatNode.getProperties();
+        assertEquals(resolve(tomcatProperties, "wars.root"), WAR_ROOT);
+        assertEquals(resolve(tomcatProperties, "http.port"), "8080+");
+    }
 
 }

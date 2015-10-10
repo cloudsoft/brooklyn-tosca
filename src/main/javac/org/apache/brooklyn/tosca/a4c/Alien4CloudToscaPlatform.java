@@ -63,6 +63,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
     
     public static final String TOSCA_NORMATIVE_TYPES_LOCAL_URL = "classpath://org/apache/brooklyn/tosca/a4c/tosca-normative-types.zip";
     public static final String TOSCA_NORMATIVE_TYPES_GITHUB_URL = "https://github.com/alien4cloud/tosca-normative-types/archive/master.zip";
+    public static final String BROOKLYN_TOSCA_CUSTOM_TYPES = "classpath://org/apache/brooklyn/tosca/a4c/custom/types/custom-types.zip";
 
     public static Alien4CloudToscaPlatform newInstance(String ...args) throws Exception {
         return newInstance((ManagementContext)new LocalManagementContext(), args);
@@ -122,7 +123,21 @@ public class Alien4CloudToscaPlatform implements Closeable {
 
     }
 
-    
+    public void loadNodeTypes()throws Exception{
+        loadNormativeTypes();
+        loadBrooklynCustomTypes();
+    }
+
+    public void loadBrooklynCustomTypes() throws Exception{
+        Path brooklynCustomTypes= Paths.get(tmpRoot.toString(), "tomcat-type_"+Identifiers.makeRandomId(6)+".tgz");
+        Streams.copy(new ResourceUtils(this).getResourceFromUrl(BROOKLYN_TOSCA_CUSTOM_TYPES),
+                new FileOutputStream(brooklynCustomTypes.toString()));
+
+        ParsingResult<Csar> normative = getBean(ArchiveUploadService.class).upload(brooklynCustomTypes);
+        if (ArchiveUploadService.hasError(normative, ParsingErrorLevel.ERROR))
+            throw new UserFacingException("Errors parsing brooklyn custom node types:\n"+Strings.join(normative.getContext().getParsingErrors(), "\n  "));
+    }
+
     public void loadNormativeTypes() throws Exception {
         Path zpc;
         if (new ResourceUtils(this).doesUrlExist(TOSCA_NORMATIVE_TYPES_LOCAL_URL)) {

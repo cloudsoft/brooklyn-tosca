@@ -19,8 +19,11 @@ public class AbstractAlien4CloudToscaTest {
     private final String TEMPLATE_FOLDER ="templates/";
     protected String POLICY_TEMPLATE= "script1.tosca.yaml";
     protected String COMPUTE_TEMPLATE ="compute-template.yaml";
+    protected String TOMCAT_TEMPLATE ="tomcat-template.yaml";
+
 
     protected final String COMPUTE_NODETYPE = "tosca.nodes.Compute";
+    protected final String TOMCAT_NODETYPE= "org.apache.brooklyn.entity.webapp.tomcat.TomcatServer";
 
     protected ManagementContext mgmt;
 

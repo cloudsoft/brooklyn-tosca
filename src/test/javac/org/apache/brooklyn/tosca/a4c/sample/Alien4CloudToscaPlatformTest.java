@@ -33,7 +33,7 @@ public class Alien4CloudToscaPlatformTest {
         Alien4CloudToscaPlatform.grantAdminAuth();
         Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance(args);
         
-        platform.loadNormativeTypes();
+        platform.loadNodeTypes();
         
         String name = "script1.tosca.yaml";
         String url = "classpath:templates/" + name;
@@ -91,7 +91,7 @@ public class Alien4CloudToscaPlatformTest {
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
             platform = Alien4CloudToscaPlatform.newInstance();
-            platform.loadNormativeTypes();
+            platform.loadNodeTypes();
             String name = "script1.tosca.yaml";
             String url = "classpath:templates/" + name;
             ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);

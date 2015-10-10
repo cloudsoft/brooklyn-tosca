@@ -1,0 +1,28 @@
+
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+
+template_name: brooklyn-custom-types
+template_version: 1.0.0-SNAPSHOT
+
+description: Sample TOSCA plan referencing scripts to create a web server
+
+node_types:
+  org.apache.brooklyn.entity.webapp.tomcat.TomcatServer:
+    derived_from: tosca.nodes.WebServer
+    description: >
+      A simple Tomcat server
+    properties:
+      wars.root:
+        type: string
+        required: false
+      http.port:
+        type: list
+        required: false
+        entry_schema:
+          type: string
+      host:
+        type: string
+        required: true

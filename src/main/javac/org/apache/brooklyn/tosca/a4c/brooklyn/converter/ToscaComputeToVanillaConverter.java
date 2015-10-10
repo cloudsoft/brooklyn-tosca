@@ -23,14 +23,12 @@ import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 
-public class ToscaComputeToVanillaConverter {
+public class ToscaComputeToVanillaConverter extends AbstractToscaConverter{
 
     private static final Logger log = LoggerFactory.getLogger(ToscaComputeToVanillaConverter.class);
-    @SuppressWarnings("unused")
-    protected ManagementContext mgmt;
     
     public ToscaComputeToVanillaConverter(ManagementContext mgmt) {
-        this.mgmt = mgmt;
+        super(mgmt);
     }
     
     public EntitySpec<VanillaSoftwareProcess> toSpec(String id, NodeTemplate t) {

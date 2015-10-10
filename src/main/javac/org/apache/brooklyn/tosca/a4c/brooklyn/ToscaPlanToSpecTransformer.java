@@ -23,6 +23,7 @@ import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeLocToVanillaConverter;
 import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeToVanillaConverter;
+import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaNodeTemplateToEntityConverter;
 import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaTomcatServerConverter;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
@@ -238,11 +239,10 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
                 } else if ("tosca.nodes.ComputeLoc".equals(template.getType())) {
                     thisNode = new ToscaComputeLocToVanillaConverter(mgmt).toSpec(templateId, template);
-                } else if ("org.apache.brooklyn.entity.webapp.tomcat.TomcatServer".equals(template.getType())) {
-                    thisNode = new ToscaTomcatServerConverter(mgmt).toSpec(templateId, template);
                 } else {
                     //tosca.nodes.Software...
-                    thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
+                    //Generic conversor
+                    thisNode = new ToscaNodeTemplateToEntityConverter(mgmt).toSpec(templateId, template);
                 }
 
                 String hostNodeId = null;

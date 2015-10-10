@@ -6,8 +6,12 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.entity.Attributes;
 import org.apache.brooklyn.core.location.PortRanges;
+import org.apache.brooklyn.entity.software.base.SoftwareProcess;
+import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.tosca.a4c.AbstractAlien4CloudPlatformTest;
+import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeToVanillaConverter;
+import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaNodeTemplateToEntityConverter;
 import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaTomcatServerConverter;
 import org.testng.annotations.Test;
 
@@ -18,7 +22,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
-public class ToscaTomcatServerConverterTest extends AbstractAlien4CloudPlatformTest {
+public class ToscaNodeTemplateToEntityConverterTest extends AbstractAlien4CloudPlatformTest {
 
     String TOMCAT_NODE_ID = "tomcat_server";
     String WAR_ROOT= "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war";
@@ -34,10 +38,10 @@ public class ToscaTomcatServerConverterTest extends AbstractAlien4CloudPlatformT
         NodeTemplate computeNode = topology.getNodeTemplates().get(TOMCAT_NODE_ID);
         assertEquals(computeNode.getType(), TOMCAT_NODETYPE);
 
-        ToscaTomcatServerConverter tomcatConverter = new ToscaTomcatServerConverter(getMgmt());
-        assertNotNull(tomcatConverter);
+        ToscaNodeTemplateToEntityConverter nodeTemplatetConverter = new ToscaNodeTemplateToEntityConverter(getMgmt());
+        assertNotNull(nodeTemplatetConverter);
 
-        EntitySpec<TomcatServer> tomcatEntitySpec = tomcatConverter
+        EntitySpec<TomcatServer> tomcatEntitySpec = (EntitySpec<TomcatServer>) nodeTemplatetConverter
                 .toSpec(TOMCAT_NODE_ID, computeNode);
 
         assertNotNull(tomcatEntitySpec);
@@ -49,7 +53,7 @@ public class ToscaTomcatServerConverterTest extends AbstractAlien4CloudPlatformT
         assertEquals(tomcatConfig.get(TomcatServer.ROOT_WAR), WAR_ROOT);
         assertEquals(
                 tomcatConfig.get(Attributes.HTTP_PORT.getConfigKey()).getClass(),
-                PortRanges.LinearPortRange.class);
+                String.class);
 
         assertEquals(tomcatEntitySpec.getType().getName(), TOMCAT_NODETYPE);
         assertNull(tomcatEntitySpec.getParent());
@@ -58,7 +62,6 @@ public class ToscaTomcatServerConverterTest extends AbstractAlien4CloudPlatformT
         assertTrue(tomcatEntitySpec.getChildren().isEmpty());
 
     }
-
 
 
 }

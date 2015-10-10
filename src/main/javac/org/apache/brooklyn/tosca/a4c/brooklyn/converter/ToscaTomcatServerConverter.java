@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
-public class ToscaTomcatServerConverter {
+public class ToscaTomcatServerConverter extends AbstractToscaConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaComputeToVanillaConverter.class);
 
@@ -23,7 +23,7 @@ public class ToscaTomcatServerConverter {
     private ManagementContext mgmt;
 
     public ToscaTomcatServerConverter(ManagementContext mgmt) {
-        this.mgmt = mgmt;
+        super(mgmt);
     }
 
     public EntitySpec<TomcatServer> toSpec(String id, NodeTemplate t) {
@@ -44,25 +44,6 @@ public class ToscaTomcatServerConverter {
         return spec;
     }
 
-    public static String resolveScalarProperty(Map<String, AbstractPropertyValue> props, String ...keys) {
-        for (String key: keys) {
-            AbstractPropertyValue v = props.get(key);
-            if (v==null) continue;
-            if (v instanceof ScalarPropertyValue) return ((ScalarPropertyValue)v).getValue();
-            log.warn("Ignoring unsupported property value "+v);
-        }
-        return null;
-    }
-
-    public static List<String> resolveListProperty(Map<String, AbstractPropertyValue> props, String ...keys) {
-        for (String key: keys) {
-            AbstractPropertyValue v = props.get(key);
-            if (v==null) continue;
-            if (v instanceof ScalarPropertyValue) return ImmutableList.of(((ScalarPropertyValue) v).getValue());
-            log.warn("Ignoring unsupported property value "+v);
-        }
-        return null;
-    }
 
 
 }

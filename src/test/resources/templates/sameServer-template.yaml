@@ -1,0 +1,22 @@
+
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+#tosca_definitions_version: tosca_simple_yaml_1_0_0
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+  - brooklyn-custom-types:1.0.0-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.sameserver-template
+template_version: 1.0.0-SNAPSHOT
+
+description: Template for describing a simple server using a sameserver type.
+ 
+topology_template:
+  node_templates:
+    my_server:
+      type: org.apache.brooklyn.entity.software.base.SameServerEntity
+      properties:
+        num_cpus: 1
+        disk_size: 10 GB
+        mem_size: 4 MB
+        location: "aws-ec2:eu-west-1"

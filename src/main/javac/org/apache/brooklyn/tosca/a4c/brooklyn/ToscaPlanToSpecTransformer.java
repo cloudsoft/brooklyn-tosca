@@ -1,5 +1,6 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -11,6 +12,7 @@ import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.mgmt.EntityManagementUtils;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
@@ -19,6 +21,10 @@ import org.apache.brooklyn.entity.software.base.SoftwareProcess.ChildStartableMo
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
+import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeLocToSameServerConverter;
+import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeToVanillaConverter;
+import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaNodeTemplateToEntityConverter;
+import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
@@ -30,10 +36,9 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import alien4cloud.application.ApplicationService;
-import alien4cloud.deployment.DeploymentTopologyService;
+//import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.components.Csar;
-import alien4cloud.model.deployment.DeploymentTopology;
+//import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
@@ -49,10 +54,10 @@ import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaPlanToSpecTransformer.class);
-    
+
     ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
         .name("tosca.a4c.platform").build();
-    
+
     private ManagementContext mgmt;
     private Alien4CloudToscaPlatform platform;
 
@@ -60,7 +65,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     public void injectManagementContext(ManagementContext managementContext) {
         if (this.mgmt!=null && this.mgmt!=managementContext) throw new IllegalStateException("Cannot switch mgmt context");
         this.mgmt = managementContext;
-        
+
         try {
             synchronized (ToscaPlanToSpecTransformer.class) {
                 platform = (Alien4CloudToscaPlatform) mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
@@ -68,7 +73,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     Alien4CloudToscaPlatform.grantAdminAuth();
                     platform = Alien4CloudToscaPlatform.newInstance();
                     ((LocalManagementContext)mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
-                    platform.loadNormativeTypes();
+                    platform.loadNodeTypes();
                 }
             }
         } catch (Exception e) {
@@ -91,7 +96,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         Object obj;
         boolean isTosca = false;
         String csarLink;
-        
+
         public PlanTypeChecker(String plan) {
             try {
                 obj = Yamls.parseAll(plan).iterator().next();
@@ -109,12 +114,12 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 }
                 return;
             }
-            
+
             if (isTosca((Map<?,?>)obj)) {
                 isTosca = true;
                 return;
             }
-            
+
             if (((Map<?,?>)obj).size()==1) {
                 csarLink = (String) ((Map<?,?>)obj).get("csar_link");
                 return;
@@ -130,20 +135,20 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             return false;
         }
     }
-    
+
     @Override
     public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
             ParsingResult<Csar> tp;
-            
+
             PlanTypeChecker type = new PlanTypeChecker(plan);
             if (!type.isTosca) {
                 if (type.csarLink==null) {
                     throw new PlanNotRecognizedException("Does not look like TOSCA");
                 }
                 tp = platform.uploadArchive(new ResourceUtils(this).getResourceFromUrl(type.csarLink), "submitted-tosca-archive");
-                
+
             } else {
                 tp = platform.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
             }
@@ -152,12 +157,12 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 throw new UserFacingException("Could not parse TOSCA plan: "
                     +Strings.join(tp.getContext().getParsingErrors(), "\n  "));
             }
-            
+
             String name = tp.getResult().getName();
             Topology topo = platform.getTopologyOfCsar(tp.getResult());
-            
+
             return createApplicationSpec(name, topo);
-            
+
         } catch (Exception e) {
             if (e instanceof PlanNotRecognizedException) {
                 if (log.isTraceEnabled())
@@ -169,27 +174,30 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             throw Exceptions.propagate(e);
         }
     }
-    
+
+    /*
     public EntitySpec<? extends Application> populateApplicationSpecFromDeploymentTopologyId(EntitySpec<BasicApplication> spec, String id) {
         DeploymentTopology dt = platform.getBean(DeploymentTopologyService.class).getOrFail(id);
         alien4cloud.model.application.Application application = platform.getBean(ApplicationService.class).getOrFail(dt.getDelegateId());
         return populateApplicationSpec(spec, application.getName(), dt);
     }
-    
+    */
+
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
         return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);
     }
-    
+
     protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo) {
-        
+
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
-        
         rootSpec.displayName(name);
+        rootSpec.configure(EntityManagementUtils.WRAPPER_APP_MARKER, Boolean.TRUE);
 
         // get COMPUTE nodes
         Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
         Map<String,EntitySpec<?>> topLevelNodeSpecs = MutableMap.of();
         Map<String,NodeTemplate> otherNodes = MutableMap.of();
+        Map<String, List<EntitySpec<?>>> childRequests = MutableMap.of();
         for (Entry<String,NodeTemplate> templateE: topo.getNodeTemplates().entrySet()) {
             String templateId = templateE.getKey();
             NodeTemplate template = templateE.getValue();
@@ -211,6 +219,8 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 NodeTemplate template = templateE.getValue();
 
                 EntitySpec<? extends Entity> thisNode = null;
+
+                /*
                 try {
                     // TODO: Brooklyn entities should be resolved through the catalog instead of looking up for the type.
                     // This works for now as a quick and dirty solution.
@@ -221,12 +231,21 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 } catch (ClassNotFoundException e) {
                     log.info("Node " + template.getType() + " is not supported");
                 }
+                */
 
-                thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
+                if ("tosca.nodes.Compute".equals(template.getType())) {
+                    thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
+                } else if ("tosca.nodes.ComputeLoc".equals(template.getType())) {
+                    thisNode = new ToscaComputeLocToSameServerConverter(mgmt).toSpec(templateId, template);
+                } else {
+                    //tosca.nodes.Software...
+                    //Generic conversor
+                    thisNode = new ToscaNodeTemplateToEntityConverter(mgmt).toSpec(templateId, template);
+                }
 
                 String hostNodeId = null;
                 Requirement hostR = template.getRequirements()==null ? null : template.getRequirements().get("host");
-                if (hostR!=null) {
+                if ((hostR!=null) && (template.getRelationships()!=null)) {
                     for (RelationshipTemplate r: template.getRelationships().values()) {
                         if (r.getRequirementName().equals("host")) {
                             hostNodeId = r.getTarget();
@@ -243,19 +262,36 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 }
 
                 if (hostNodeId!=null) {
+                    /*
                     EntitySpec<?> parent = topLevelNodeSpecs.get(hostNodeId);
                     if (parent!=null) {
                         parent.child(thisNode);
                         parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
                     } else {
                         throw new IllegalStateException("Can't find parent '"+hostNodeId+"'");
+                    }*/
+
+                    if(!childRequests.containsKey(hostNodeId)){
+                        childRequests.put(hostNodeId, MutableList.<EntitySpec<?>>of());
                     }
+                    childRequests.get(hostNodeId).add(thisNode);
                 } else {
                     // temporarily, if no host relationship, treat as top-level (assume derived from compute, but note children can't be on it)
                     topLevelNodeSpecs.put(templateId, thisNode);
                 }
                 allNodeSpecs.put(templateId, thisNode);
             }
+        }
+
+        //process child request
+        for(Map.Entry<String, List<EntitySpec<?>>> entry : childRequests.entrySet()){
+            String parentId= entry.getKey();
+            EntitySpec<?> parent = topLevelNodeSpecs.get(parentId);
+            for(EntitySpec<?> child: entry.getValue()){
+                parent.child(child);
+                parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
+            }
+
         }
 
         rootSpec.children(topLevelNodeSpecs.values());
@@ -292,8 +328,8 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         case ENTITY:
             // unwrap? any other processing?
             return (SpecT) createApplicationSpec(item.getPlanYaml());
-            
-        case LOCATION: 
+
+        case LOCATION:
         case POLICY:
             throw new PlanNotRecognizedException("TOSCA does not support: "+item.getCatalogItemType());
         default:

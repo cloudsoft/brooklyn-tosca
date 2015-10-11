@@ -1,7 +1,8 @@
-package org.apache.brooklyn.tosca.a4c;
+package org.apache.brooklyn.tosca.a4c.sample;
 
 import java.util.Set;
 
+import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.Assert;
@@ -32,10 +33,10 @@ public class Alien4CloudToscaPlatformTest {
         Alien4CloudToscaPlatform.grantAdminAuth();
         Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance(args);
         
-        platform.loadNormativeTypes();
+        platform.loadNodeTypes();
         
         String name = "script1.tosca.yaml";
-        String url = "classpath:/org/apache/brooklyn/tosca/a4c/" + name;
+        String url = "classpath:templates/" + name;
         ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
         
         explore(platform, tp);
@@ -90,9 +91,9 @@ public class Alien4CloudToscaPlatformTest {
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
             platform = Alien4CloudToscaPlatform.newInstance();
-            platform.loadNormativeTypes();
+            platform.loadNodeTypes();
             String name = "script1.tosca.yaml";
-            String url = "classpath:/org/apache/brooklyn/tosca/a4c/" + name;
+            String url = "classpath:templates/" + name;
             ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
             Topology t = platform.getTopologyOfCsar(tp.getResult());
             NodeGroup g1 = t.getGroups().values().iterator().next();

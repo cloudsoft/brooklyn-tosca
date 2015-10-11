@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c.brooklyn;
+package org.apache.brooklyn.tosca.a4c.brooklyn.converter;
 
 import java.util.Map;
 
@@ -23,14 +23,12 @@ import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 
-public class ToscaComputeToVanillaConverter {
+public class ToscaComputeToVanillaConverter extends AbstractToscaConverter{
 
     private static final Logger log = LoggerFactory.getLogger(ToscaComputeToVanillaConverter.class);
-    @SuppressWarnings("unused")
-    private ManagementContext mgmt;
     
     public ToscaComputeToVanillaConverter(ManagementContext mgmt) {
-        this.mgmt = mgmt;
+        super(mgmt);
     }
     
     public EntitySpec<VanillaSoftwareProcess> toSpec(String id, NodeTemplate t) {
@@ -163,13 +161,4 @@ public class ToscaComputeToVanillaConverter {
         return;
     }
 
-    public static String resolve(Map<String, AbstractPropertyValue> props, String ...keys) {
-        for (String key: keys) {
-            AbstractPropertyValue v = props.get(key);
-            if (v==null) continue;
-            if (v instanceof ScalarPropertyValue) return ((ScalarPropertyValue)v).getValue();
-            log.warn("Ignoring unsupported property value "+v);
-        }
-        return null;
-    }
 }

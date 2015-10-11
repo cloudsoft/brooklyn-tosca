@@ -21,10 +21,9 @@ import org.apache.brooklyn.entity.software.base.SoftwareProcess.ChildStartableMo
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
-import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeLocToVanillaConverter;
+import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeLocToSameServerConverter;
 import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaComputeToVanillaConverter;
 import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaNodeTemplateToEntityConverter;
-import org.apache.brooklyn.tosca.a4c.brooklyn.converter.ToscaTomcatServerConverter;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
@@ -37,7 +36,6 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import alien4cloud.application.ApplicationService;
 //import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.components.Csar;
 //import alien4cloud.model.deployment.DeploymentTopology;
@@ -238,7 +236,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                 if ("tosca.nodes.Compute".equals(template.getType())) {
                     thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
                 } else if ("tosca.nodes.ComputeLoc".equals(template.getType())) {
-                    thisNode = new ToscaComputeLocToVanillaConverter(mgmt).toSpec(templateId, template);
+                    thisNode = new ToscaComputeLocToSameServerConverter(mgmt).toSpec(templateId, template);
                 } else {
                     //tosca.nodes.Software...
                     //Generic conversor

@@ -161,13 +161,4 @@ public class ToscaComputeToVanillaConverter extends AbstractToscaConverter{
         return;
     }
 
-    public static String resolve(Map<String, AbstractPropertyValue> props, String ...keys) {
-        for (String key: keys) {
-            AbstractPropertyValue v = props.get(key);
-            if (v==null) continue;
-            if (v instanceof ScalarPropertyValue) return ((ScalarPropertyValue)v).getValue();
-            log.warn("Ignoring unsupported property value "+v);
-        }
-        return null;
-    }
 }

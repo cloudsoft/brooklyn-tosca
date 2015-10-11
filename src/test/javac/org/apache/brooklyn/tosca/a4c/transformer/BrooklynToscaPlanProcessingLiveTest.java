@@ -58,12 +58,11 @@ public class BrooklynToscaPlanProcessingLiveTest extends AbstractPlanToSpecTrans
         Application application=EntityManagementUtils.createUnstarted(mgmt, appSpec);
         EntityManagementUtils.start(application);
 
-        final VanillaSoftwareProcess vanilla=(VanillaSoftwareProcess)application.getChildren().toArray()[0];
+        final SameServerEntity hostEntity=(SameServerEntity)application.getChildren().toArray()[0];
         waitForApplicationTasks(mgmt, application);
 
-        TomcatServer tomcat = (TomcatServer) vanilla.getChildren().toArray()[0];
+        TomcatServer tomcat = (TomcatServer) hostEntity.getChildren().toArray()[0];
 
-        //doent't works
         assertNotNull(tomcat.getAttribute(Attributes.MAIN_URI));
     }
 

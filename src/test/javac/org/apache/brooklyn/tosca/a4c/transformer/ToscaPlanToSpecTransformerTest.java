@@ -60,7 +60,7 @@ public class ToscaPlanToSpecTransformerTest extends AbstractPlanToSpecTransforme
         EntitySpec<VanillaSoftwareProcess> vanillaSpec =
                 (EntitySpec<VanillaSoftwareProcess>)app.getChildren().get(0);
         assertEquals(vanillaSpec.getType().getName(),
-                VANILLA_SP_TYPE);
+                SAMESERVER_TYPE);
     }
 
 

@@ -1,12 +1,12 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.brooklyn.api.catalog.BrooklynCatalog;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
-import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
@@ -18,9 +18,9 @@ import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess.ChildStartableMode;
-import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
+import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
@@ -182,14 +182,39 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);
     }
 
-    protected CatalogItem<?, EntitySpec<?>> getEntityCatalogItem(BrooklynCatalog catalog, String entityType) {
-        if (CatalogUtils.looksLikeVersionedId(entityType)) {
-            String id = CatalogUtils.getIdFromVersionedId(entityType);
-            String version = CatalogUtils.getVersionFromVersionedId(entityType);
-            return (CatalogItem<?, EntitySpec<?>>) catalog.getCatalogItem(id, version);
-        } else {
-            return (CatalogItem<?, EntitySpec<?>>) catalog.getCatalogItem(entityType, BrooklynCatalog.DEFAULT_VERSION);
+    private String getParentId(NodeTemplate nodeTemplate) {
+        Requirement host = nodeTemplate.getRequirements() != null ? nodeTemplate.getRequirements().get("host") : null;
+        if (host != null) {
+            for (RelationshipTemplate r : nodeTemplate.getRelationships().values()) {
+                if (r.getRequirementName().equals("host")) {
+                    return r.getTarget();
+                }
+            }
         }
+
+        // temporarily, fall back to looking for a *property* called 'host'
+        String parentId = ToscaNodeToEntityConverter.resolve(nodeTemplate.getProperties(), "host");
+        if (parentId != null) {
+            log.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
+        }
+        return parentId;
+    }
+
+    private EntitySpec<?> buildBranch(Map<String, EntitySpec<?>> specs, Map<String, List<String>> edges, String id) {
+        EntitySpec<?> spec = specs.get(id);
+
+        if (spec == null) {
+            throw new IllegalStateException("Cannot find node with id: " + id);
+        }
+
+        if (edges.containsKey(id)) {
+            for (String edgeId : edges.get(id)) {
+                spec.child(buildBranch(specs, edges, edgeId)).configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
+                specs.remove(edgeId);
+            }
+        }
+
+        return spec;
     }
     
     protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo) {
@@ -198,82 +223,33 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         
         rootSpec.displayName(name);
 
-        // get COMPUTE nodes
-        Map<String,EntitySpec<?>> allNodeSpecs = MutableMap.of();
-        Map<String,EntitySpec<?>> topLevelNodeSpecs = MutableMap.of();
-        Map<String,NodeTemplate> otherNodes = MutableMap.of();
-        for (Entry<String,NodeTemplate> templateE: topo.getNodeTemplates().entrySet()) {
-            String templateId = templateE.getKey();
-            NodeTemplate template = templateE.getValue();
+        // Build tree edges
+        Map<String, EntitySpec<?>> specs = MutableMap.of();
+        Map<String, List<String>> edges = MutableMap.of();
+        for (Entry<String, NodeTemplate> nodeTemplate : topo.getNodeTemplates().entrySet()) {
+            specs.put(nodeTemplate.getKey(), ToscaNodeToEntityConverter.with(mgmt)
+                    .setNodeId(nodeTemplate.getKey())
+                    .setNodeTemplate(nodeTemplate.getValue())
+                    .createSpec());
 
-            if ("tosca.nodes.Compute".equals(template.getType())) {
-                EntitySpec<VanillaSoftwareProcess> spec = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
-                topLevelNodeSpecs.put(templateId, spec);
-                allNodeSpecs.put(templateId, spec);
+            final String parentId = getParentId(nodeTemplate.getValue());
+            if (parentId != null) {
+                if (!edges.containsKey(parentId)) {
+                    edges.put(parentId, MutableList.<String>of());
+                }
+                edges.get(parentId).add(nodeTemplate.getKey());
             } else {
-                otherNodes.put(templateId, template);
+                if (!edges.containsKey(nodeTemplate.getKey())) {
+                    edges.put(nodeTemplate.getKey(), MutableList.<String>of());
+                }
             }
         }
 
-        // get OTHER nodes, putting as children of the relevant compute node for now
-        // (only supporting explicit compute, and always requiring it)
-        if (!otherNodes.isEmpty()) {
-            for (Entry<String,NodeTemplate> templateE: otherNodes.entrySet()) {
-                String templateId = templateE.getKey();
-                NodeTemplate template = templateE.getValue();
-
-                EntitySpec<?> thisNode = null;
-
-                CatalogItem<?, EntitySpec<?>> catalogItem = getEntityCatalogItem(mgmt.getCatalog(), template.getType());
-                if (catalogItem != null) {
-                    log.info("Brooklyn node found: " + template.getType() + " - adding it to the tree");
-                    thisNode = (EntitySpec<?>) mgmt.getCatalog().createSpec((CatalogItem) catalogItem);
-                    topLevelNodeSpecs.put(templateId, thisNode);
-                    allNodeSpecs.put(templateId, thisNode);
-                    continue;
-                }
-
-                // If we reach this point, it means that there is no entity within the catalog that match the current
-                // node type. We then assume that it's a TOSCA node
-                log.info("Node " + template.getType() + " is not a Brooklyn entity. Converting it into a VanillaSoftwareProcess");
-
-                thisNode = new ToscaComputeToVanillaConverter(mgmt).toSpec(templateId, template);
-
-                String hostNodeId = null;
-                Requirement hostR = template.getRequirements()==null ? null : template.getRequirements().get("host");
-                if (hostR!=null) {
-                    for (RelationshipTemplate r: template.getRelationships().values()) {
-                        if (r.getRequirementName().equals("host")) {
-                            hostNodeId = r.getTarget();
-                            break;
-                        }
-                    }
-                }
-                if (hostNodeId==null) {
-                    // temporarily, fall back to looking for a *property* called 'host'
-                    hostNodeId = ToscaComputeToVanillaConverter.resolve(template.getProperties(), "host");
-                    if (hostNodeId!=null) {
-                        log.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
-                    }
-                }
-
-                if (hostNodeId!=null) {
-                    EntitySpec<?> parent = topLevelNodeSpecs.get(hostNodeId);
-                    if (parent!=null) {
-                        parent.child(thisNode);
-                        parent.configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
-                    } else {
-                        throw new IllegalStateException("Can't find parent '"+hostNodeId+"'");
-                    }
-                } else {
-                    // temporarily, if no host relationship, treat as top-level (assume derived from compute, but note children can't be on it)
-                    topLevelNodeSpecs.put(templateId, thisNode);
-                }
-                allNodeSpecs.put(templateId, thisNode);
-            }
+        for (Entry<String, List<String>> edge : edges.entrySet()) {
+            buildBranch(specs, edges, edge.getKey());
         }
 
-        rootSpec.children(topLevelNodeSpecs.values());
+        rootSpec.children(specs.values());
 
         if (topo.getGroups()!=null) {
             for (NodeGroup g: topo.getGroups().values()) {
@@ -284,18 +260,18 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                         }
                         if ("brooklyn.location".equals(p.getName())) {
                             for (String id: g.getMembers()) {
-                                EntitySpec<?> spec = allNodeSpecs.get(id);
+                                EntitySpec<?> spec = specs.get(id);
                                 if (spec==null) throw new IllegalStateException("No node '"+id+"' found, when setting locations");
                                 spec.location(mgmt.getLocationRegistry().resolve( (String)((GenericPolicy)p).getData().get(GroupPolicyParser.VALUE) ));
                             }
                         }
-                        // other policies ignored
+                        // TODO: Other policies ignored, should we support them?
                     }
                 }
             }
         }
 
-        log.debug("Created entity from TOSCA spec: "+ rootSpec);
+        log.debug("Created entity from TOSCA spec: " + rootSpec);
         return rootSpec;
     }
 

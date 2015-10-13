@@ -22,6 +22,8 @@ import org.jclouds.compute.domain.OsFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
+
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ImplementationArtifact;
 import alien4cloud.model.components.Interface;
@@ -65,10 +67,10 @@ public class ToscaNodeToEntityConverter {
 
         EntitySpec<?> spec = null;
 
-        CatalogItem<?, EntitySpec<?>> catalogItem = getEntityCatalogItem();
+        CatalogItem catalogItem = CatalogUtils.getCatalogItemOptionalVersion(this.mgnt, this.nodeTemplate.getType());
         if (catalogItem != null) {
             log.info("Found Brooklyn catalog item that match node type: " + this.nodeTemplate.getType());
-            spec = (EntitySpec<?>) this.mgnt.getCatalog().createSpec((CatalogItem) catalogItem);
+            spec = (EntitySpec<?>) this.mgnt.getCatalog().createSpec(catalogItem);
         } else {
             try {
                 log.info("Found Brooklyn entity that match node type: " + this.nodeTemplate.getType());
@@ -137,39 +139,22 @@ public class ToscaNodeToEntityConverter {
         return spec;
     }
 
-    protected CatalogItem<?, EntitySpec<?>> getEntityCatalogItem() {
-        if (CatalogUtils.looksLikeVersionedId(this.nodeTemplate.getType())) {
-            String id = CatalogUtils.getIdFromVersionedId(this.nodeTemplate.getType());
-            String version = CatalogUtils.getVersionFromVersionedId(this.nodeTemplate.getType());
-            return (CatalogItem<?, EntitySpec<?>>) this.mgnt.getCatalog().getCatalogItem(id, version);
-        } else {
-            return (CatalogItem<?, EntitySpec<?>>) this.mgnt.getCatalog().getCatalogItem(this.nodeTemplate.getType(), BrooklynCatalog.DEFAULT_VERSION);
-        }
-    }
-
     protected Map<String, Operation> getInterfaceOperations() {
-        Map<String, Operation> operations = MutableMap.of();
+        final Map<String, Operation> operations = MutableMap.of();
 
-        // then get interface operations from node template
         if (this.nodeTemplate.getInterfaces() != null) {
-            MutableMap<String, Interface> ifs = MutableMap.copyOf(this.nodeTemplate.getInterfaces());
-            Interface ifa = null;
-            if (ifa == null) {
-                ifa = ifs.remove("tosca.interfaces.node.lifecycle.Standard");
-            }
-            if (ifa == null) {
-                ifa = ifs.remove("standard");
-            }
-            if (ifa == null) {
-                ifs.remove("Standard");
-            }
+            final ImmutableList<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
+            final MutableMap<String, Interface> interfaces = MutableMap.copyOf(this.nodeTemplate.getInterfaces());
 
-            if (ifa!=null) {
-                operations.putAll(ifa.getOperations());
-            }
-
-            if (!ifs.isEmpty()) {
-                log.warn("Could not translate some interfaces for " + this.nodeId + ": " + ifs.keySet());
+            for (String validInterfaceName : validInterfaceNames) {
+                Interface validInterface = interfaces.remove(validInterfaceName);
+                if (validInterface != null) {
+                    operations.putAll(validInterface.getOperations());
+                    if (!interfaces.isEmpty()) {
+                        log.warn("Could not translate some interfaces for " + this.nodeId + ": " + interfaces.keySet());
+                    }
+                    break;
+                }
             }
         }
 

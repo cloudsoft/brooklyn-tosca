@@ -34,7 +34,11 @@ if [[ ! `ls ${project.artifactId}-*.jar 2> /dev/null` ]] ; then
   exit 4
 fi
 
-$JAVA -Xms256m -Xmx1024m -XX:MaxPermSize=1024m \
+if [ -z "$JAVA_OPTS" ] ; then
+    JAVA_OPTS="-Xms256m -Xmx1024m -XX:MaxPermSize=1024m"
+fi
+
+$JAVA ${JAVA_OPTS} \
     -classpath "conf/:patch/*:*:lib/*" \
     ${project.entry} \
     "$@"

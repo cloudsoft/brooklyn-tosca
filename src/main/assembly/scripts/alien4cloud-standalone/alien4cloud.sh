@@ -17,7 +17,11 @@ if [[ ! `ls alien4cloud-ui-${alien.version}.war 2> /dev/null` ]] ; then
   cd alien4cloud-standalone
 fi
 
+if [ -z "$JAVA_OPTS" ] ; then
+    JAVA_OPTS="-Xms256m -Xmx1024m -XX:MaxPermSize=1024m"
+fi
+
 #    java -jar target/dependency/jetty-runner.jar target/*.war
-$JAVA -Xms256m -Xmx1024m -XX:MaxPermSize=1024m \
+$JAVA ${JAVA_OPTS} \
     -jar alien4cloud-ui-${alien.version}.war \
     "$@"

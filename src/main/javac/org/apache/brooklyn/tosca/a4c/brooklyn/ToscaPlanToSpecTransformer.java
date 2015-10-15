@@ -3,6 +3,7 @@ package org.apache.brooklyn.tosca.a4c.brooklyn;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.brooklyn.api.catalog.BrooklynCatalog;
 import org.apache.brooklyn.api.catalog.CatalogItem;
@@ -171,15 +172,11 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             throw Exceptions.propagate(e);
         }
     }
-    
-    public EntitySpec<? extends Application> populateApplicationSpecFromDeploymentTopologyId(EntitySpec<BasicApplication> spec, String id) {
+
+    public EntitySpec<? extends Application> createApplicationSpecFromTopologyId(String id) {
         DeploymentTopology dt = platform.getBean(DeploymentTopologyService.class).getOrFail(id);
         alien4cloud.model.application.Application application = platform.getBean(ApplicationService.class).getOrFail(dt.getDelegateId());
-        return populateApplicationSpec(spec, application.getName(), dt);
-    }
-    
-    protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
-        return populateApplicationSpec(EntitySpec.create(BasicApplication.class), name, topo);
+        return createApplicationSpec(application.getName(), dt);
     }
 
     private String getParentId(NodeTemplate nodeTemplate) {
@@ -216,12 +213,12 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
         return spec;
     }
-    
-    protected EntitySpec<? extends Application> populateApplicationSpec(EntitySpec<BasicApplication> rootSpec, String name, Topology topo) {
+
+    protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo) {
         
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
-        
-        rootSpec.displayName(name);
+
+        EntitySpec<BasicApplication> rootSpec = EntitySpec.create(BasicApplication.class).displayName(name);
 
         // Build tree edges
         Map<String, EntitySpec<?>> specs = MutableMap.of();
@@ -277,7 +274,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T, SpecT extends AbstractBrooklynObjectSpec<? extends T, SpecT>> SpecT createCatalogSpec(CatalogItem<T, SpecT> item) throws PlanNotRecognizedException {
+    public <T, SpecT extends AbstractBrooklynObjectSpec<? extends T, SpecT>> SpecT createCatalogSpec(CatalogItem<T, SpecT> item, Set<String> encounteredTypes) throws PlanNotRecognizedException {
         switch (item.getCatalogItemType()) {
         case TEMPLATE:
         case ENTITY:

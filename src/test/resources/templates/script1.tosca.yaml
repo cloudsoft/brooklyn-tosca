@@ -19,10 +19,10 @@ topology_template:
       - host: a_server
       interfaces:
         Standard:
-          create: file:///tmp/scripts/create.sh
-          configure: file:///tmp/scripts/configure.sh
-          start: file:///tmp/scripts/start.sh
-          stop: file:///tmp/scripts/stop.sh
+           create: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/create.sh
+           configure: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/configure.sh
+           start: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/start.sh
+           stop: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/stop.sh
         
     a_server:
       type: tosca.nodes.Compute

@@ -1,20 +1,28 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
-import java.util.Map;
-
-import org.apache.brooklyn.api.catalog.BrooklynCatalog;
+import alien4cloud.model.components.AbstractPropertyValue;
+import alien4cloud.model.components.ImplementationArtifact;
+import alien4cloud.model.components.Interface;
+import alien4cloud.model.components.Operation;
+import alien4cloud.model.components.ScalarPropertyValue;
+import alien4cloud.model.topology.NodeTemplate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
+import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.location.jclouds.JcloudsLocationConfig;
 import org.apache.brooklyn.util.collections.MutableMap;
+import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.config.ConfigBag;
+import org.apache.brooklyn.util.core.flags.FlagUtils;
 import org.apache.brooklyn.util.core.flags.TypeCoercions;
 import org.apache.brooklyn.util.text.Strings;
 import org.apache.commons.lang3.StringUtils;
@@ -22,14 +30,10 @@ import org.jclouds.compute.domain.OsFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableList;
-
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.ImplementationArtifact;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.ScalarPropertyValue;
-import alien4cloud.model.topology.NodeTemplate;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class ToscaNodeToEntityConverter {
 
@@ -92,7 +96,6 @@ public class ToscaNodeToEntityConverter {
         spec.configure("tosca.node.type", this.nodeTemplate.getType());
 
         Map<String, AbstractPropertyValue> properties = this.nodeTemplate.getProperties();
-
         // Applying provisioning properties
         ConfigBag prov = ConfigBag.newInstance();
         prov.putIfNotNull(JcloudsLocationConfig.MIN_RAM, resolve(properties, "mem_size"));
@@ -103,12 +106,7 @@ public class ToscaNodeToEntityConverter {
         // TODO: Mapping for "os_arch" and "os_type" are missing
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
-        // Adding remaining TOSCA properties as EntitySpec properties
-        for (Map.Entry<String, AbstractPropertyValue> property : properties.entrySet()) {
-            if (property.getValue() instanceof ScalarPropertyValue) {
-                spec.configure(property.getKey(), ((ScalarPropertyValue) property.getValue()).getValue());
-            }
-        }
+        configureSpec(spec, nodeTemplate);
 
         // If the entity spec is of type VanillaSoftwareProcess, we assume that it's running. The operations should
         // then take care of setting up the correct scripts.
@@ -137,6 +135,67 @@ public class ToscaNodeToEntityConverter {
         }
 
         return spec;
+    }
+
+    //TODO: refactor this method in Brooklyn in {@link org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver}
+    //TODO POVISION_PROPERTIES should be adde to this method.
+    private void configureSpec(EntitySpec spec, NodeTemplate nodeTemplate){
+        Set<String> keyNamesUsed = new LinkedHashSet<String>();
+        ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate));
+
+        // now set configuration for all the items in the bag
+        Collection<FlagUtils.FlagConfigKeyAndValueRecord> records = findAllFlagsAndConfigKeys(spec, bag);
+
+        for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
+            if (r.getFlagMaybeValue().isPresent()) {
+                //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(r.getFlagMaybeValue().get());
+                spec.configure(r.getFlagName(), r.getFlagMaybeValue().get());
+                keyNamesUsed.add(r.getFlagName());
+            }
+            if (r.getConfigKeyMaybeValue().isPresent()) {
+                //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(r.getConfigKeyMaybeValue().get());
+                spec.configure((ConfigKey<Object>) r.getConfigKey(), r.getConfigKeyMaybeValue().get());
+                keyNamesUsed.add(r.getConfigKey().getName());
+            }
+        }
+
+        // set unused keys as anonymous config keys -
+        // they aren't flags or known config keys, so must be passed as config keys in order for
+        // EntitySpec to know what to do with them (as they are passed to the spec as flags)
+        for (String key : MutableSet.copyOf(bag.getUnusedConfig().keySet())) {
+            // we don't let a flag with the same name as a config key override the config key
+            // (that's why we check whether it is used)
+            if (!keyNamesUsed.contains(key)) {
+                //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(bag.getStringKey(key));
+                spec.configure(ConfigKeys.newConfigKey(Object.class, key.toString()), bag.getStringKey(key));
+            }
+        }
+    }
+
+    /**
+     * Searches for config keys in the type, additional interfaces and the implementation (if specified)
+     */
+    private Collection<FlagUtils.FlagConfigKeyAndValueRecord> findAllFlagsAndConfigKeys(EntitySpec<?> spec, ConfigBag bagFlags) {
+        Set<FlagUtils.FlagConfigKeyAndValueRecord> allKeys = MutableSet.of();
+        allKeys.addAll(FlagUtils.findAllFlagsAndConfigKeys(null, spec.getType(), bagFlags));
+        if (spec.getImplementation() != null) {
+            allKeys.addAll(FlagUtils.findAllFlagsAndConfigKeys(null, spec.getImplementation(), bagFlags));
+        }
+        for (Class<?> iface : spec.getAdditionalInterfaces()) {
+            allKeys.addAll(FlagUtils.findAllFlagsAndConfigKeys(null, iface, bagFlags));
+        }
+        return allKeys;
+    }
+
+    private Map<String, Object> getTemplatePropertyObjects(NodeTemplate template) {
+        Map<String, Object> propertyMap = MutableMap.of();
+        ImmutableSet<String> propertyKeys = ImmutableSet.copyOf(template.getProperties().keySet());
+
+        for (String propertyKey : propertyKeys) {
+            propertyMap.put(propertyKey,
+                    resolve(template.getProperties(), propertyKey));
+        }
+        return propertyMap;
     }
 
     protected Map<String, Operation> getInterfaceOperations() {

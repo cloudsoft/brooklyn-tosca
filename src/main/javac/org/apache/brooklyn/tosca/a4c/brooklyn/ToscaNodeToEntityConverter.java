@@ -90,6 +90,7 @@ public class ToscaNodeToEntityConverter {
         }
         // Add TOSCA node type as a property
         spec.configure("tosca.node.type", this.nodeTemplate.getType());
+        spec.configure("tosca.template.id", this.nodeId);
 
         Map<String, AbstractPropertyValue> properties = this.nodeTemplate.getProperties();
 

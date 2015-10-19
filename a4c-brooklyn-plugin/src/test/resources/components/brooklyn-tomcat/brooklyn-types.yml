@@ -1,0 +1,53 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+template_name: brooklyn-types
+template_author: Alien4cloud Brooklyn
+template_version: 1.0.0-SNAPSHOT
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+  - alien4cloud-tomcat-types:1.0.0-SNAPSHOT
+
+description: Mapping types out of brooklyn to Alien 4 Cloud
+
+node_types:
+  brooklyn.entity.webapp.tomcat.TomcatServer:
+    tags:
+      # used to map port to http.port (or httpPort would be fine), since port not known
+      brooklyn_property_map__port: http.port   # alias is httpPort, not port
+      # used to map the tosca type to the brooklyn type (not different here)
+      brooklyn_blueprint_catalog_id: brooklyn.entity.webapp.tomcat.TomcatServer
+    derived_from: alien.nodes.Tomcat
+    description: Brooklyn implementation of tomcat webserver.
+    properties:
+      port:
+        type: integer
+        required: true
+        default: 80
+      war:
+        type: string
+        required: false
+        description: |
+          The normal way to inject a WAR or WARs is with the HostedOn relationship,
+          but as Brooklyn accepts it as config, a user can supply a URL here for convenience.
+    requirements:
+      - host: tosca.nodes.Compute
+        # above has changed, but idea is that the "name" of this requirement was declared as host,
+        # and the host property (target) is of type Compute
+        lower_bound: 0
+        upper_bound: 0
+        
+
+# above is sufficient for A4C to collect values and generate the follow spec for Brooklyn to deploy
+#
+# (in YAML)
+#services:
+#- type: brooklyn.entity.webapp.tomcat.TomcatServer  # from brooklyn_blueprint_catalog_id
+#  brooklyn.config:
+#    war: http://path/hello_world.war   # taken from property
+#    http.port: 80    # taken from property value, with mapping applied because "port" is ambiguous
+#
+# (as brooklyn object model)
+# EntitySpec.create(brooklyn.entity.webapp.tomcat.TomcatServer.class)
+#    .configure("war", "http://...")
+#    .configure("http.port", 80)

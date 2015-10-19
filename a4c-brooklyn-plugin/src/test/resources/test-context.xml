@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <context:annotation-config/>
+
+    <context:component-scan base-package="
+		alien4cloud.*,
+		org.elasticsearch.mapping">
+        <!-- alien4cloud.security.* to exclude ldap package is not working in component-scan -->
+        <context:exclude-filter type="regex" expression="alien4cloud\.brooklyn\.PluginContextConfiguration"/>
+        <context:exclude-filter type="regex" expression="alien4cloud\.ldap.*|alien4cloud\.initialization.*|alien4cloud\.documentation.*|alien4cloud\.audit.*|alien4cloud\.security\.users\.rest.*|alien4cloud\.security\.groups\.rest.*"/>
+        <context:exclude-filter type="regex" expression="alien4cloud\.security\.spring\.SecurityConfiguration"/>
+    </context:component-scan>
+
+    <bean id="alienconfigFactory" class="alien4cloud.utils.AlienConfigFactory"/>
+    <bean id="alienconfig" factory-bean="alienconfigFactory" factory-method="get"/>
+    <alias name="alienconfig" alias="elasticsearchConfig"/>
+    <context:property-placeholder properties-ref="alienconfig"/>
+
+    <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+</beans>

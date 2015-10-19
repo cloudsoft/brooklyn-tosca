@@ -1,0 +1,22 @@
+node_templates:
+  War:
+    type: alien.nodes.War
+    name: War
+    properties:
+      context_path: "helloworld"
+    relationships:
+      warHostedOnTomcat:
+        type: alien.relationships.WarHostedOnTomcat
+        target: Tomcat
+  Tomcat:
+    type: alien.nodes.Tomcat
+    name: Tomcat
+    properties:
+      tomcat_port:
+        value: 80
+
+dependencies:
+  - name: tosca-normative-types
+    version: 1.0.0.wd03-SNAPSHOT
+  - name: apache-brooklyn-types
+    version: 1.0.0-SNAPSHOT

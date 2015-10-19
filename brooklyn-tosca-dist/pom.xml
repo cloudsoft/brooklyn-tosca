@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.apache.brooklyn.tosca</groupId>
+        <artifactId>brooklyn-tosca-parent</artifactId>
+        <version>0.9.0-SNAPSHOT</version> <!-- BROOKLYN_VERSION -->
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>brooklyn-tosca-dist</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Brooklyn TOSCA distribution</name>
+    <description>Brooklyn with TOSCA support bundled.</description>
+
+    <properties>
+        <project.entry>org.apache.brooklyn.tosca.a4c.brooklyn.BrooklynToscaMain</project.entry>
+        <jetty-runner.version>8.1.16.v20140903</jetty-runner.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.brooklyn.tosca</groupId>
+            <artifactId>brooklyn-tosca-transformer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>alien4cloud</groupId>
+                                    <artifactId>alien4cloud-ui</artifactId>
+                                    <version>${alien.version}</version>
+                                    <type>war</type>
+                                    <classifier>standalone</classifier>
+
+                                    <destFileName>alien4cloud-ui-${alien.version}.war</destFileName>
+                                    <outputDirectory>${project.build.directory}/overlay/alien4cloud-standalone
+                                    </outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

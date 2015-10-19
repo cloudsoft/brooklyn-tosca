@@ -1,28 +1,21 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>alien4cloud</groupId>
-    <artifactId>a4c-brooklyn-provider</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <parent>
+        <groupId>org.apache.brooklyn.tosca</groupId>
+        <artifactId>brooklyn-tosca-parent</artifactId>
+        <version>0.9.0-SNAPSHOT</version> <!-- BROOKLYN_VERSION -->
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
-    <name>Brooklyn plugin for Alien 4 Cloud</name>
-    <description>Apache Brooklyn and A4C joint initiative to bridge the two projects and bring best of both worlds.</description>
+    <artifactId>a4c-brooklyn-plugin</artifactId>
 
-    <repositories>
-        <repository>
-            <id>repo.opensource.fastconnect.org</id>
-            <url>https://fastconnect.org/maven/content/repositories/opensource</url>
-        </repository>
-        <repository>
-            <id>org.openspaces</id>
-            <name>OpenSpaces</name>
-            <url>http://maven-repository.openspaces.org</url>
-        </repository>
-        <repository>
-            <id>apache</id>
-            <url>http://repository.apache.org/content/repositories/snapshots</url>
-        </repository>
-    </repositories>
+    <name>Brooklyn A4C plugin</name>
+    <description>
+        Apache Brooklyn and A4C joint initiative to bridge the two projects and bring
+        the best of both worlds.
+    </description>
 
     <distributionManagement>
         <repository>
@@ -36,9 +29,6 @@
     </distributionManagement>
 
     <properties>
-        <java.version>1.7</java.version>
-        <alien4cloud.version>1.1.0-SM5-SNAPSHOT</alien4cloud.version>
-        <spring.version>4.1.4.RELEASE</spring.version>
         <lombok.version>1.12.6</lombok.version>
         <!-- Tests -->
         <junit.version>4.11</junit.version>
@@ -55,27 +45,12 @@
         <dependency>
             <groupId>alien4cloud</groupId>
             <artifactId>alien4cloud-core</artifactId>
-            <version>${alien4cloud.version}</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>log4j-over-slf4j</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>logback-classic</artifactId>
-                    <groupId>ch.qos.logback</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>logback-classic</artifactId>
-                    <groupId>ch.qos.logback</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.brooklyn</groupId>
             <artifactId>brooklyn-rest-client</artifactId>
-            <version>0.9.0-SNAPSHOT</version>
+            <version>${brooklyn.version}</version>
         </dependency>
         <!-- others -->
         <dependency>
@@ -133,42 +108,7 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>src/main/resources/META-INF</directory>
-                <targetPath>META-INF</targetPath>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.version}</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.14.1</version>
-                <configuration>
-                    <argLine>${argLine}</argLine>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.16</version>
-                <configuration>
-                    <argLine>${argLine}</argLine>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -190,11 +130,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>external.atlassian.jgitflow</groupId>
-                <artifactId>jgitflow-maven-plugin</artifactId>
-                <version>1.0-m3</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -221,7 +156,6 @@
         </plugins>
     </build>
 
-
     <profiles>
         <profile>
             <id>intellij</id>
@@ -229,7 +163,7 @@
                 <dependency>
                     <groupId>alien4cloud</groupId>
                     <artifactId>alien4cloud-core</artifactId>
-                    <version>${alien4cloud.version}</version>
+                    <version>${alien.version}</version>
                     <scope>compile</scope>
                     <exclusions>
                         <exclusion>
@@ -243,92 +177,6 @@
                     </exclusions>
                 </dependency>
             </dependencies>
-        </profile>
-        <profile>
-            <id>no-test</id>
-            <activation>
-                <property>
-                    <name>!doTest</name>
-                </property>
-            </activation>
-            <properties>
-                <maven.test.skip>true</maven.test.skip>
-            </properties>
-        </profile>
-        <profile>
-            <id>do-test</id>
-            <activation>
-                <property>
-                    <name>doTest</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>2.16</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>coverage</id>
-            <activation>
-                <property>
-                    <name>coverage</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.6.4.201312101107</version>
-                        <configuration>
-                            <includes>
-                                <include>alien4cloud.*</include>
-                            </includes>
-                            <destFile>${sonar.jacoco.reportPath}</destFile>
-                            <dataFile>${sonar.jacoco.reportPath}</dataFile>
-                            <append>true</append>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>pre-junit-test</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>post-test</id>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>nocoverage</id>
-            <activation>
-                <property>
-                    <name>!coverage</name>
-                </property>
-            </activation>
-            <properties>
-                <jacocoargline />
-            </properties>
         </profile>
     </profiles>
 </project>

@@ -19,11 +19,13 @@
     <modules>
         <module>brooklyn-tosca-transformer</module>
         <module>brooklyn-tosca-dist</module>
+        <module>a4c-brooklyn-plugin</module>
     </modules>
 
     <properties>
         <java.version>1.7</java.version>
         <alien.version>1.1.0-SM6-SNAPSHOT</alien.version>
+        <spring.version>4.1.4.RELEASE</spring.version>
     </properties>
 
     <repositories>
@@ -75,6 +77,26 @@
                 <version>${brooklyn.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>alien4cloud</groupId>
+                <artifactId>alien4cloud-core</artifactId>
+                <version>${alien.version}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>log4j-over-slf4j</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>logback-classic</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>logback-classic</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -178,4 +200,3 @@
     </build>
 
 </project>
-

@@ -19,7 +19,6 @@
 
     <properties>
         <project.entry>org.apache.brooklyn.tosca.a4c.brooklyn.BrooklynToscaMain</project.entry>
-        <jetty-runner.version>8.1.16.v20140903</jetty-runner.version>
     </properties>
 
     <dependencies>

@@ -1,0 +1,182 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.apache.brooklyn.tosca</groupId>
+        <artifactId>brooklyn-tosca-parent</artifactId>
+        <version>0.9.0-SNAPSHOT</version> <!-- BROOKLYN_VERSION -->
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>a4c-brooklyn-plugin</artifactId>
+
+    <name>Brooklyn A4C plugin</name>
+    <description>
+        Apache Brooklyn and A4C joint initiative to bridge the two projects and bring
+        the best of both worlds.
+    </description>
+
+    <distributionManagement>
+        <repository>
+            <id>repo.opensource.fastconnect.org</id>
+            <url>https://fastconnect.org/maven/content/repositories/opensource</url>
+        </repository>
+        <snapshotRepository>
+            <id>repo.opensource.snapshot.fastconnect.org</id>
+            <url>https://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <properties>
+        <lombok.version>1.12.6</lombok.version>
+        <!-- Tests -->
+        <junit.version>4.11</junit.version>
+        <mockito.version>1.9.0</mockito.version>
+        <springockito.version>1.0.4</springockito.version>
+        <!-- Java coverage configuration -->
+        <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
+        <maven.compiler.version>2.3.2</maven.compiler.version>
+        <httpclient.version>4.4.1</httpclient.version>
+    </properties>
+
+    <dependencies>
+        <!-- alien4cloud -->
+        <dependency>
+            <groupId>alien4cloud</groupId>
+            <artifactId>alien4cloud-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.brooklyn</groupId>
+            <artifactId>brooklyn-rest-client</artifactId>
+            <version>${brooklyn.version}</version>
+        </dependency>
+        <!-- others -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- tests -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit-addons</groupId>
+            <artifactId>junit-addons</artifactId>
+            <version>1.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.kubek2k</groupId>
+            <artifactId>springockito</artifactId>
+            <version>${springockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${spring.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${httpclient.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>${httpclient.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.4.1</version>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <attach>false</attach>
+                    <ignoreDirFormatExtensions>true</ignoreDirFormatExtensions>
+                    <descriptors>
+                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>attach-distribution</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>target/${project.artifactId}-${project.version}.zip</file>
+                                    <type>zip</type>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>intellij</id>
+            <dependencies>
+                <dependency>
+                    <groupId>alien4cloud</groupId>
+                    <artifactId>alien4cloud-core</artifactId>
+                    <version>${alien.version}</version>
+                    <scope>compile</scope>
+                    <exclusions>
+                        <exclusion>
+                            <artifactId>log4j-over-slf4j</artifactId>
+                            <groupId>org.slf4j</groupId>
+                        </exclusion>
+                        <exclusion>
+                            <artifactId>logback-classic</artifactId>
+                            <groupId>ch.qos.logback</groupId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+</project>

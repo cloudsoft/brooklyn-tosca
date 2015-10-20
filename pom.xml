@@ -2,196 +2,201 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.apache.brooklyn</groupId>
-    <artifactId>brooklyn-downstream-parent</artifactId>
-    <version>0.9.0-SNAPSHOT</version>  <!-- BROOKLYN_VERSION -->
-  </parent>
+    <parent>
+        <groupId>org.apache.brooklyn</groupId>
+        <artifactId>brooklyn-downstream-parent</artifactId>
+        <version>0.9.0-SNAPSHOT</version> <!-- BROOKLYN_VERSION -->
+    </parent>
 
-  <groupId>org.apache.brooklyn.tosca</groupId>
-  <artifactId>brooklyn-tosca</artifactId>
-  <packaging>jar</packaging>
+    <groupId>org.apache.brooklyn.tosca</groupId>
+    <artifactId>brooklyn-tosca-parent</artifactId>
+    <packaging>pom</packaging>
 
-  <name>TOSCA support for Brooklyn plans leveraging Alien4Cloud</name>
+    <name>Brooklyn TOSCA parent project</name>
 
-<!-- Optional metadata (commented out in this sample) 
+    <modules>
+        <module>brooklyn-tosca-transformer</module>
+        <module>brooklyn-tosca-dist</module>
+        <module>a4c-brooklyn-plugin</module>
+    </modules>
 
-  <url>https://github.com/sample/sample</url>
+    <properties>
+        <java.version>1.7</java.version>
+        <alien.version>1.1.0-SM6-SNAPSHOT</alien.version>
+        <spring.version>4.1.4.RELEASE</spring.version>
+    </properties>
 
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
+    <repositories>
+        <repository>
+            <id>apache.snapshots</id>
+            <name>Apache Snapshot Repository</name>
+            <url>http://repository.apache.org/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+        <repository>
+            <id>repo.opensource.fastconnect.org</id>
+            <url>http://fastconnect.org/maven/content/repositories/opensource</url>
+        </repository>
+        <repository>
+            <id>repo.opensource.snapshot.fastconnect.org</id>
+            <url>http://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
+        </repository>
+    </repositories>
 
-  <developers>
-    <developer>
-      <name>Sample Project Committers</name>
-    </developer>
-  </developers>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.brooklyn</groupId>
+                <artifactId>brooklyn-all</artifactId>
+                <version>${brooklyn.version}</version>
+            </dependency>
 
-  <scm>
-    <connection>scm:git:git://github.com/sample/sample</connection>
-    <developerConnection>scm:git:git@github.com:sample/sample.git</developerConnection>
-    <url>http://github.com/sample/sample</url>
-  </scm>
+            <dependency>
+                <!-- a4c uses a new version of these than brooklyn supplies -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.3.2</version>
+            </dependency>
 
-  -->
+            <dependency>
+                <!-- includes testng and useful logging for tests -->
+                <groupId>org.apache.brooklyn</groupId>
+                <artifactId>brooklyn-test-support</artifactId>
+                <version>${brooklyn.version}</version>
+                <scope>test</scope>
+            </dependency>
 
-  <properties>
-    <project.entry>org.apache.brooklyn.tosca.a4c.brooklyn.BrooklynToscaMain</project.entry>
-    <alien.version>1.1.0-SM6-SNAPSHOT</alien.version>
-    <!-- <jetty-runner.version>8.1.17.v20150415</jetty.version> -->
-    <jetty-runner.version>8.1.16.v20140903</jetty-runner.version>
-  </properties>
+            <dependency>
+                <!-- this gives us flexible and easy-to-use logging; just edit logback-custom.xml! -->
+                <groupId>org.apache.brooklyn</groupId>
+                <artifactId>brooklyn-logback-xml</artifactId>
+                <version>${brooklyn.version}</version>
+            </dependency>
 
-  <repositories>
-    <repository>
-      <id>apache.snapshots</id>
-      <name>Apache Snapshot Repository</name>
-      <url>http://repository.apache.org/snapshots</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
-    <repository>
-      <id>repo.opensource.fastconnect.org</id>
-      <url>http://fastconnect.org/maven/content/repositories/opensource</url>
-    </repository>
-    <repository>
-      <id>repo.opensource.snapshot.fastconnect.org</id>
-      <url>http://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
-    </repository>
-  </repositories>
+            <dependency>
+                <groupId>alien4cloud</groupId>
+                <artifactId>alien4cloud-core</artifactId>
+                <version>${alien.version}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>log4j-over-slf4j</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>logback-classic</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>logback-classic</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-  <dependencies>
-    <dependency>
-      <!-- this pulls in all brooklyn entities and clouds; 
-           you can cherry pick selected ones instead (for a smaller build) -->
-      <groupId>org.apache.brooklyn</groupId>
-      <artifactId>brooklyn-all</artifactId>
-    </dependency>
+    <build>
+        <sourceDirectory>src/main/java</sourceDirectory>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
 
-    <dependency>
-      <!-- includes testng and useful logging for tests -->
-      <groupId>org.apache.brooklyn</groupId>
-      <artifactId>brooklyn-test-support</artifactId>
-      <version>${brooklyn.version}</version>
-      <scope>test</scope>
-    </dependency>
+        <testResources>
+            <testResource>
+                <directory>src/test/java</directory>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+        </testResources>
 
-    <dependency>
-      <!-- this gives us flexible and easy-to-use logging; just edit logback-custom.xml! -->
-      <groupId>org.apache.brooklyn</groupId>
-      <artifactId>brooklyn-logback-xml</artifactId>
-      <version>${brooklyn.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>alien4cloud</groupId>
-      <artifactId>alien4cloud-core</artifactId>
-      <version>${alien.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <!-- these versions required by above, but this requirement (from dependencyManagement in a4c) is not exported -->
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-tx</artifactId>
-      <version>4.1.4.RELEASE</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-webmvc</artifactId>
-      <version>4.1.4.RELEASE</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.data</groupId>
-      <artifactId>spring-data-commons</artifactId>
-      <version>1.9.1.RELEASE</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.social</groupId>
-      <artifactId>spring-social-config</artifactId>
-      <version>1.1.0.RELEASE</version>
-    </dependency>
-    
-    <!-- a4c uses a new version of these than brooklyn supplies -->
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.3.2</version>
-    </dependency>
-    
-  </dependencies>
-
-  <build>
-    <sourceDirectory>src/main/javac</sourceDirectory>
-    <testSourceDirectory>src/test/javac</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>src/main/javac</directory>
-        <excludes>
-          <exclude>**/*.java</exclude>
-        </excludes>
-      </resource>
-      <resource>
-        <directory>src/main/resources</directory>
-      </resource>
-    </resources>
-    <testResources>
-      <testResource>
-        <directory>src/test/javac</directory>
-        <excludes>
-          <exclude>**/*.java</exclude>
-        </excludes>
-      </testResource>
-      <testResource>
-        <directory>src/test/resources</directory>
-      </testResource>
-    </testResources>
-    <plugins>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <descriptors>
-            <descriptor>src/main/assembly/assembly.xml</descriptor>
-          </descriptors>
-        </configuration>
-      </plugin>
-      <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-                <execution>
-                    <phase>install</phase>
-                    <goals><goal>copy</goal></goals>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.1</version>
                     <configuration>
-                        <artifactItems>
-                            <artifactItem>
-                                <groupId>alien4cloud</groupId>
-                                <artifactId>alien4cloud-ui</artifactId>
-                                <version>${alien.version}</version>
-                                <type>war</type>
-                                <classifier>standalone</classifier>
-                                
-                                <destFileName>alien4cloud-ui-${alien.version}.war</destFileName>
-                                <outputDirectory>${project.build.directory}/overlay/alien4cloud-standalone</outputDirectory>
-                            </artifactItem>
-                        </artifactItems>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
                     </configuration>
-                </execution>
-            </executions>
-      </plugin>
-    </plugins>
-  </build>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>2.5</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>.</directory>
+                            <includes>
+                                <include>brooklyn*.log</include>
+                                <include>brooklyn*.log.*</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*IntegrationTest.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-tests</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

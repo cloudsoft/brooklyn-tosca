@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,19 +32,11 @@
     <build>
         <plugins>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/main/assembly/assembly.xml</descriptor>
-                    </descriptors>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>install</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
@@ -62,6 +54,41 @@
                                     </outputDirectory>
                                 </artifactItem>
                             </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>alien4cloud</groupId>
+                                    <artifactId>alien4cloud-ui</artifactId>
+                                    <version>${alien.version}</version>
+                                    <type>war</type>
+                                    <classifier>standalone</classifier>
+
+                                    <destFileName>alien4cloud-ui-${alien.version}.war</destFileName>
+                                    <outputDirectory>${project.build.directory}/overlay/alien4cloud-standalone
+                                    </outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <formats>
+                                <format>tar.gz</format>
+                                <format>zip</format>
+                            </formats>
                         </configuration>
                     </execution>
                 </executions>

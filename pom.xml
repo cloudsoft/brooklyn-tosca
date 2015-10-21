@@ -81,7 +81,6 @@
                 <groupId>alien4cloud</groupId>
                 <artifactId>alien4cloud-core</artifactId>
                 <version>${alien.version}</version>
-                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <artifactId>log4j-over-slf4j</artifactId>

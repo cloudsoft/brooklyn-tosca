@@ -1,6 +1,8 @@
 brooklyn-tosca
 ===
 
+[![Join the chat at https://gitter.im/cloudsoft/brooklyn-tosca](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/cloudsoft/brooklyn-tosca?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ## Overview
 
 This package provides support for [Apache Brooklyn](http://brooklyn.io)

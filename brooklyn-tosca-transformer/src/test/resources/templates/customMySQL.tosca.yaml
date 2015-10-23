@@ -1,0 +1,35 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.mysqlnode
+template_version: 1.0.0-SNAPSHOT
+
+description: Sample TOSCA plan, a MySQL
+
+node_types:
+  org.apache.brooklyn.entity.database.mysql.MySqlNode:
+    derived_from: tosca.nodes.Root
+    description: >
+      A MySQL server
+    properties:
+      "datastore.creation.script.url":
+        type: string
+        required: false
+
+topology_template:
+  description: Web Server Sample with Script
+  node_templates:
+    mysql_node:
+      type: org.apache.brooklyn.entity.database.mysql.MySqlNode
+      properties:
+        datastore.creation.script.url: "http://script.sql"
+
+  # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
+  # it can also be done with camp, referencing this topology template.
+  groups:
+    add_brooklyn_location:
+      members: [ mysql_node ]
+      policies:
+      - brooklyn.location: localhost

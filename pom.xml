@@ -17,9 +17,9 @@
     <name>Brooklyn TOSCA parent project</name>
 
     <modules>
+        <module>a4c-brooklyn-plugin</module>
         <module>brooklyn-tosca-transformer</module>
         <module>brooklyn-tosca-dist</module>
-        <module>a4c-brooklyn-plugin</module>
     </modules>
 
     <properties>

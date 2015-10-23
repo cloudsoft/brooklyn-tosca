@@ -71,25 +71,6 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>alien4cloud</groupId>
-                                    <artifactId>alien4cloud-ui</artifactId>
-                                    <version>${alien.version}</version>
-                                    <type>war</type>
-                                    <classifier>standalone</classifier>
-
-                                    <destFileName>alien4cloud-ui-${alien.version}.war</destFileName>
-                                    <outputDirectory>${project.build.directory}/overlay/alien4cloud-standalone
-                                    </outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                            <formats>
-                                <format>tar.gz</format>
-                                <format>zip</format>
-                            </formats>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

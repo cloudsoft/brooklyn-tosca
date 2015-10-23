@@ -6,15 +6,25 @@ import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
+
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.reflect.TypeToken;
+
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver.SpecialFlagsTransformer;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.CampUtils;
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.location.jclouds.JcloudsLocationConfig;
@@ -95,6 +105,8 @@ public class ToscaNodeToEntityConverter {
         // Add TOSCA node type as a property
         spec.configure("tosca.node.type", this.nodeTemplate.getType());
         spec.configure("tosca.template.id", this.nodeId);
+        // Use the nodeId as the camp.template.id to enable DSL lookup
+        spec.configure(BrooklynCampConstants.PLAN_ID, this.nodeId);
 
         Map<String, AbstractPropertyValue> properties = this.nodeTemplate.getProperties();
         // Applying provisioning properties
@@ -139,9 +151,9 @@ public class ToscaNodeToEntityConverter {
     }
 
     //TODO: refactor this method in Brooklyn in {@link org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver}
-    //TODO POVISION_PROPERTIES should be adde to this method.
+    //TODO PROVISION_PROPERTIES should be added to this method.
     private void configureSpec(EntitySpec spec, NodeTemplate nodeTemplate){
-        Set<String> keyNamesUsed = new LinkedHashSet<String>();
+        Set<String> keyNamesUsed = new LinkedHashSet<>();
         ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate));
 
         // now set configuration for all the items in the bag
@@ -149,13 +161,17 @@ public class ToscaNodeToEntityConverter {
 
         for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
             if (r.getFlagMaybeValue().isPresent()) {
-                //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(r.getFlagMaybeValue().get());
-                spec.configure(r.getFlagName(), r.getFlagMaybeValue().get());
+                Optional<Object> resolvedValue = resolveValue(r.getFlagMaybeValue().get(), Optional.<TypeToken>absent());
+                if (resolvedValue.isPresent()) {
+                    spec.configure(r.getFlagName(), resolvedValue.get());
+                }
                 keyNamesUsed.add(r.getFlagName());
             }
             if (r.getConfigKeyMaybeValue().isPresent()) {
-                //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(r.getConfigKeyMaybeValue().get());
-                spec.configure((ConfigKey<Object>) r.getConfigKey(), r.getConfigKeyMaybeValue().get());
+                Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(), Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
+                if (resolvedValue.isPresent()) {
+                    spec.configure(r.getConfigKey(), resolvedValue.get());
+                }
                 keyNamesUsed.add(r.getConfigKey().getName());
             }
         }
@@ -170,6 +186,21 @@ public class ToscaNodeToEntityConverter {
                 //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(bag.getStringKey(key));
                 spec.configure(ConfigKeys.newConfigKey(Object.class, key.toString()), bag.getStringKey(key));
             }
+        }
+    }
+
+    private Optional<Object> resolveValue(Object unresolvedValue, Optional<TypeToken> desiredType) {
+        if (unresolvedValue == null) {
+            return Optional.absent();
+        }
+        // The 'dsl' key is arbitrary, but the interpreter requires a map
+        Map<String, Object> resolvedConfigMap = CampUtils.getCampPlatform(mgnt).pdp().applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
+        if (resolvedConfigMap.get("dsl") instanceof BrooklynDslDeferredSupplier) {
+            return Optional.of(resolvedConfigMap.get("dsl"));
+        } else if (desiredType.isPresent()) {
+            return Optional.of(TypeCoercions.coerce(unresolvedValue, desiredType.get()));
+        } else {
+            return Optional.of(unresolvedValue);
         }
     }
 

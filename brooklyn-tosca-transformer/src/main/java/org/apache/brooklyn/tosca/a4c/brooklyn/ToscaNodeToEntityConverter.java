@@ -1,6 +1,7 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
 import alien4cloud.model.components.AbstractPropertyValue;
+import alien4cloud.model.components.ComplexPropertyValue;
 import alien4cloud.model.components.ImplementationArtifact;
 import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
@@ -18,13 +19,11 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
-import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver.SpecialFlagsTransformer;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.CampUtils;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
-import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.location.jclouds.JcloudsLocationConfig;
@@ -115,7 +114,7 @@ public class ToscaNodeToEntityConverter {
         prov.putIfNotNull(JcloudsLocationConfig.MIN_DISK, resolve(properties, "disk_size"));
         prov.putIfNotNull(JcloudsLocationConfig.MIN_CORES, TypeCoercions.coerce(resolve(properties, "num_cpus"), Integer.class));
         prov.putIfNotNull(JcloudsLocationConfig.OS_FAMILY, TypeCoercions.coerce(resolve(properties, "os_distribution"), OsFamily.class));
-        prov.putIfNotNull(JcloudsLocationConfig.OS_VERSION_REGEX, resolve(properties, "os_version"));
+        prov.putIfNotNull(JcloudsLocationConfig.OS_VERSION_REGEX, (String)resolve(properties, "os_version"));
         // TODO: Mapping for "os_arch" and "os_type" are missing
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
@@ -195,7 +194,8 @@ public class ToscaNodeToEntityConverter {
         }
         // The 'dsl' key is arbitrary, but the interpreter requires a map
         Map<String, Object> resolvedConfigMap = CampUtils.getCampPlatform(mgnt).pdp().applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
-        if (resolvedConfigMap.get("dsl") instanceof BrooklynDslDeferredSupplier) {
+        if ((resolvedConfigMap.get("dsl") instanceof BrooklynDslDeferredSupplier) ||
+                (desiredType.isPresent()&& (desiredType.get()).getType().equals(Map.class))) {
             return Optional.of(resolvedConfigMap.get("dsl"));
         } else if (desiredType.isPresent()) {
             return Optional.of(TypeCoercions.coerce(unresolvedValue, desiredType.get()));
@@ -279,7 +279,7 @@ public class ToscaNodeToEntityConverter {
 
     }
 
-    public static String resolve(Map<String, AbstractPropertyValue> props, String... keys) {
+    public static Object resolve(Map<String, AbstractPropertyValue> props, String... keys) {
         for (String key: keys) {
             AbstractPropertyValue v = props.remove(key);
             if (v == null) {
@@ -287,6 +287,9 @@ public class ToscaNodeToEntityConverter {
             }
             if (v instanceof ScalarPropertyValue) {
                 return ((ScalarPropertyValue)v).getValue();
+            }
+            if (v instanceof ComplexPropertyValue){
+                return ((ComplexPropertyValue)v).getValue();
             }
             log.warn("Ignoring unsupported property value " + v);
         }

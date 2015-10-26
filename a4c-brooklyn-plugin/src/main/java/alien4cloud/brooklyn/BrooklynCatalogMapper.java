@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import alien4cloud.tosca.normative.ToscaType;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
@@ -52,15 +53,15 @@ public class BrooklynCatalogMapper {
     private CsarService csarService;
 
     public BrooklynCatalogMapper() {
-        TYPE_MAPPING.put(Boolean.class.getName(), "boolean");
-        TYPE_MAPPING.put(String.class.getName(), "string");
-        TYPE_MAPPING.put(Integer.class.getName(), "integer");
-        TYPE_MAPPING.put(Long.class.getName(), "integer");
-        TYPE_MAPPING.put(Float.class.getName(), "float");
-        TYPE_MAPPING.put(Double.class.getName(), "float");
+        TYPE_MAPPING.put(Boolean.class.getName(), ToscaType.BOOLEAN);
+        TYPE_MAPPING.put(String.class.getName(), ToscaType.STRING);
+        TYPE_MAPPING.put(Integer.class.getName(), ToscaType.INTEGER);
+        TYPE_MAPPING.put(Long.class.getName(), ToscaType.INTEGER);
+        TYPE_MAPPING.put(Float.class.getName(), ToscaType.FLOAT);
+        TYPE_MAPPING.put(Double.class.getName(), ToscaType.FLOAT);
         TYPE_MAPPING.put(Duration.class.getName(), "scalar-unit.time");
-        TYPE_MAPPING.put(List.class.getName(), "list");
-        TYPE_MAPPING.put(Map.class.getName(), "map");
+        TYPE_MAPPING.put(List.class.getName(), ToscaType.LIST);
+        TYPE_MAPPING.put(Map.class.getName(), ToscaType.MAP);
     }
 
     public void mapBrooklynEntities(BrooklynApi brooklynApi) {
@@ -151,6 +152,12 @@ public class BrooklynCatalogMapper {
                 propertyDefinition.setType(propertyType);
                 if (entityConfigSummary.getDefaultValue() != null) {
                     propertyDefinition.setDefault(entityConfigSummary.getDefaultValue().toString());
+                }
+                if ("map".equals(propertyType)) {
+                    PropertyDefinition mapDefinition = new PropertyDefinition();
+                    // TODO: More complex map types. Unfortunately the type is not available from EntityConfigSummary
+                    mapDefinition.setType("string");
+                    propertyDefinition.setEntrySchema(mapDefinition);
                 }
                 propertyDefinition.setRequired(false);
                 toscaType.getProperties().put(entityConfigSummary.getName(), propertyDefinition);

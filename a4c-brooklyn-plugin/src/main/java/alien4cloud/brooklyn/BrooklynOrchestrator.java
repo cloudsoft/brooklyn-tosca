@@ -3,6 +3,8 @@ package alien4cloud.brooklyn;
 import java.util.List;
 import java.util.Map;
 
+import alien4cloud.paas.IPaaSCallback;
+import alien4cloud.paas.model.PaaSDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.rest.domain.LocationSummary;
@@ -66,4 +68,9 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
         return newLocations;
     }
 
+    @Override
+    public void launchWorkflow(PaaSDeploymentContext paaSDeploymentContext, String s, Map<String, Object> map, IPaaSCallback<?> iPaaSCallback) {
+        // TODO: Determine whether or not this is required, and implement if required, otherwise no-op
+        throw new UnsupportedOperationException("launchWorkflow is not currently supported");
+    }
 }

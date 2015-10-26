@@ -59,7 +59,6 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testDslInChatApplication() {
         String templateUrl = getClasspathUrlForResource("templates/helloworld-sql.tosca.yaml");
 

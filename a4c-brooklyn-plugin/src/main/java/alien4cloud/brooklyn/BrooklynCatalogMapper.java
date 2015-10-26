@@ -59,6 +59,8 @@ public class BrooklynCatalogMapper {
         TYPE_MAPPING.put(Float.class.getName(), "float");
         TYPE_MAPPING.put(Double.class.getName(), "float");
         TYPE_MAPPING.put(Duration.class.getName(), "scalar-unit.time");
+        TYPE_MAPPING.put(List.class.getName(), "list");
+        TYPE_MAPPING.put(Map.class.getName(), "map");
     }
 
     public void mapBrooklynEntities(BrooklynApi brooklynApi) {

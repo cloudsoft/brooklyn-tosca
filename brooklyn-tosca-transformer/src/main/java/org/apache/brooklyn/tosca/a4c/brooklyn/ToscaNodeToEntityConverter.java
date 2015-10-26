@@ -194,14 +194,9 @@ public class ToscaNodeToEntityConverter {
         }
         // The 'dsl' key is arbitrary, but the interpreter requires a map
         Map<String, Object> resolvedConfigMap = CampUtils.getCampPlatform(mgnt).pdp().applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
-        if ((resolvedConfigMap.get("dsl") instanceof BrooklynDslDeferredSupplier) ||
-                (desiredType.isPresent()&& (desiredType.get()).getType().equals(Map.class))) {
-            return Optional.of(resolvedConfigMap.get("dsl"));
-        } else if (desiredType.isPresent()) {
-            return Optional.of(TypeCoercions.coerce(unresolvedValue, desiredType.get()));
-        } else {
-            return Optional.of(unresolvedValue);
-        }
+        return Optional.of(desiredType.isPresent()
+                ? TypeCoercions.coerce(resolvedConfigMap.get("dsl"), desiredType.get())
+                : resolvedConfigMap.get("dsl"));
     }
 
     /**

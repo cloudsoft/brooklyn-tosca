@@ -59,7 +59,7 @@ public class BrooklynCatalogMapper {
         TYPE_MAPPING.put(Long.class.getName(), ToscaType.INTEGER);
         TYPE_MAPPING.put(Float.class.getName(), ToscaType.FLOAT);
         TYPE_MAPPING.put(Double.class.getName(), ToscaType.FLOAT);
-        TYPE_MAPPING.put(Duration.class.getName(), "scalar-unit.time");
+        TYPE_MAPPING.put(Duration.class.getName(), ToscaType.TIME);
         TYPE_MAPPING.put(List.class.getName(), ToscaType.LIST);
         TYPE_MAPPING.put(Map.class.getName(), ToscaType.MAP);
     }
@@ -153,10 +153,10 @@ public class BrooklynCatalogMapper {
                 if (entityConfigSummary.getDefaultValue() != null) {
                     propertyDefinition.setDefault(entityConfigSummary.getDefaultValue().toString());
                 }
-                if ("map".equals(propertyType)) {
+                if (ToscaType.MAP.equals(propertyType)) {
                     PropertyDefinition mapDefinition = new PropertyDefinition();
                     // TODO: More complex map types. Unfortunately the type is not available from EntityConfigSummary
-                    mapDefinition.setType("string");
+                    mapDefinition.setType(ToscaType.STRING);
                     propertyDefinition.setEntrySchema(mapDefinition);
                 }
                 propertyDefinition.setRequired(false);

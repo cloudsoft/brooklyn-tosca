@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<included>
+
+    <appender name="ALIEN-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logging.dir:-./}${logging.basename:-brooklyn}.alien.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d %-5level %logger{30} [%thread{15}]: %msg%n</pattern>
+        </encoder>
+
+        <!-- Truncate log at 100 MB, max history of 10 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${logging.dir:-./}${logging.basename:-brooklyn}.alien-%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>10</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>100MB</maxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+</included>

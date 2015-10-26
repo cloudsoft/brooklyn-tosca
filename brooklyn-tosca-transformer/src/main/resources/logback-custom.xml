@@ -1,19 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <included>
 
-    <!-- include everything in this project at debug level -->
-    <logger name="org.apache.brooklyn.tosca" level="DEBUG"/>
-    
-    <!-- but bump a4c and spring to WARN as it's noisy! (change to DEBUG as needed!);
-         better would be to take all A4C code and write to a separate log -->
-<!-- 
-    <logger name="alien4cloud" level="WARN"/>
-    <logger name="org.springframework" level="WARN"/>
-    <logger name="org.elasticsearch" level="WARN"/>
-    <logger name="org.hibernate" level="WARN"/>
- -->         
-    
     <!-- logfile named after this project -->
     <property name="logging.basename" scope="context" value="brooklyn-tosca" />
+
+    <!-- include everything in this project at debug level -->
+    <logger name="org.apache.brooklyn.tosca" level="DEBUG"/>
+
+    <!-- include the alien appender -->
+    <include resource="brooklyn/logback-appender-alien.xml"/>
+
+    <!-- log a4c at INFO and its dependencies to a separate file at WARN - they're noisy! -->
+    <logger name="alien4cloud" additivity="false" level="INFO">
+        <appender-ref ref="ALIEN-FILE" />
+    </logger>
+    <logger name="org.springframework" additivity="false" level="WARN">
+        <appender-ref ref="ALIEN-FILE" />
+    </logger>
+    <logger name="org.elasticsearch" additivity="false" level="WARN">
+        <appender-ref ref="ALIEN-FILE" />
+    </logger>
+    <logger name="org.hibernate" additivity="false" level="WARN">
+        <appender-ref ref="ALIEN-FILE" />
+    </logger>
 
 </included>

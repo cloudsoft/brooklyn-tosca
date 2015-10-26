@@ -192,7 +192,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
 
         // temporarily, fall back to looking for a *property* called 'host'
-        String parentId = ToscaNodeToEntityConverter.resolve(nodeTemplate.getProperties(), "host");
+        String parentId = (String) ToscaNodeToEntityConverter.resolve(nodeTemplate.getProperties(), "host");
         if (parentId != null) {
             log.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
         }

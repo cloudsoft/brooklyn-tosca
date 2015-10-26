@@ -1,0 +1,66 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.chatApplication
+template_version: 1.0.0-SNAPSHOT
+
+description: Brooklyn HelloWorld application. (ChatApplication)
+
+node_types:
+  org.apache.brooklyn.entity.webapp.tomcat.TomcatServer:
+    derived_from: tosca.nodes.Root
+    description: >
+      A simple Tomcat server
+    properties:
+      wars.root:
+        type: string
+        required: false
+      http.port:
+        type: list
+        required: false
+        entry_schema:
+          type: string
+      java.sysprops:
+        type: map
+        required: false
+        entry_schema:
+          type: string
+
+
+  org.apache.brooklyn.entity.database.mysql.MySqlNode:
+    derived_from: tosca.nodes.Root
+    description: >
+      A MySQL server
+    properties:
+      "datastore.creation.script.url":
+        type: string
+        required: false
+
+
+topology_template:
+  description: Web Server Sample with Script
+  node_templates:
+    tomcat_server:
+      type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
+      properties:
+        wars.root: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
+        http.port: "8080+"
+        java.sysprops:
+          brooklyn.example.db.url: $brooklyn:formatString("jdbc:%s%s?user=%s\\&password=%s", component("mysql_server").attributeWhenReady("datastore.url"), "visitors", "brooklyn", "br00k11n")
+
+
+    mysql_server:
+      type: org.apache.brooklyn.entity.database.mysql.MySqlNode
+      properties:
+        datastore.creation.script.url: "https://github.com/apache/incubator-brooklyn/raw/master/usage/launcher/src/test/resources/visitors-creation-script.sql"
+
+
+  # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
+  # it can also be done with camp, referencing this topology template.
+  groups:
+    add_brooklyn_location:
+      members: [ mysql_server, tomcat_server ]
+      policies:
+      - brooklyn.location: localhost

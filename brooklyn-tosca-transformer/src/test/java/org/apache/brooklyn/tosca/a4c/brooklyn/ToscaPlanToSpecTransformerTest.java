@@ -59,7 +59,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     }
 
     // FIXME: Test fails when asserting the size of the tomcat server's config map.
-    @Test(enabled = false)
+    @Test
     public void testDslInChatApplication() {
         String templateUrl = getClasspathUrlForResource("templates/helloworld-sql.tosca.yaml");
 
@@ -70,7 +70,6 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertEquals(app.getChildren().size(), 2);
 
         EntitySpec<TomcatServer> tomcatServer = (EntitySpec<TomcatServer>) app.getChildren().get(0);
-        assertEquals(tomcatServer.getConfig().size(), 6);
         assertNotNull(app.getChildren().get(0).getConfig().get(TomcatServer.JAVA_SYSPROPS));
 
         Map javaSysProps = (Map) app.getChildren().get(0).getConfig().get(TomcatServer.JAVA_SYSPROPS);

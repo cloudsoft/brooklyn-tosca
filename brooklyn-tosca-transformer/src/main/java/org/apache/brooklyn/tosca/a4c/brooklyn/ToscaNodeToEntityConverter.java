@@ -20,7 +20,6 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.CampUtils;
-import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
@@ -118,7 +117,7 @@ public class ToscaNodeToEntityConverter {
         // TODO: Mapping for "os_arch" and "os_type" are missing
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
-        configureSpec(spec, nodeTemplate);
+        configurePropertiesForSpec(spec, nodeTemplate);
 
         // If the entity spec is of type VanillaSoftwareProcess, we assume that it's running. The operations should
         // then take care of setting up the correct scripts.
@@ -149,14 +148,16 @@ public class ToscaNodeToEntityConverter {
         return spec;
     }
 
-    //TODO: refactor this method in Brooklyn in {@link org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver}
     //TODO PROVISION_PROPERTIES should be added to this method.
-    private void configureSpec(EntitySpec spec, NodeTemplate nodeTemplate){
-        Set<String> keyNamesUsed = new LinkedHashSet<>();
+    private void configurePropertiesForSpec(EntitySpec spec, NodeTemplate nodeTemplate){
         ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate));
-
         // now set configuration for all the items in the bag
+        configureConfigKeysSpec(spec, bag);
+    }
+
+    private void configureConfigKeysSpec(EntitySpec spec, ConfigBag bag){
         Collection<FlagUtils.FlagConfigKeyAndValueRecord> records = findAllFlagsAndConfigKeys(spec, bag);
+        Set<String> keyNamesUsed = new LinkedHashSet<>();
 
         for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
             if (r.getFlagMaybeValue().isPresent()) {

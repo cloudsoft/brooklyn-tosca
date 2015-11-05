@@ -17,6 +17,8 @@ import alien4cloud.orchestrators.plugin.IOrchestratorPluginFactory;
 @Component("brooklyn-orchestrator-factory")
 public class BrooklynOrchestratorFactory implements IOrchestratorPluginFactory<BrooklynOrchestrator, Configuration> {
 
+    public static final String BROOKLYN = "Brooklyn";
+
     @Autowired
     private BeanFactory beanFactory;
 
@@ -44,7 +46,7 @@ public class BrooklynOrchestratorFactory implements IOrchestratorPluginFactory<B
 
     @Override
     public LocationSupport getLocationSupport() {
-        return new LocationSupport(true, new String[] {});
+        return new LocationSupport(true, new String[] {BROOKLYN});
     }
 
     @Override

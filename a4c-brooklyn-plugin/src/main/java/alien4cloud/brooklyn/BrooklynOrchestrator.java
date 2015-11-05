@@ -3,6 +3,8 @@ package alien4cloud.brooklyn;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.model.PaaSDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
@@ -27,31 +29,13 @@ import com.google.common.collect.Maps;
 @Scope(value = "prototype")
 @Slf4j
 public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestratorPlugin<Configuration>, ILocationAutoConfigurer {
+
+    @Inject
+    private BrooklynLocationConfigurerFactory brooklynLocationConfigurerFactory;
     
     @Override
     public ILocationConfiguratorPlugin getConfigurator(String locationType) {
-        return new ILocationConfiguratorPlugin() {
-
-            @Override
-            public List<PluginArchive> pluginArchives() {
-                return Lists.newArrayList();
-            }
-
-            @Override
-            public List<String> getResourcesTypes() {
-                return Lists.newArrayList();
-            }
-
-            @Override
-            public Map<String, MatchingConfiguration> getMatchingConfigurations() {
-                return Maps.newHashMap();
-            }
-
-            @Override
-            public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-                return Lists.newArrayList();
-            }
-        };
+        return brooklynLocationConfigurerFactory.newInstance(locationType);
     }
 
     @Override

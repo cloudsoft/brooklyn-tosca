@@ -9,6 +9,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
@@ -38,21 +39,20 @@ import com.google.common.collect.Maps;
 @Component
 public class BrooklynLocationConfigurer implements ILocationConfiguratorPlugin {
 
-
-    @Inject
     private ArchiveParser archiveParser;
-    @Inject
     private MatchingConfigurationsParser matchingConfigurationsParser;
-    @Inject
     private ManagedPlugin selfContext;
-    @Inject
     private TopologyServiceCore topologyService;
 
     private List<PluginArchive> archives;
 
-    @PostConstruct
-    private void postConstruct() {
-        archives = parseArchives();
+    @Autowired
+    public BrooklynLocationConfigurer(ArchiveParser archiveParser, MatchingConfigurationsParser matchingConfigurationsParser, ManagedPlugin selfContext, TopologyServiceCore topologyService) {
+        this.archiveParser = archiveParser;
+        this.matchingConfigurationsParser = matchingConfigurationsParser;
+        this.selfContext = selfContext;
+        this.topologyService = topologyService;
+        this.archives = parseArchives();
     }
 
     private List<PluginArchive> parseArchives() {

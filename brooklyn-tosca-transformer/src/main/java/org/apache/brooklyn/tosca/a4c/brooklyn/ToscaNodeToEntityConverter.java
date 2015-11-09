@@ -8,6 +8,8 @@ import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 
+import alien4cloud.model.topology.RelationshipTemplate;
+import alien4cloud.model.topology.Requirement;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -38,10 +40,12 @@ import org.jclouds.compute.domain.OsFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.relation.Relation;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ToscaNodeToEntityConverter {
 
@@ -145,7 +149,59 @@ public class ToscaNodeToEntityConverter {
             }
         }
 
+        //This is only a fist prototype.
+        Map<String, Object> propertiesAndTypedValues = MutableMap.of();
+        //ProcessConfigurationRequirement
+        for(String requirementId: nodeTemplate.getRequirements().keySet()){
+            RelationshipTemplate relationshipTemplate =
+                    findRelationshipRequirement(nodeTemplate, requirementId);
+            if((relationshipTemplate!=null)
+                    &&(relationshipTemplate.getType().equals("tosca.relationships.Configure"))){
+
+                Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate);
+
+                String target = relationshipTemplate.getTarget();
+                String propName= (String)relationProperties.get("prop.name");
+                String propCollection= (String)relationProperties.get("prop.collection");
+                String propValue= managePropertyTargetNode(target,
+                        (String)relationProperties.get("prop.value"));
+
+                Map<String, String> simpleProperty=null;
+                if(!Strings.isBlank(propName)){
+                    simpleProperty=ImmutableMap.of(propName, propValue);
+                }
+                if(simpleProperty==null) {
+                    propertiesAndTypedValues=
+                            ImmutableMap.of(propCollection, ((Object)ImmutableList.of(propValue)));
+                } else {
+                    propertiesAndTypedValues =
+                            ImmutableMap.of(propCollection, (Object)simpleProperty);
+                }
+            }
+        }
+
+        configureConfigKeysSpec(spec, ConfigBag.newInstance(propertiesAndTypedValues));
+
         return spec;
+    }
+
+    private RelationshipTemplate findRelationshipRequirement(NodeTemplate node, String requirementId){
+        if(node.getRelationships()!=null){
+            for(Map.Entry<String, RelationshipTemplate> entry: node.getRelationships().entrySet()){
+                if(entry.getValue().getRequirementName().equals(requirementId)){
+                    return entry.getValue();
+                }
+            }
+            log.warn("Requirement {} is not described by any relationship ", requirementId);
+        }
+        return null;
+    }
+
+    private String managePropertyTargetNode(String targetId, String value){
+        if(!Strings.containsLiteralIgnoreCase(value, "TARGET")){
+            log.warn("TARGET identifier was not found on value {} in value {}", value);
+        }
+        return value.replaceAll("(?i)TARGET", "\\$brooklyn:component(\""+ targetId+"\")");
     }
 
     //TODO PROVISION_PROPERTIES should be added to this method.
@@ -216,15 +272,24 @@ public class ToscaNodeToEntityConverter {
     }
 
     private Map<String, Object> getTemplatePropertyObjects(NodeTemplate template) {
+        return getPropertyObjects(template.getProperties());
+    }
+
+    private Map<String, Object> getTemplatePropertyObjects(RelationshipTemplate template) {
+        return getPropertyObjects(template.getProperties());
+    }
+
+    private Map<String, Object> getPropertyObjects(Map<String, AbstractPropertyValue> propertyValueMap) {
         Map<String, Object> propertyMap = MutableMap.of();
-        ImmutableSet<String> propertyKeys = ImmutableSet.copyOf(template.getProperties().keySet());
+        ImmutableSet<String> propertyKeys = ImmutableSet.copyOf(propertyValueMap.keySet());
 
         for (String propertyKey : propertyKeys) {
             propertyMap.put(propertyKey,
-                    resolve(template.getProperties(), propertyKey));
+                    resolve(propertyValueMap, propertyKey));
         }
         return propertyMap;
     }
+
 
     protected Map<String, Operation> getInterfaceOperations() {
         final Map<String, Operation> operations = MutableMap.of();

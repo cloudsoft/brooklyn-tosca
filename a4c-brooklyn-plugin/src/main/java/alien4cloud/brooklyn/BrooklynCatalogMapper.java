@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import alien4cloud.model.components.*;
 import alien4cloud.tosca.normative.ToscaType;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
@@ -22,13 +24,6 @@ import com.google.common.collect.Sets;
 
 import alien4cloud.component.repository.ICsarRepositry;
 import alien4cloud.csar.services.CsarService;
-import alien4cloud.model.components.AttributeDefinition;
-import alien4cloud.model.components.CSARDependency;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.tosca.ArchiveImageLoader;
 import alien4cloud.tosca.ArchiveIndexer;
 import alien4cloud.tosca.model.ArchiveRoot;
@@ -78,8 +73,9 @@ public class BrooklynCatalogMapper {
 
         archiveRoot.getArchive().setDependencies(
                 Sets.newHashSet(
-                    new CSARDependency("tosca-normative-types", "1.0.0.wd03-SNAPSHOT"), 
-                    new CSARDependency("alien4cloud-tomcat-types", "1.0.0-SNAPSHOT")));
+                    new CSARDependency("tosca-normative-types", "1.0.0.wd06-SNAPSHOT"),
+                    new CSARDependency("alien4cloud-tomcat-types", "1.0.0-SNAPSHOT"),
+                    new CSARDependency("brooklyn-types", "0.1.0-SNAPSHOT")));
 
         // TODO Not great way to go but that's a POC for now ;)
         List<CatalogEntitySummary> entities = brooklynApi.getCatalogApi().listEntities(null, null, false);
@@ -116,7 +112,7 @@ public class BrooklynCatalogMapper {
             addPropertyDefinitions(brooklynEntity, toscaType);
             addAttributeDefinitions(brooklynEntity, toscaType);
             addInterfaces(brooklynEntity, toscaType);
-            toscaType.setDerivedFrom(Arrays.asList("tosca.nodes.Root"
+            toscaType.setDerivedFrom(Arrays.asList("brooklyn.nodes.SoftwareProcess"
                 // TODO could introduce this type to mark items from brooklyn (and to give a "b" icon default)
                 //, "brooklyn.tosca.entity.Root"
                 ));

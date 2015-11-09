@@ -1,13 +1,17 @@
 package alien4cloud.brooklyn;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import alien4cloud.model.components.*;
+import alien4cloud.plugin.model.ManagedPlugin;
+import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.normative.ToscaType;
-import com.google.common.collect.Lists;
+import alien4cloud.tosca.parser.ParsingException;
+import alien4cloud.tosca.parser.ParsingResult;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
@@ -37,17 +41,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 @Slf4j
 public class BrooklynCatalogMapper {
     private final static Map<String, String> TYPE_MAPPING = Maps.newHashMap();
-
-    @Autowired
-    private ArchiveIndexer archiveIndexer;
-    @Autowired
-    private ArchiveImageLoader imageLoader;
-    @Autowired
-    private ICsarRepositry archiveRepository;
-    @Autowired
-    private CsarService csarService;
-
-    public BrooklynCatalogMapper() {
+    static {
         TYPE_MAPPING.put(Boolean.class.getName(), ToscaType.BOOLEAN);
         TYPE_MAPPING.put(String.class.getName(), ToscaType.STRING);
         TYPE_MAPPING.put(Integer.class.getName(), ToscaType.INTEGER);
@@ -57,6 +51,39 @@ public class BrooklynCatalogMapper {
         TYPE_MAPPING.put(Duration.class.getName(), ToscaType.TIME);
         TYPE_MAPPING.put(List.class.getName(), ToscaType.LIST);
         TYPE_MAPPING.put(Map.class.getName(), ToscaType.MAP);
+    }
+
+    private ArchiveIndexer archiveIndexer;
+    private ArchiveImageLoader imageLoader;
+    private ICsarRepositry archiveRepository;
+    private CsarService csarService;
+    private ManagedPlugin selfContext;
+    private ArchiveParser archiveParser;
+
+
+    @Autowired
+    public BrooklynCatalogMapper(ArchiveIndexer archiveIndexer, ArchiveImageLoader imageLoader, ICsarRepositry archiveRepository, CsarService csarService, ManagedPlugin selfContext, ArchiveParser archiveParser) {
+        this.archiveIndexer = archiveIndexer;
+        this.imageLoader = imageLoader;
+        this.archiveRepository = archiveRepository;
+        this.csarService = csarService;
+        this.selfContext = selfContext;
+        this.archiveParser = archiveParser;
+    }
+
+    public void addBaseTypes(){
+        Path archivePath = selfContext.getPluginPath().resolve("brooklyn/brooklyn-resources");
+        // Parse the archives
+        try {
+            ParsingResult<ArchiveRoot> result = archiveParser.parseDir(archivePath);
+            ArchiveRoot root = result.getResult();
+            Csar csar = root.getArchive();
+            csarService.save(csar);
+            archiveIndexer.indexArchive(csar.getName(), csar.getVersion(), root, true);
+
+        } catch(ParsingException e) {
+            log.error("Failed to parse archive", e);
+        }
     }
 
     public void mapBrooklynEntities(BrooklynApi brooklynApi) {

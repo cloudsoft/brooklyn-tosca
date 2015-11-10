@@ -105,6 +105,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         try {
             log.info("INIT: " + activeDeployments);
             // TODO synchronise locations
+            catalogMapper.addBaseTypes();
             catalogMapper.mapBrooklynEntities(getNewBrooklynApi());
             
             

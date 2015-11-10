@@ -1,11 +1,24 @@
 package alien4cloud.brooklyn;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import alien4cloud.model.components.AttributeDefinition;
+import alien4cloud.model.components.CSARDependency;
+import alien4cloud.model.components.Csar;
+import alien4cloud.model.components.IValue;
+import alien4cloud.model.components.IndexedNodeType;
+import alien4cloud.model.components.Interface;
+import alien4cloud.model.components.Operation;
+import alien4cloud.model.components.PropertyDefinition;
+import alien4cloud.plugin.model.ManagedPlugin;
+import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.normative.ToscaType;
+import alien4cloud.tosca.parser.ParsingException;
+import alien4cloud.tosca.parser.ParsingResult;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
@@ -22,13 +35,6 @@ import com.google.common.collect.Sets;
 
 import alien4cloud.component.repository.ICsarRepositry;
 import alien4cloud.csar.services.CsarService;
-import alien4cloud.model.components.AttributeDefinition;
-import alien4cloud.model.components.CSARDependency;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.tosca.ArchiveImageLoader;
 import alien4cloud.tosca.ArchiveIndexer;
 import alien4cloud.tosca.model.ArchiveRoot;
@@ -42,17 +48,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 @Slf4j
 public class BrooklynCatalogMapper {
     private final static Map<String, String> TYPE_MAPPING = Maps.newHashMap();
-
-    @Autowired
-    private ArchiveIndexer archiveIndexer;
-    @Autowired
-    private ArchiveImageLoader imageLoader;
-    @Autowired
-    private ICsarRepositry archiveRepository;
-    @Autowired
-    private CsarService csarService;
-
-    public BrooklynCatalogMapper() {
+    static {
         TYPE_MAPPING.put(Boolean.class.getName(), ToscaType.BOOLEAN);
         TYPE_MAPPING.put(String.class.getName(), ToscaType.STRING);
         TYPE_MAPPING.put(Integer.class.getName(), ToscaType.INTEGER);
@@ -62,6 +58,39 @@ public class BrooklynCatalogMapper {
         TYPE_MAPPING.put(Duration.class.getName(), ToscaType.TIME);
         TYPE_MAPPING.put(List.class.getName(), ToscaType.LIST);
         TYPE_MAPPING.put(Map.class.getName(), ToscaType.MAP);
+    }
+
+    private ArchiveIndexer archiveIndexer;
+    private ArchiveImageLoader imageLoader;
+    private ICsarRepositry archiveRepository;
+    private CsarService csarService;
+    private ManagedPlugin selfContext;
+    private ArchiveParser archiveParser;
+
+
+    @Autowired
+    public BrooklynCatalogMapper(ArchiveIndexer archiveIndexer, ArchiveImageLoader imageLoader, ICsarRepositry archiveRepository, CsarService csarService, ManagedPlugin selfContext, ArchiveParser archiveParser) {
+        this.archiveIndexer = archiveIndexer;
+        this.imageLoader = imageLoader;
+        this.archiveRepository = archiveRepository;
+        this.csarService = csarService;
+        this.selfContext = selfContext;
+        this.archiveParser = archiveParser;
+    }
+
+    public void addBaseTypes(){
+        Path archivePath = selfContext.getPluginPath().resolve("brooklyn/brooklyn-resources");
+        // Parse the archives
+        try {
+            ParsingResult<ArchiveRoot> result = archiveParser.parseDir(archivePath);
+            ArchiveRoot root = result.getResult();
+            Csar csar = root.getArchive();
+            csarService.save(csar);
+            archiveIndexer.indexArchive(csar.getName(), csar.getVersion(), root, true);
+
+        } catch(ParsingException e) {
+            log.error("Failed to parse archive", e);
+        }
     }
 
     public void mapBrooklynEntities(BrooklynApi brooklynApi) {
@@ -78,8 +107,9 @@ public class BrooklynCatalogMapper {
 
         archiveRoot.getArchive().setDependencies(
                 Sets.newHashSet(
-                    new CSARDependency("tosca-normative-types", "1.0.0.wd03-SNAPSHOT"), 
-                    new CSARDependency("alien4cloud-tomcat-types", "1.0.0-SNAPSHOT")));
+                    new CSARDependency("tosca-normative-types", "1.0.0.wd06-SNAPSHOT"),
+                    new CSARDependency("alien4cloud-tomcat-types", "1.0.0-SNAPSHOT"),
+                    new CSARDependency("brooklyn-types", "0.1.0-SNAPSHOT")));
 
         // TODO Not great way to go but that's a POC for now ;)
         List<CatalogEntitySummary> entities = brooklynApi.getCatalogApi().listEntities(null, null, false);
@@ -116,7 +146,7 @@ public class BrooklynCatalogMapper {
             addPropertyDefinitions(brooklynEntity, toscaType);
             addAttributeDefinitions(brooklynEntity, toscaType);
             addInterfaces(brooklynEntity, toscaType);
-            toscaType.setDerivedFrom(Arrays.asList("tosca.nodes.Root"
+            toscaType.setDerivedFrom(Arrays.asList("brooklyn.nodes.SoftwareProcess"
                 // TODO could introduce this type to mark items from brooklyn (and to give a "b" icon default)
                 //, "brooklyn.tosca.entity.Root"
                 ));

@@ -1,6 +1,7 @@
 package alien4cloud.brooklyn;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,22 +29,22 @@ public class BrooklynLocationConfigurerFactory {
         return new ILocationConfiguratorPlugin() {
             @Override
             public List<PluginArchive> pluginArchives() {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             @Override
             public List<String> getResourcesTypes() {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             @Override
             public Map<String, MatchingConfiguration> getMatchingConfigurations() {
-                return new HashMap<>();
+                return Collections.emptyMap();
             }
 
             @Override
             public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-                return null;
+                return Collections.emptyList();
             }
         };
     }

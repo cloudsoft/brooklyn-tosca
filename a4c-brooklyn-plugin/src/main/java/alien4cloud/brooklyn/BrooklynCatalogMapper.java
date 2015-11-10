@@ -6,7 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import alien4cloud.model.components.*;
+import alien4cloud.model.components.AttributeDefinition;
+import alien4cloud.model.components.CSARDependency;
+import alien4cloud.model.components.Csar;
+import alien4cloud.model.components.IValue;
+import alien4cloud.model.components.IndexedNodeType;
+import alien4cloud.model.components.Interface;
+import alien4cloud.model.components.Operation;
+import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.normative.ToscaType;

@@ -1,6 +1,7 @@
 package alien4cloud.brooklyn;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,7 +81,7 @@ public class BrooklynLocationConfigurer implements ILocationConfiguratorPlugin {
 
     @Override
     public List<String> getResourcesTypes() {
-        return Lists.newArrayList("brooklyn.nodes.Compute");
+        return Collections.singletonList("brooklyn.nodes.Compute");
     }
 
     @Override
@@ -115,7 +116,6 @@ public class BrooklynLocationConfigurer implements ILocationConfiguratorPlugin {
             String name = StringUtils.isNotBlank(computeContext.getGeneratedNamePrefix()) ? computeContext.getGeneratedNamePrefix()
                     : "BROOKLYN_DEFAULT_COMPUTE_NAME";
             NodeTemplate node = topologyService.buildNodeTemplate(dependencies, indexedNodeType, null);
-            // set the imageId
 
             LocationResourceTemplate resource = new LocationResourceTemplate();
             resource.setService(false);

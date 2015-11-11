@@ -66,6 +66,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
     // FIXME: Test fails when asserting the size of the tomcat server's config map.
     @Test
+    @SuppressWarnings("unchecked")
     public void testDslInChatApplication() {
         String templateUrl = getClasspathUrlForResource("templates/helloworld-sql.tosca.yaml");
 
@@ -75,11 +76,11 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
 
-        EntitySpec<TomcatServer> tomcatServer = (EntitySpec<TomcatServer>) app.getChildren().get(0);
-        assertNotNull(app.getChildren().get(0).getConfig().get(TomcatServer.JAVA_SYSPROPS));
+        EntitySpec<TomcatServer> tomcatServer =
+                (EntitySpec<TomcatServer>) findChildEntitySpecByPlanId(app, "tomcat_server");
+        assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
 
-        Map javaSysProps = (Map) app.getChildren().get(0).getConfig().get(TomcatServer.JAVA_SYSPROPS);
-
+        Map javaSysProps = (Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS);
         assertEquals(javaSysProps.size(), 1);
         assertTrue(javaSysProps.get("brooklyn.example.db.url") instanceof BrooklynDslDeferredSupplier);
         assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
@@ -88,6 +89,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testRelation(){
         String templateUrl = getClasspathUrlForResource("templates/relationship.yaml");
 
@@ -95,15 +97,14 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 
         assertNotNull(app);
-
         assertEquals(app.getChildren().size(), 2);
 
-        EntitySpec<TomcatServer> tomcatServer = (EntitySpec<TomcatServer>) app.getChildren().get(0);
+        EntitySpec<TomcatServer> tomcatServer =
+                (EntitySpec<TomcatServer>) findChildEntitySpecByPlanId(app, "tomcat_server");
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
         assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
         assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                         .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
-
     }
 
 

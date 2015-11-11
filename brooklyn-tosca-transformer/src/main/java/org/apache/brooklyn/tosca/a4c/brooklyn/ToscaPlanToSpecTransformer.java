@@ -5,11 +5,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
+import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlLocationResolver;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
@@ -263,11 +266,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                             throw new NullPointerException("Null policy found in topology.");
                         }
                         if ("brooklyn.location".equals(p.getName())) {
-                            for (String id: g.getMembers()) {
-                                EntitySpec<?> spec = specs.get(id);
-                                if (spec==null) throw new IllegalStateException("No node '"+id+"' found, when setting locations");
-                                spec.location(mgmt.getLocationRegistry().resolve( (String)((GenericPolicy)p).getData().get(GroupPolicyParser.VALUE) ));
-                            }
+                            setLocationsOnSpecs(specs, g, (GenericPolicy) p);
                         }
                         // TODO: Other policies ignored, should we support them?
                     }
@@ -278,6 +277,34 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         log.debug("Created entity from TOSCA spec: " + rootSpec);
         return rootSpec;
     }
+
+    private void setLocationsOnSpecs(Map<String, EntitySpec<?>> specs,
+                                     NodeGroup group,
+                                     GenericPolicy policy) {
+
+        List<Location> foundLocations;
+        if(policy.getData().containsKey(GroupPolicyParser.VALUE)){
+            foundLocations = new BrooklynYamlLocationResolver(mgmt)
+                    .resolveLocations(ImmutableMap.of("location",
+                                    policy.getData().get(GroupPolicyParser.VALUE)), true);
+        } else {
+            Map<String, ?> data = MutableMap.copyOf(policy.getData());
+            /* name entry contains the policy name. This value is not necessary for the location
+            creating process which is carried out by BrooklynYamlLocationResolver.*/
+            data.remove("name");
+            foundLocations = new BrooklynYamlLocationResolver(mgmt)
+                    .resolveLocations(ImmutableMap.of("location", data), true);
+        }
+
+        for (String id: group.getMembers()) {
+            EntitySpec<?> spec = specs.get(id);
+            if (spec==null){
+                throw new IllegalStateException("No node "+id+" found, when setting locations");
+            }
+            spec.locations(foundLocations);
+        }
+    }
+
 
     @SuppressWarnings("unchecked")
     @Override

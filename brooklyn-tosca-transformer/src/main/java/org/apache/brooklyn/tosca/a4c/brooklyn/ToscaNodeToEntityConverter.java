@@ -7,15 +7,12 @@ import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
-
 import alien4cloud.model.topology.RelationshipTemplate;
-import alien4cloud.model.topology.Requirement;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
-
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -40,12 +37,10 @@ import org.jclouds.compute.domain.OsFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.relation.Relation;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public class ToscaNodeToEntityConverter {
 
@@ -165,6 +160,14 @@ public class ToscaNodeToEntityConverter {
                 String propCollection= (String)relationProperties.get("prop.collection");
                 String propValue= managePropertyTargetNode(target,
                         (String)relationProperties.get("prop.value"));
+
+
+                if(Strings.isBlank(propCollection)&&(Strings.isBlank(propName))){
+                    throw new IllegalStateException("Relationship for Requirement "
+                            + relationshipTemplate.getRequirementName() + " on NodeTemplate "
+                            + nodeTemplate.getName() + ". Collection Name or Property Name should" +
+                            " be defined for RelationsType " + relationshipTemplate.getType());
+                }
 
                 Map<String, String> simpleProperty=null;
                 if(!Strings.isBlank(propName)){

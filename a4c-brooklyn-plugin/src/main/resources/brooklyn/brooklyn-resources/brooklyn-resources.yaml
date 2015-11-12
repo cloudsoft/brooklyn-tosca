@@ -22,3 +22,17 @@ node_types:
   brooklyn.nodes.Database:
     derived_from: brooklyn.nodes.SoftwareProcess
 
+relationship_types:
+  brooklyn.relationships.Configure:
+    derived_from: tosca.relationships.DependsOn
+    valid_targets: [ tosca.capabilities.Endpoint ]
+    properties:
+      prop.name:
+        type: string
+        required: true
+      prop.value:
+        type: string
+        required: true
+      prop.collection:
+        type: string
+        required: false

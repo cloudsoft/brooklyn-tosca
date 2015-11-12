@@ -2,18 +2,21 @@ package alien4cloud.brooklyn;
 
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import alien4cloud.model.components.AttributeDefinition;
 import alien4cloud.model.components.CSARDependency;
+import alien4cloud.model.components.CapabilityDefinition;
 import alien4cloud.model.components.Csar;
 import alien4cloud.model.components.IValue;
 import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.PropertyDefinition;
+import alien4cloud.model.components.RequirementDefinition;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.normative.ToscaType;
@@ -26,6 +29,7 @@ import org.apache.brooklyn.rest.domain.CatalogEntitySummary;
 import org.apache.brooklyn.rest.domain.EffectorSummary;
 import org.apache.brooklyn.rest.domain.EntityConfigSummary;
 import org.apache.brooklyn.rest.domain.SensorSummary;
+import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -146,14 +150,16 @@ public class BrooklynCatalogMapper {
             addPropertyDefinitions(brooklynEntity, toscaType);
             addAttributeDefinitions(brooklynEntity, toscaType);
             addInterfaces(brooklynEntity, toscaType);
-            toscaType.setDerivedFrom(Arrays.asList("brooklyn.nodes.SoftwareProcess"
-                // TODO could introduce this type to mark items from brooklyn (and to give a "b" icon default)
-                //, "brooklyn.tosca.entity.Root"
-                ));
+            addRequirements(brooklynEntity, toscaType);
+            addCapabilities(brooklynEntity, toscaType);
 
-            // TODO override the host requirement in order to say that none is required.
-            // or say it requires some type of cloud/server/location/etc
-//            toscaType.getRequirements().add(...)
+            String derivedFrom = "brooklyn.nodes.SoftwareProcess";
+            for (Object tag : brooklynEntity.getRawTags()) {
+                Map<String, ?> tagMap = (Map<String, ?>) tag;
+                if (!tagMap.containsKey("derivedFrom")) continue;
+                derivedFrom = String.valueOf(tagMap.get("derivedFrom"));
+            }
+            toscaType.setDerivedFrom(Arrays.asList(derivedFrom));
 
             archiveRoot.getNodeTypes().put(brooklynEntity.getSymbolicName(), toscaType);
 
@@ -172,6 +178,9 @@ public class BrooklynCatalogMapper {
         Set<EntityConfigSummary> entityConfigSummaries = brooklynEntity.getConfig(); // properties in TOSCA
         Map<String, PropertyDefinition> properties = Maps.newHashMap();
         toscaType.setProperties(properties);
+        if (entityConfigSummaries == null) {
+            return;
+        }
         for (EntityConfigSummary entityConfigSummary : entityConfigSummaries) {
             String propertyType = TYPE_MAPPING.get(entityConfigSummary.getType());
             if (propertyType == null) {
@@ -249,4 +258,37 @@ public class BrooklynCatalogMapper {
         interfaces.put("brooklyn_management", interfaz);
     }
 
+    private void addRequirements(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+        for (Object tag : brooklynEntity.getRawTags()) {
+            Map<String, ?> tagMap = (Map<String, ?>) tag;
+            if (!tagMap.containsKey("requirements")) continue;
+            List<RequirementDefinition> requirementDefinitions = MutableList.of();
+            List<Map<String, ?>> requirements = (List<Map<String, ?>>) tagMap.get("requirements");
+            for (Map<String, ?> requirement : requirements) {
+                RequirementDefinition requirementDefinition = new RequirementDefinition(requirement.get("id").toString(), requirement.get("targetType").toString());
+                requirementDefinition.setRelationshipType(requirement.get("relationshipType").toString());
+                if (requirement.containsKey("lowerBound")) {
+                    requirementDefinition.setLowerBound((Integer) requirement.get("lowerBound"));
+                }
+                if (requirement.containsKey("upperBound")) {
+                    requirementDefinition.setUpperBound((Integer) requirement.get("upperBound"));
+                }
+                requirementDefinitions.add(requirementDefinition);
+            }
+            toscaType.setRequirements(requirementDefinitions);
+        }
+    }
+
+    private void addCapabilities(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+        for (Object tag : brooklynEntity.getRawTags()) {
+            Map<String, ?> tagMap = (Map<String, ?>) tag;
+            if (!tagMap.containsKey("capabilities")) continue;
+            List<CapabilityDefinition> capabilityDefinitions = MutableList.of();
+            List<Map<String, ?>> capabilities = (List<Map<String, ?>>) tagMap.get("capabilities");
+            for (Map<String, ?> capability : capabilities) {
+                capabilityDefinitions.add(new CapabilityDefinition(capability.get("id").toString(), capability.get("type").toString(), (Integer) capability.get("upperBound")));
+            }
+            toscaType.setCapabilities(capabilityDefinitions);
+        }
+    }
 }

@@ -7,20 +7,18 @@ import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
-
+import alien4cloud.model.topology.RelationshipTemplate;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
-
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.CampUtils;
-import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
@@ -118,7 +116,7 @@ public class ToscaNodeToEntityConverter {
         // TODO: Mapping for "os_arch" and "os_type" are missing
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
-        configureSpec(spec, nodeTemplate);
+        configurePropertiesForSpec(spec, nodeTemplate);
 
         // If the entity spec is of type VanillaSoftwareProcess, we assume that it's running. The operations should
         // then take care of setting up the correct scripts.
@@ -146,17 +144,79 @@ public class ToscaNodeToEntityConverter {
             }
         }
 
+        //This is only a fist prototype.
+        Map<String, Object> propertiesAndTypedValues = MutableMap.of();
+        //ProcessConfigurationRequirement
+        for(String requirementId: nodeTemplate.getRequirements().keySet()){
+            RelationshipTemplate relationshipTemplate =
+                    findRelationshipRequirement(nodeTemplate, requirementId);
+            if((relationshipTemplate!=null)
+                    &&(relationshipTemplate.getType().equals("tosca.relationships.Configure"))){
+
+                Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate);
+
+                String target = relationshipTemplate.getTarget();
+                String propName= (String)relationProperties.get("prop.name");
+                String propCollection= (String)relationProperties.get("prop.collection");
+                String propValue= managePropertyTargetNode(target,
+                        (String)relationProperties.get("prop.value"));
+
+
+                if(Strings.isBlank(propCollection)&&(Strings.isBlank(propName))){
+                    throw new IllegalStateException("Relationship for Requirement "
+                            + relationshipTemplate.getRequirementName() + " on NodeTemplate "
+                            + nodeTemplate.getName() + ". Collection Name or Property Name should" +
+                            " be defined for RelationsType " + relationshipTemplate.getType());
+                }
+
+                Map<String, String> simpleProperty=null;
+                if(!Strings.isBlank(propName)){
+                    simpleProperty=ImmutableMap.of(propName, propValue);
+                }
+                if(simpleProperty==null) {
+                    propertiesAndTypedValues=
+                            ImmutableMap.of(propCollection, ((Object)ImmutableList.of(propValue)));
+                } else {
+                    propertiesAndTypedValues =
+                            ImmutableMap.of(propCollection, (Object)simpleProperty);
+                }
+            }
+        }
+
+        configureConfigKeysSpec(spec, ConfigBag.newInstance(propertiesAndTypedValues));
+
         return spec;
     }
 
-    //TODO: refactor this method in Brooklyn in {@link org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver}
-    //TODO PROVISION_PROPERTIES should be added to this method.
-    private void configureSpec(EntitySpec spec, NodeTemplate nodeTemplate){
-        Set<String> keyNamesUsed = new LinkedHashSet<>();
-        ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate));
+    private RelationshipTemplate findRelationshipRequirement(NodeTemplate node, String requirementId){
+        if(node.getRelationships()!=null){
+            for(Map.Entry<String, RelationshipTemplate> entry: node.getRelationships().entrySet()){
+                if(entry.getValue().getRequirementName().equals(requirementId)){
+                    return entry.getValue();
+                }
+            }
+            log.warn("Requirement {} is not described by any relationship ", requirementId);
+        }
+        return null;
+    }
 
+    private String managePropertyTargetNode(String targetId, String value){
+        if(!Strings.containsLiteralIgnoreCase(value, "TARGET")){
+            log.warn("TARGET identifier was not found on value {} in value {}", value);
+        }
+        return value.replaceAll("(?i)TARGET", "\\$brooklyn:component(\""+ targetId+"\")");
+    }
+
+    //TODO PROVISION_PROPERTIES should be added to this method.
+    private void configurePropertiesForSpec(EntitySpec spec, NodeTemplate nodeTemplate){
+        ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate));
         // now set configuration for all the items in the bag
+        configureConfigKeysSpec(spec, bag);
+    }
+
+    private void configureConfigKeysSpec(EntitySpec spec, ConfigBag bag){
         Collection<FlagUtils.FlagConfigKeyAndValueRecord> records = findAllFlagsAndConfigKeys(spec, bag);
+        Set<String> keyNamesUsed = new LinkedHashSet<>();
 
         for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
             if (r.getFlagMaybeValue().isPresent()) {
@@ -215,15 +275,24 @@ public class ToscaNodeToEntityConverter {
     }
 
     private Map<String, Object> getTemplatePropertyObjects(NodeTemplate template) {
+        return getPropertyObjects(template.getProperties());
+    }
+
+    private Map<String, Object> getTemplatePropertyObjects(RelationshipTemplate template) {
+        return getPropertyObjects(template.getProperties());
+    }
+
+    private Map<String, Object> getPropertyObjects(Map<String, AbstractPropertyValue> propertyValueMap) {
         Map<String, Object> propertyMap = MutableMap.of();
-        ImmutableSet<String> propertyKeys = ImmutableSet.copyOf(template.getProperties().keySet());
+        ImmutableSet<String> propertyKeys = ImmutableSet.copyOf(propertyValueMap.keySet());
 
         for (String propertyKey : propertyKeys) {
             propertyMap.put(propertyKey,
-                    resolve(template.getProperties(), propertyKey));
+                    resolve(propertyValueMap, propertyKey));
         }
         return propertyMap;
     }
+
 
     protected Map<String, Operation> getInterfaceOperations() {
         final Map<String, Operation> operations = MutableMap.of();

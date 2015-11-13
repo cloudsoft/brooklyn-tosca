@@ -156,8 +156,8 @@ public class BrooklynCatalogMapper {
             String derivedFrom = "brooklyn.nodes.SoftwareProcess";
             for (Object tag : brooklynEntity.getRawTags()) {
                 Map<String, ?> tagMap = (Map<String, ?>) tag;
-                if (!tagMap.containsKey("derivedFrom")) continue;
-                derivedFrom = String.valueOf(tagMap.get("derivedFrom"));
+                if (!tagMap.containsKey("tosca:derivedFrom")) continue;
+                derivedFrom = String.valueOf(tagMap.get("tosca:derivedFrom"));
             }
             toscaType.setDerivedFrom(Arrays.asList(derivedFrom));
 
@@ -261,9 +261,9 @@ public class BrooklynCatalogMapper {
     private void addRequirements(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
         for (Object tag : brooklynEntity.getRawTags()) {
             Map<String, ?> tagMap = (Map<String, ?>) tag;
-            if (!tagMap.containsKey("requirements")) continue;
+            if (!tagMap.containsKey("tosca:requirements")) continue;
             List<RequirementDefinition> requirementDefinitions = MutableList.of();
-            List<Map<String, ?>> requirements = (List<Map<String, ?>>) tagMap.get("requirements");
+            List<Map<String, ?>> requirements = (List<Map<String, ?>>) tagMap.get("tosca:requirements");
             for (Map<String, ?> requirement : requirements) {
                 RequirementDefinition requirementDefinition = new RequirementDefinition(requirement.get("id").toString(), requirement.get("targetType").toString());
                 requirementDefinition.setRelationshipType(requirement.get("relationshipType").toString());
@@ -282,9 +282,9 @@ public class BrooklynCatalogMapper {
     private void addCapabilities(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
         for (Object tag : brooklynEntity.getRawTags()) {
             Map<String, ?> tagMap = (Map<String, ?>) tag;
-            if (!tagMap.containsKey("capabilities")) continue;
+            if (!tagMap.containsKey("tosca:capabilities")) continue;
             List<CapabilityDefinition> capabilityDefinitions = MutableList.of();
-            List<Map<String, ?>> capabilities = (List<Map<String, ?>>) tagMap.get("capabilities");
+            List<Map<String, ?>> capabilities = (List<Map<String, ?>>) tagMap.get("tosca:capabilities");
             for (Map<String, ?> capability : capabilities) {
                 capabilityDefinitions.add(new CapabilityDefinition(capability.get("id").toString(), capability.get("type").toString(), (Integer) capability.get("upperBound")));
             }

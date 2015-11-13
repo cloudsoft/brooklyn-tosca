@@ -190,7 +190,11 @@ public class BrooklynCatalogMapper {
                 propertyDefinition.setDescription(entityConfigSummary.getDescription());
                 propertyDefinition.setType(propertyType);
                 if (entityConfigSummary.getDefaultValue() != null) {
-                    propertyDefinition.setDefault(entityConfigSummary.getDefaultValue().toString());
+                    if (propertyType.equals(ToscaType.TIME)) {
+                        propertyDefinition.setDefault(Duration.of(entityConfigSummary.getDefaultValue()).toSeconds() + " s");
+                    } else {
+                        propertyDefinition.setDefault(entityConfigSummary.getDefaultValue().toString());
+                    }
                 }
                 if (ToscaType.MAP.equals(propertyType)) {
                     PropertyDefinition mapDefinition = new PropertyDefinition();
@@ -265,7 +269,7 @@ public class BrooklynCatalogMapper {
             List<RequirementDefinition> requirementDefinitions = MutableList.of();
             List<Map<String, ?>> requirements = (List<Map<String, ?>>) tagMap.get("tosca:requirements");
             for (Map<String, ?> requirement : requirements) {
-                RequirementDefinition requirementDefinition = new RequirementDefinition(requirement.get("id").toString(), requirement.get("targetType").toString());
+                RequirementDefinition requirementDefinition = new RequirementDefinition(requirement.get("id").toString(), requirement.get("capabilityType").toString());
                 requirementDefinition.setRelationshipType(requirement.get("relationshipType").toString());
                 if (requirement.containsKey("lowerBound")) {
                     requirementDefinition.setLowerBound((Integer) requirement.get("lowerBound"));

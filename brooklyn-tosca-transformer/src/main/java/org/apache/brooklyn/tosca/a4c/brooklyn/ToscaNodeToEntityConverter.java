@@ -1,7 +1,10 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
+import alien4cloud.component.repository.CsarFileRepository;
+import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ComplexPropertyValue;
+import alien4cloud.model.components.DeploymentArtifact;
 import alien4cloud.model.components.ImplementationArtifact;
 import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.components.Interface;
@@ -9,6 +12,8 @@ import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
+
+import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -28,31 +33,42 @@ import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.location.jclouds.JcloudsLocationConfig;
+import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.core.flags.FlagUtils;
 import org.apache.brooklyn.util.core.flags.TypeCoercions;
+import org.apache.brooklyn.util.os.Os;
 import org.apache.brooklyn.util.text.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.jclouds.compute.domain.OsFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 public class ToscaNodeToEntityConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaNodeToEntityConverter.class);
 
     private final ManagementContext mgnt;
-    private NodeTemplate nodeTemplate;
     private String nodeId;
     private IndexedArtifactToscaElement indexedNodeTemplate;
+    private NodeTemplate nodeTemplate;
+    private CsarFileRepository csarFileRepository;
 
     private ToscaNodeToEntityConverter(ManagementContext mgmt) {
         this.mgnt = mgmt;
@@ -62,18 +78,23 @@ public class ToscaNodeToEntityConverter {
         return new ToscaNodeToEntityConverter(mgmt);
     }
 
-    public ToscaNodeToEntityConverter setNodeTemplate(NodeTemplate nodeTemplate) {
-        this.nodeTemplate = nodeTemplate;
-        return this;
-    }
-
     public ToscaNodeToEntityConverter setNodeId(String nodeId) {
         this.nodeId = nodeId;
         return this;
     }
 
+    public ToscaNodeToEntityConverter setNodeTemplate(NodeTemplate nodeTemplate) {
+        this.nodeTemplate = nodeTemplate;
+        return this;
+    }
+
     public ToscaNodeToEntityConverter setIndexedNodeTemplate(IndexedArtifactToscaElement indexedNodeTemplate) {
         this.indexedNodeTemplate = indexedNodeTemplate;
+        return this;
+    }
+
+    public ToscaNodeToEntityConverter setCsarFileRepository(CsarFileRepository csarFileRepository) {
+        this.csarFileRepository = csarFileRepository;
         return this;
     }
 
@@ -129,6 +150,8 @@ public class ToscaNodeToEntityConverter {
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
         configurePropertiesForSpec(spec, nodeTemplate);
+
+        configureRuntimeEnvironment(spec);
 
         // If the entity spec is of type VanillaSoftwareProcess, we assume that it's running. The operations should
         // then take care of setting up the correct scripts.
@@ -309,9 +332,9 @@ public class ToscaNodeToEntityConverter {
     protected Map<String, Operation> getInterfaceOperations() {
         final Map<String, Operation> operations = MutableMap.of();
 
-        if (this.nodeTemplate.getInterfaces() != null) {
+        if (indexedNodeTemplate.getInterfaces() != null) {
             final ImmutableList<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-            final MutableMap<String, Interface> interfaces = MutableMap.copyOf(this.nodeTemplate.getInterfaces());
+            final MutableMap<String, Interface> interfaces = MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
 
             for (String validInterfaceName : validInterfaceNames) {
                 Interface validInterface = interfaces.remove(validInterfaceName);
@@ -337,15 +360,18 @@ public class ToscaNodeToEntityConverter {
         if (artifact != null) {
             String ref = artifact.getArtifactRef();
             if (ref != null) {
-                // TODO get script/artifact relative to CSAR
-                String script = new ResourceUtils(this).getResourceAsString(ref);
-                String setScript = (String) spec.getConfig().get(cmdKey);
-                if (Strings.isBlank(setScript) || setScript.trim().equals("true")) {
-                    setScript = script;
-                } else {
-                    setScript += "\n"+script;
+                String script = null;
+
+                // Trying to get the CSAR file based on the artifact reference. If it fails, then we try to get the
+                // content of the script from any resources
+                try {
+                    Path csarPath = csarFileRepository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
+                    script = new ResourceUtils(this).getResourceAsString(csarPath.getParent().toString() + "/expanded/" + ref);
+                } catch (CSARVersionNotFoundException e) {
+                    script = new ResourceUtils(this).getResourceAsString(ref);
                 }
-                spec.configure(cmdKey, setScript);
+
+                spec.configure(cmdKey, script);
                 return;
             }
             log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no ref");
@@ -353,6 +379,58 @@ public class ToscaNodeToEntityConverter {
         }
         log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no impl");
 
+    }
+
+    protected void configureRuntimeEnvironment(EntitySpec<?> entitySpec) {
+        if (indexedNodeTemplate.getArtifacts() == null) {
+            return;
+        }
+
+        final Map<String, String> filesToCopy = MutableMap.of();
+        final List<String> preInstallCommands = MutableList.of();
+
+        for (final Map.Entry<String, DeploymentArtifact> artifactEntry : indexedNodeTemplate.getArtifacts().entrySet()) {
+            if (artifactEntry.getValue() == null) {
+                continue;
+            }
+            if (!"tosca.artifacts.File".equals(artifactEntry.getValue().getArtifactType())) {
+                continue;
+            }
+
+            final String destRoot = Os.mergePaths("~", artifactEntry.getValue().getArtifactName());
+            final String tempRoot = Os.mergePaths("/tmp", artifactEntry.getValue().getArtifactName());
+
+            preInstallCommands.add("mkdir -p " + destRoot);
+            preInstallCommands.add("mkdir -p " + tempRoot);
+            preInstallCommands.add(String.format("export %s=%s", artifactEntry.getValue().getArtifactName(), destRoot));
+
+            try {
+                Path csarPath = csarFileRepository.getCSAR(artifactEntry.getValue().getArchiveName(), artifactEntry.getValue().getArchiveVersion());
+
+                Path resourcesRootPath = Paths.get(csarPath.getParent().toAbsolutePath().toString(), "expanded", artifactEntry.getKey());
+                Files.find(resourcesRootPath, Integer.MAX_VALUE, new BiPredicate<Path, BasicFileAttributes>() {
+                    @Override
+                    public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
+                        return basicFileAttributes.isRegularFile();
+                    }
+                }).forEach(new Consumer<Path>() {
+                    @Override
+                    public void accept(Path file) {
+                        String tempDest = Os.mergePaths(tempRoot, file.getFileName().toString());
+                        String finalDest = Os.mergePaths(destRoot, file.getFileName().toString());
+                        filesToCopy.put(file.toAbsolutePath().toString(), tempDest);
+                        preInstallCommands.add(String.format("mv %s %s", tempDest, finalDest));
+                    }
+                });
+            } catch (CSARVersionNotFoundException e) {
+                log.warn("CSAR " + artifactEntry.getValue().getArtifactName() + ":" + artifactEntry.getValue().getArchiveVersion() + " does not exists", e);
+            } catch (IOException e) {
+                log.warn("Cannot parse CSAR resources", e);
+            }
+        }
+
+        entitySpec.configure(SoftwareProcess.PRE_INSTALL_FILES, filesToCopy);
+        entitySpec.configure(SoftwareProcess.PRE_INSTALL_COMMAND, Joiner.on("\n").join(preInstallCommands));
     }
 
     public static Object resolve(Map<String, AbstractPropertyValue> props, String... keys) {

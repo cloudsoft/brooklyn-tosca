@@ -1,6 +1,7 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
 import alien4cloud.component.ICSARRepositorySearchService;
+import alien4cloud.component.repository.CsarFileRepository;
 import alien4cloud.model.components.CSARDependency;
 import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.topology.NodeTemplate;
@@ -26,6 +27,8 @@ public class DependencyTreeTest extends Alien4CloudToscaTest {
 
     @Mock
     private ICSARRepositorySearchService repositorySearchService;
+    @Mock
+    private CsarFileRepository csarFileRepository;
     @Mock
     private Topology topo;
     @Mock
@@ -54,7 +57,7 @@ public class DependencyTreeTest extends Alien4CloudToscaTest {
         when(repositorySearchService.getRequiredElementInDependencies(IndexedArtifactToscaElement.class, "brooklyn.nodes.Test", dependencies)).thenReturn(indexedToscaElement);
         when(indexedToscaElement.getDerivedFrom()).thenReturn(ImmutableList.<String>of());
 
-        dt = new DependencyTree(topo, mgmt, repositorySearchService);
+        dt = new DependencyTree(topo, mgmt, repositorySearchService, csarFileRepository);
         assertEquals(VanillaSoftwareProcess.class, dt.getSpec("node1").getType());
     }
 
@@ -68,7 +71,7 @@ public class DependencyTreeTest extends Alien4CloudToscaTest {
         when(repositorySearchService.getRequiredElementInDependencies(IndexedArtifactToscaElement.class, "brooklyn.nodes.Test", dependencies)).thenReturn(indexedToscaElement);
         when(indexedToscaElement.getDerivedFrom()).thenReturn(ImmutableList.of("tosca.nodes.Compute"));
 
-        dt = new DependencyTree(topo, mgmt, repositorySearchService);
+        dt = new DependencyTree(topo, mgmt, repositorySearchService, csarFileRepository);
         assertEquals(BasicApplication.class, dt.getSpec("node1").getType());
     }
 
@@ -90,7 +93,7 @@ public class DependencyTreeTest extends Alien4CloudToscaTest {
         when(repositorySearchService.getRequiredElementInDependencies(IndexedArtifactToscaElement.class, "brooklyn.nodes.Test2", dependencies)).thenReturn(indexedToscaElement2);
         when(indexedToscaElement.getDerivedFrom()).thenReturn(ImmutableList.of("tosca.nodes.Compute"));
 
-        dt = new DependencyTree(topo, mgmt, repositorySearchService);
+        dt = new DependencyTree(topo, mgmt, repositorySearchService, csarFileRepository);
         assertEquals(SameServerEntity.class, dt.getSpec("node1").getType());
     }
 

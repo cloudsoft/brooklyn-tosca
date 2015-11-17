@@ -2,6 +2,7 @@ package org.apache.brooklyn.tosca.a4c.brooklyn;
 
 
 import alien4cloud.component.ICSARRepositorySearchService;
+import alien4cloud.component.repository.CsarFileRepository;
 import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
@@ -34,10 +35,12 @@ public class DependencyTree{
     private ManagementContext mgmt;
     private Topology topo;
     private ICSARRepositorySearchService repositorySearchService;
+    private CsarFileRepository csarFileRepository;
 
-    public DependencyTree(Topology topo, ManagementContext mgmt, ICSARRepositorySearchService repositorySearchService) {
+    public DependencyTree(Topology topo, ManagementContext mgmt, ICSARRepositorySearchService repositorySearchService, CsarFileRepository csarFileRepository) {
         this.topo = topo;
         this.repositorySearchService = repositorySearchService;
+        this.csarFileRepository = csarFileRepository;
         this.nodeTemplates = topo.getNodeTemplates();
         this.mgmt = mgmt;
         for(Map.Entry<String, NodeTemplate> nodeTemplate : nodeTemplates.entrySet()){
@@ -65,6 +68,7 @@ public class DependencyTree{
                 .setNodeId(root)
                 .setNodeTemplate(nodeTemplate)
                 .setIndexedNodeTemplate(indexedNodeTemplate)
+                .setCsarFileRepository(csarFileRepository)
                 .createSpec(hasMultipleChildren(root));
 
         for(String child : children.get(root)) {

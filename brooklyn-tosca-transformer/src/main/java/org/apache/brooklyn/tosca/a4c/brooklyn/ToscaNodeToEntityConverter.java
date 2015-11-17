@@ -151,7 +151,7 @@ public class ToscaNodeToEntityConverter {
             RelationshipTemplate relationshipTemplate =
                     findRelationshipRequirement(nodeTemplate, requirementId);
             if((relationshipTemplate!=null)
-                    &&(relationshipTemplate.getType().equals("brooklyn.relationships.Configure"))){
+                    &&(relationshipTemplate.getType().equals("tosca.relationships.Configure"))){
 
                 Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate);
 

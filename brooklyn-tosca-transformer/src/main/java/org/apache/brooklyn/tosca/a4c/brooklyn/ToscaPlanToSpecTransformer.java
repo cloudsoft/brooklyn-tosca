@@ -1,10 +1,18 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import alien4cloud.application.ApplicationService;
+import alien4cloud.component.CSARRepositorySearchService;
+import alien4cloud.deployment.DeploymentTopologyService;
+import alien4cloud.model.components.Csar;
+import alien4cloud.model.deployment.DeploymentTopology;
+import alien4cloud.model.topology.AbstractPolicy;
+import alien4cloud.model.topology.GenericPolicy;
+import alien4cloud.model.topology.NodeGroup;
+import alien4cloud.model.topology.Topology;
+import alien4cloud.tosca.ArchiveUploadService;
+import alien4cloud.tosca.parser.ParsingErrorLevel;
+import alien4cloud.tosca.parser.ParsingResult;
+import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
 import com.google.common.collect.ImmutableMap;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
@@ -18,11 +26,8 @@ import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
-import org.apache.brooklyn.entity.software.base.SoftwareProcess;
-import org.apache.brooklyn.entity.software.base.SoftwareProcess.ChildStartableMode;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
-import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
@@ -34,21 +39,9 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import alien4cloud.application.ApplicationService;
-import alien4cloud.deployment.DeploymentTopologyService;
-import alien4cloud.model.components.Csar;
-import alien4cloud.model.deployment.DeploymentTopology;
-import alien4cloud.model.topology.AbstractPolicy;
-import alien4cloud.model.topology.GenericPolicy;
-import alien4cloud.model.topology.NodeGroup;
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.RelationshipTemplate;
-import alien4cloud.model.topology.Requirement;
-import alien4cloud.model.topology.Topology;
-import alien4cloud.tosca.ArchiveUploadService;
-import alien4cloud.tosca.parser.ParsingErrorLevel;
-import alien4cloud.tosca.parser.ParsingResult;
-import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
@@ -184,79 +177,20 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return createApplicationSpec(application.getName(), dt, id);
     }
 
-    private String getParentId(NodeTemplate nodeTemplate) {
-        Requirement host = nodeTemplate.getRequirements() != null ? nodeTemplate.getRequirements().get("host") : null;
-        if (host != null) {
-            for (RelationshipTemplate r : nodeTemplate.getRelationships().values()) {
-                if (r.getRequirementName().equals("host")) {
-                    return r.getTarget();
-                }
-            }
-        }
 
-        // temporarily, fall back to looking for a *property* called 'host'
-        String parentId = (String) ToscaNodeToEntityConverter.resolve(nodeTemplate.getProperties(), "host");
-        if (parentId != null) {
-            log.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
-        }
-        return parentId;
-    }
-
-    private EntitySpec<?> buildBranch(Map<String, EntitySpec<?>> specs, Map<String, List<String>> edges, String id) {
-        EntitySpec<?> spec = specs.get(id);
-
-        if (spec == null) {
-            throw new IllegalStateException("Cannot find node with id: " + id);
-        }
-
-        if (edges.containsKey(id)) {
-            for (String edgeId : edges.get(id)) {
-                spec.child(buildBranch(specs, edges, edgeId)).configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, ChildStartableMode.BACKGROUND_LATE);
-                specs.remove(edgeId);
-            }
-        }
-
-        return spec;
-    }
 
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo, String deploymentId) {
-        
-        // TODO we should support Relationships and have an OtherEntityMachineLocation ?
 
+        // TODO we should support Relationships and have an OtherEntityMachineLocation ?
+        CSARRepositorySearchService repositorySearchService = platform.getBean(CSARRepositorySearchService.class);
         EntitySpec<BasicApplication> rootSpec = EntitySpec.create(BasicApplication.class).displayName(name);
 
-       rootSpec.configure(TOSCA_ID, topo.getId());
-       rootSpec.configure(TOSCA_DELEGATE_ID, topo.getDelegateId());
-       rootSpec.configure(TOSCA_DEPLOYMENT_ID, deploymentId);
+        rootSpec.configure(TOSCA_ID, topo.getId());
+        rootSpec.configure(TOSCA_DELEGATE_ID, topo.getDelegateId());
+        rootSpec.configure(TOSCA_DEPLOYMENT_ID, deploymentId);
 
-        // Build tree edges
-        Map<String, EntitySpec<?>> specs = MutableMap.of();
-        Map<String, List<String>> edges = MutableMap.of();
-        for (Entry<String, NodeTemplate> nodeTemplate : topo.getNodeTemplates().entrySet()) {
-
-            specs.put(nodeTemplate.getKey(), ToscaNodeToEntityConverter.with(mgmt)
-                    .setNodeId(nodeTemplate.getKey())
-                    .setNodeTemplate(nodeTemplate.getValue())
-                    .createSpec());
-
-            final String parentId = getParentId(nodeTemplate.getValue());
-            if (parentId != null) {
-                if (!edges.containsKey(parentId)) {
-                    edges.put(parentId, MutableList.<String>of());
-                }
-                edges.get(parentId).add(nodeTemplate.getKey());
-            } else {
-                if (!edges.containsKey(nodeTemplate.getKey())) {
-                    edges.put(nodeTemplate.getKey(), MutableList.<String>of());
-                }
-            }
-        }
-
-        for (Entry<String, List<String>> edge : edges.entrySet()) {
-            buildBranch(specs, edges, edge.getKey());
-        }
-
-        rootSpec.children(specs.values());
+        DependencyTree dt = new DependencyTree(topo, mgmt, repositorySearchService);
+        dt.addSpecsAsChildrenOf(rootSpec);
 
         if (topo.getGroups()!=null) {
             for (NodeGroup g: topo.getGroups().values()) {
@@ -266,7 +200,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                             throw new NullPointerException("Null policy found in topology.");
                         }
                         if ("brooklyn.location".equals(p.getName())) {
-                            setLocationsOnSpecs(specs, g, (GenericPolicy) p);
+                            setLocationsOnSpecs(dt.getSpecs(), g, (GenericPolicy) p);
                         }
                         // TODO: Other policies ignored, should we support them?
                     }

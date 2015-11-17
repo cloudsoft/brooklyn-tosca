@@ -407,6 +407,6 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     }
     
     protected BrooklynApi getNewBrooklynApi() {
-		return new BrooklynApi(configuration.getUrl(), configuration.getUser(), configuration.getPassword());
+		return BrooklynApi.newInstance(configuration.getUrl(), configuration.getUser(), configuration.getPassword());
 	}
 }

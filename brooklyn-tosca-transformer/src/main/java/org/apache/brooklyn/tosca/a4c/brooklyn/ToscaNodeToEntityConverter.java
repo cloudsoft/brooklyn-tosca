@@ -3,6 +3,7 @@ package org.apache.brooklyn.tosca.a4c.brooklyn;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ComplexPropertyValue;
 import alien4cloud.model.components.ImplementationArtifact;
+import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
@@ -18,12 +19,14 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
-import org.apache.brooklyn.camp.brooklyn.spi.creation.CampUtils;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.CampCatalogUtils;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
+import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.location.jclouds.JcloudsLocationConfig;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
@@ -49,6 +52,7 @@ public class ToscaNodeToEntityConverter {
     private final ManagementContext mgnt;
     private NodeTemplate nodeTemplate;
     private String nodeId;
+    private IndexedArtifactToscaElement indexedNodeTemplate;
 
     private ToscaNodeToEntityConverter(ManagementContext mgmt) {
         this.mgnt = mgmt;
@@ -68,7 +72,12 @@ public class ToscaNodeToEntityConverter {
         return this;
     }
 
-    public EntitySpec<? extends Entity> createSpec() {
+    public ToscaNodeToEntityConverter setIndexedNodeTemplate(IndexedArtifactToscaElement indexedNodeTemplate) {
+        this.indexedNodeTemplate = indexedNodeTemplate;
+        return this;
+    }
+
+    public EntitySpec<? extends Entity> createSpec(boolean hasMultipleChildren) {
         if (this.nodeTemplate == null) {
             throw new IllegalStateException("TOSCA node template is missing. You must specify it by using the method #setNodeTemplate(NodeTemplate nodeTemplate)");
         }
@@ -82,6 +91,9 @@ public class ToscaNodeToEntityConverter {
         if (catalogItem != null) {
             log.info("Found Brooklyn catalog item that match node type: " + this.nodeTemplate.getType());
             spec = (EntitySpec<?>) this.mgnt.getCatalog().createSpec(catalogItem);
+        } else if (indexedNodeTemplate.getDerivedFrom().contains("tosca.nodes.Compute")) {
+            spec = hasMultipleChildren ? EntitySpec.create(SameServerEntity.class)
+                    : EntitySpec.create(BasicApplication.class);
         } else {
             try {
                 log.info("Found Brooklyn entity that match node type: " + this.nodeTemplate.getType());
@@ -253,7 +265,7 @@ public class ToscaNodeToEntityConverter {
             return Optional.absent();
         }
         // The 'dsl' key is arbitrary, but the interpreter requires a map
-        Map<String, Object> resolvedConfigMap = CampUtils.getCampPlatform(mgnt).pdp().applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
+        Map<String, Object> resolvedConfigMap = CampCatalogUtils.getCampPlatform(mgnt).pdp().applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
         return Optional.of(desiredType.isPresent()
                 ? TypeCoercions.coerce(resolvedConfigMap.get("dsl"), desiredType.get())
                 : resolvedConfigMap.get("dsl"));
@@ -262,7 +274,7 @@ public class ToscaNodeToEntityConverter {
     /**
      * Searches for config keys in the type, additional interfaces and the implementation (if specified)
      */
-    private Collection<FlagUtils.FlagConfigKeyAndValueRecord> findAllFlagsAndConfigKeys(EntitySpec<?> spec, ConfigBag bagFlags) {
+    private Collection<FlagUtils.FlagConfigKeyAndValueRecord> findAllFlagsAndConfigKeys(EntitySpec<? extends Entity> spec, ConfigBag bagFlags) {
         Set<FlagUtils.FlagConfigKeyAndValueRecord> allKeys = MutableSet.of();
         allKeys.addAll(FlagUtils.findAllFlagsAndConfigKeys(null, spec.getType(), bagFlags));
         if (spec.getImplementation() != null) {

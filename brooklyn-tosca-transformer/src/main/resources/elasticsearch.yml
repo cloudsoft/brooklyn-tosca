@@ -1,0 +1,14 @@
+
+index:
+  number_of_shards: 1
+  number_of_replicas: 0
+
+path:
+  data: runtime/elasticsearch/data
+  work: runtime/elasticsearch/work
+  logs: runtime/elasticsearch/logs
+  conf: conf/
+
+gateway:
+  recover_after_nodes: 1
+  expected_nodes: 1

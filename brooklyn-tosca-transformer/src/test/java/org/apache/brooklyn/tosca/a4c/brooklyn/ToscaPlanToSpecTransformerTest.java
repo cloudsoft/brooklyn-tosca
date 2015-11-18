@@ -1,16 +1,23 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
+import com.google.common.collect.Iterables;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
+import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
+import org.apache.brooklyn.location.byon.FixedListMachineProvisioningLocation;
+import org.apache.brooklyn.location.jclouds.JcloudsLocation;
 import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocation;
+import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaTest;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
@@ -86,6 +93,58 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
 
         assertTrue(tomcatServer.getLocations().get(0) instanceof LocalhostMachineProvisioningLocation);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testFullJcloudsLocationDescription() {
+        String templateUrl = getClasspathUrlForResource("templates/full-location.jclouds.tosca.yaml");
+
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+        EntitySpec<VanillaSoftwareProcess> vanillaEntity =
+                (EntitySpec<VanillaSoftwareProcess>) Iterables.getOnlyElement(app.getChildren());
+
+        assertEquals(vanillaEntity.getLocations().size(), 1);
+        Location location = Iterables.getOnlyElement(vanillaEntity.getLocations());
+        assertTrue(location instanceof JcloudsLocation);
+        assertEquals(((JcloudsLocation) location).getProvider(), "aws-ec2");
+        assertEquals(((JcloudsLocation) location).getRegion(), "us-west-2");
+        assertEquals(((JcloudsLocation) location).getIdentity(), "user-key-id");
+        assertEquals(((JcloudsLocation) location).getCredential(), "user-key");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testFullByonLocationDescription() {
+        String templateUrl = getClasspathUrlForResource("templates/full-location.byon.tosca.yaml");
+
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+        EntitySpec<VanillaSoftwareProcess> vanillaEntity =
+                (EntitySpec<VanillaSoftwareProcess>) Iterables.getOnlyElement(app.getChildren());
+
+        assertEquals(vanillaEntity.getLocations().size(), 1);
+        assertTrue(Iterables.getOnlyElement(vanillaEntity.getLocations())
+                instanceof FixedListMachineProvisioningLocation);
+
+        FixedListMachineProvisioningLocation location =
+                (FixedListMachineProvisioningLocation) Iterables
+                        .getOnlyElement(vanillaEntity.getLocations());
+        Map<String, Object> configByon = location.getLocalConfigBag().getAllConfig();
+        assertEquals(configByon.get("user"), "brooklyn");
+        assertEquals(configByon.get("provider"), "byon");
+        assertTrue(configByon.get("machines") instanceof Collection);
+        assertEquals(((Collection)configByon.get("machines")).size(), 1);
+
+        List<SshMachineLocation> machines = (List<SshMachineLocation>) configByon.get("machines");
+        assertEquals(machines.get(0).getAddress().getHostAddress(), "192.168.0.18");
     }
 
     @Test

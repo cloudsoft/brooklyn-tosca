@@ -11,11 +11,13 @@ import alien4cloud.ui.form.annotation.FormProperties;
 import alien4cloud.ui.form.annotation.FormPropertyConstraint;
 import alien4cloud.ui.form.annotation.FormPropertyDefinition;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@FormProperties({ "url", "user", "password", "location" })
+@FormProperties({ "url", "user", "password", "location", "providers" })
 public class Configuration {
 
     @FormLabel("Brooklyn URL")
@@ -32,4 +34,7 @@ public class Configuration {
 
     @FormLabel("Default Brooklyn Location")
     private String location;
+
+    @FormLabel("Tosca Metadata Providers")
+    private List<String> providers;
 }

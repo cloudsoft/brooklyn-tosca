@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import alien4cloud.brooklyn.metadata.AbstractToscaMetadataProvider;
 import alien4cloud.model.components.AttributeDefinition;
 import alien4cloud.model.components.CSARDependency;
 import alien4cloud.model.components.Csar;
@@ -19,6 +20,7 @@ import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.normative.ToscaType;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
+import com.google.common.collect.ImmutableList;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
@@ -93,7 +95,7 @@ public class BrooklynCatalogMapper {
         }
     }
 
-    public void mapBrooklynEntities(BrooklynApi brooklynApi) {
+    public void mapBrooklynEntities(BrooklynApi brooklynApi, AbstractToscaMetadataProvider metadataProvider) {
         ArchiveRoot archiveRoot = new ArchiveRoot();
         // Brooklyn actually depends on normative types and alien types
         archiveRoot.getArchive().setToscaDefinitionsVersion("tosca_simple_yaml_1_0_0_wd03");
@@ -114,7 +116,7 @@ public class BrooklynCatalogMapper {
         // TODO Not great way to go but that's a POC for now ;)
         List<CatalogEntitySummary> entities = brooklynApi.getCatalogApi().listEntities(null, null, false);
         for (CatalogEntitySummary entity: entities) {
-            mapBrooklynEntity(brooklynApi, archiveRoot, entity.getSymbolicName(), entity.getVersion());
+            mapBrooklynEntity(brooklynApi, archiveRoot, entity.getSymbolicName(), entity.getVersion(), metadataProvider);
         }
         
         // this is what ArchiveUploadService does:
@@ -127,7 +129,7 @@ public class BrooklynCatalogMapper {
         archiveIndexer.indexArchive(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), archiveRoot, true);
     }
 
-    public void mapBrooklynEntity(BrooklynApi brooklynApi, ArchiveRoot archiveRoot, String entityName, String entityVersion) {
+    public void mapBrooklynEntity(BrooklynApi brooklynApi, ArchiveRoot archiveRoot, String entityName, String entityVersion, AbstractToscaMetadataProvider metadataProvider) {
         try {
             IndexedNodeType toscaType = new IndexedNodeType();
             CatalogEntitySummary brooklynEntity = loadEntity(brooklynApi, entityName);
@@ -146,10 +148,10 @@ public class BrooklynCatalogMapper {
             addPropertyDefinitions(brooklynEntity, toscaType);
             addAttributeDefinitions(brooklynEntity, toscaType);
             addInterfaces(brooklynEntity, toscaType);
-            toscaType.setDerivedFrom(Arrays.asList("brooklyn.nodes.SoftwareProcess"
-                // TODO could introduce this type to mark items from brooklyn (and to give a "b" icon default)
-                //, "brooklyn.tosca.entity.Root"
-                ));
+            toscaType.setDerivedFrom(ImmutableList.of(
+                    metadataProvider.findToscaType(brooklynEntity.getType())
+            ));
+
 
             // TODO override the host requirement in order to say that none is required.
             // or say it requires some type of cloud/server/location/etc

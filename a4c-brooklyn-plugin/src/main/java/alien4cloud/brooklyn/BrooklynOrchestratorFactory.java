@@ -1,9 +1,11 @@
 package alien4cloud.brooklyn;
 
+import java.util.Collections;
 import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.brooklyn.util.collections.MutableList;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,7 +43,12 @@ public class BrooklynOrchestratorFactory implements IOrchestratorPluginFactory<B
 
     @Override
     public Configuration getDefaultConfiguration() {
-        return new Configuration("http://localhost:8081/", "brooklyn", "brooklyn", "localhost");
+        return new Configuration("http://localhost:8081/",
+                "brooklyn",
+                "brooklyn",
+                "localhost",
+                MutableList.of("alien4cloud.brooklyn.metadata.DefaultToscaMetadataProvider")
+        );
     }
 
     @Override

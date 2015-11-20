@@ -19,3 +19,6 @@ node_types:
     - host: tosca.capabilities.Container
       relationship: tosca.relationships.HostedOn
 
+  brooklyn.nodes.Database:
+    derived_from: brooklyn.nodes.SoftwareProcess
+

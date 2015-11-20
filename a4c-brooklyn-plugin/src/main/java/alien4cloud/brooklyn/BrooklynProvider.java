@@ -2,12 +2,14 @@ package alien4cloud.brooklyn;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.ws.rs.core.Response;
 
+import alien4cloud.brooklyn.metadata.AbstractToscaMetadataProvider;
 import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.orchestrators.locations.services.LocationService;
 import alien4cloud.paas.model.InstanceStatus;
@@ -106,7 +108,21 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             log.info("INIT: " + activeDeployments);
             // TODO synchronise locations
             catalogMapper.addBaseTypes();
-            catalogMapper.mapBrooklynEntities(getNewBrooklynApi());
+
+            AbstractToscaMetadataProvider metadataProvider = null;
+            for (String provider : configuration.getProviders()) {
+                try {
+                    AbstractToscaMetadataProvider next = (AbstractToscaMetadataProvider)Class.forName(provider).newInstance();
+                    if(metadataProvider == null) {metadataProvider = next;}
+                    else {
+                        next.setNext(metadataProvider);
+                        metadataProvider = next;
+                    }
+                } catch (IllegalAccessException| InstantiationException | ClassNotFoundException e) {
+                    log.warn("no such metadata provider {}", provider);
+                }
+            }
+            catalogMapper.mapBrooklynEntities(getNewBrooklynApi(), metadataProvider);
             
             
         } finally { revertContextClassLoader(); }

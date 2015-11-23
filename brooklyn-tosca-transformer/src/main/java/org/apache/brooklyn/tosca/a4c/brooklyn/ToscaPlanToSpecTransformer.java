@@ -26,12 +26,14 @@ import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
+import org.apache.brooklyn.api.policy.Policy;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampReservedKeys;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlLocationResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlTypeInstantiator;
 import org.apache.brooklyn.config.ConfigKey;
+import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
@@ -216,7 +218,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                         }
                         if ("brooklyn.location".equals(p.getName())) {
                             setLocationsOnSpecs(dt.getSpecs(), g, (GenericPolicy) p);
-                        } else {
+                        } else if(isABrooklynPolicy(getPolicyType((GenericPolicy)p))){
                             decorateEntityBrooklynWithPolicies(rootSpec, g, (GenericPolicy) p);
                         }
                     }
@@ -285,6 +287,21 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             }
             spec.locations(foundLocations);
         }
+    }
+
+    public boolean isABrooklynPolicy(String policyType){
+        Class clazz;
+        CatalogItem catalogItem = CatalogUtils.getCatalogItemOptionalVersion(this.mgmt, policyType);
+        if (catalogItem != null) {
+            clazz = catalogItem.getCatalogItemJavaType();
+        } else {
+            try {
+                clazz = Class.forName(policyType);
+            } catch (ClassNotFoundException e) {
+                return false;
+            }
+        }
+        return Policy.class.isAssignableFrom(clazz);
     }
 
     private String getPolicyType(GenericPolicy policy){

@@ -2,19 +2,11 @@ package alien4cloud.brooklyn;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import javax.ws.rs.core.Response;
-
-import alien4cloud.brooklyn.metadata.AbstractToscaMetadataProvider;
-import alien4cloud.dao.IGenericSearchDAO;
-import alien4cloud.orchestrators.locations.services.LocationService;
-import alien4cloud.paas.model.InstanceStatus;
-import alien4cloud.paas.model.PaaSMessageMonitorEvent;
-import lombok.SneakyThrows;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
 import org.apache.brooklyn.rest.domain.ApplicationSummary;
@@ -33,6 +25,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import alien4cloud.application.ApplicationService;
+import alien4cloud.brooklyn.metadata.ToscaMetadataProvider;
+import alien4cloud.brooklyn.metadata.ToscaTypeProvider;
+import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.exception.NotFoundException;
 import alien4cloud.model.application.Application;
 import alien4cloud.model.common.Tag;
@@ -40,6 +35,7 @@ import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.orchestrators.locations.services.LocationService;
 import alien4cloud.paas.IConfigurablePaaSProvider;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.MaintenanceModeException;
@@ -48,9 +44,12 @@ import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.AbstractMonitorEvent;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.InstanceInformation;
+import alien4cloud.paas.model.InstanceStatus;
 import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.PaaSMessageMonitorEvent;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import lombok.SneakyThrows;
 
 /**
  *
@@ -109,23 +108,22 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             // TODO synchronise locations
             catalogMapper.addBaseTypes();
 
-            AbstractToscaMetadataProvider metadataProvider = null;
-            for (String provider : configuration.getProviders()) {
+            List<ToscaTypeProvider> metadataProviders = new LinkedList<>();
+            for (String providerClass : configuration.getProviders()) {
                 try {
-                    AbstractToscaMetadataProvider next = (AbstractToscaMetadataProvider)Class.forName(provider).newInstance();
-                    if(metadataProvider == null) {metadataProvider = next;}
-                    else {
-                        next.setNext(metadataProvider);
-                        metadataProvider = next;
-                    }
+                    Object provider = Class.forName(providerClass).newInstance();
+                    // Alien UI has higher priority items at the end of the list.
+                    // Reverse the order here.
+                    metadataProviders.add(0, ToscaTypeProvider.class.cast(provider));
                 } catch (IllegalAccessException| InstantiationException | ClassNotFoundException e) {
-                    log.warn("no such metadata provider {}", provider);
+                    log.warn("Could not load metadata provider " + providerClass, e);
                 }
             }
-            catalogMapper.mapBrooklynEntities(getNewBrooklynApi(), metadataProvider);
-            
-            
-        } finally { revertContextClassLoader(); }
+            catalogMapper.mapBrooklynEntities(getNewBrooklynApi(), new ToscaMetadataProvider(metadataProviders));
+
+        } finally {
+            revertContextClassLoader();
+        }
     }
 
     @Override

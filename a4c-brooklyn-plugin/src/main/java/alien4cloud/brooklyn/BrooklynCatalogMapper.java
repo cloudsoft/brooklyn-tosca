@@ -1,27 +1,9 @@
 package alien4cloud.brooklyn;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import alien4cloud.brooklyn.metadata.AbstractToscaMetadataProvider;
-import alien4cloud.model.components.AttributeDefinition;
-import alien4cloud.model.components.CSARDependency;
-import alien4cloud.model.components.Csar;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.PropertyDefinition;
-import alien4cloud.plugin.model.ManagedPlugin;
-import alien4cloud.tosca.ArchiveParser;
-import alien4cloud.tosca.normative.ToscaType;
-import alien4cloud.tosca.parser.ParsingException;
-import alien4cloud.tosca.parser.ParsingResult;
-import com.google.common.collect.ImmutableList;
-import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.rest.client.BrooklynApi;
 import org.apache.brooklyn.rest.domain.CatalogEntitySummary;
@@ -32,14 +14,32 @@ import org.apache.brooklyn.util.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import alien4cloud.brooklyn.metadata.ToscaMetadataProvider;
+import alien4cloud.brooklyn.metadata.ToscaTypeProvider;
 import alien4cloud.component.repository.ICsarRepositry;
 import alien4cloud.csar.services.CsarService;
+import alien4cloud.model.components.AttributeDefinition;
+import alien4cloud.model.components.CSARDependency;
+import alien4cloud.model.components.Csar;
+import alien4cloud.model.components.IValue;
+import alien4cloud.model.components.IndexedNodeType;
+import alien4cloud.model.components.Interface;
+import alien4cloud.model.components.Operation;
+import alien4cloud.model.components.PropertyDefinition;
+import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.ArchiveImageLoader;
 import alien4cloud.tosca.ArchiveIndexer;
+import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.model.ArchiveRoot;
+import alien4cloud.tosca.normative.ToscaType;
+import alien4cloud.tosca.parser.ParsingException;
+import alien4cloud.tosca.parser.ParsingResult;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * This component is used to map components out of brooklyn to a4c.
@@ -50,6 +50,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 @Slf4j
 public class BrooklynCatalogMapper {
     private final static Map<String, String> TYPE_MAPPING = Maps.newHashMap();
+
     static {
         TYPE_MAPPING.put(Boolean.class.getName(), ToscaType.BOOLEAN);
         TYPE_MAPPING.put(String.class.getName(), ToscaType.STRING);
@@ -95,7 +96,7 @@ public class BrooklynCatalogMapper {
         }
     }
 
-    public void mapBrooklynEntities(BrooklynApi brooklynApi, AbstractToscaMetadataProvider metadataProvider) {
+    public void mapBrooklynEntities(BrooklynApi brooklynApi, ToscaMetadataProvider metadataProvider) {
         ArchiveRoot archiveRoot = new ArchiveRoot();
         // Brooklyn actually depends on normative types and alien types
         archiveRoot.getArchive().setToscaDefinitionsVersion("tosca_simple_yaml_1_0_0_wd03");
@@ -129,7 +130,7 @@ public class BrooklynCatalogMapper {
         archiveIndexer.indexArchive(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), archiveRoot, true);
     }
 
-    public void mapBrooklynEntity(BrooklynApi brooklynApi, ArchiveRoot archiveRoot, String entityName, String entityVersion, AbstractToscaMetadataProvider metadataProvider) {
+    public void mapBrooklynEntity(BrooklynApi brooklynApi, ArchiveRoot archiveRoot, String entityName, String entityVersion, ToscaMetadataProvider metadataProvider) {
         try {
             IndexedNodeType toscaType = new IndexedNodeType();
             CatalogEntitySummary brooklynEntity = loadEntity(brooklynApi, entityName);
@@ -148,10 +149,11 @@ public class BrooklynCatalogMapper {
             addPropertyDefinitions(brooklynEntity, toscaType);
             addAttributeDefinitions(brooklynEntity, toscaType);
             addInterfaces(brooklynEntity, toscaType);
-            toscaType.setDerivedFrom(ImmutableList.of(
-                    metadataProvider.findToscaType(brooklynEntity.getType())
-            ));
 
+            Optional<String> derivedFrom = metadataProvider.getToscaType(brooklynEntity.getType());
+            if (derivedFrom.isPresent()) {
+                toscaType.setDerivedFrom(ImmutableList.of(derivedFrom.get()));
+            }
 
             // TODO override the host requirement in order to say that none is required.
             // or say it requires some type of cloud/server/location/etc

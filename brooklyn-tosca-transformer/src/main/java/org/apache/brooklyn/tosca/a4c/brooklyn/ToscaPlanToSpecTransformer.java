@@ -13,16 +13,27 @@ import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
+import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
+import org.apache.brooklyn.camp.brooklyn.BrooklynCampReservedKeys;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlLocationResolver;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlTypeInstantiator;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
@@ -30,8 +41,10 @@ import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
+import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.exceptions.Exceptions;
 import org.apache.brooklyn.util.exceptions.UserFacingException;
+import org.apache.brooklyn.util.guava.SerializablePredicate;
 import org.apache.brooklyn.util.net.Urls;
 import org.apache.brooklyn.util.stream.Streams;
 import org.apache.brooklyn.util.text.Strings;
@@ -39,6 +52,7 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +67,10 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
    public static ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");
    public static ConfigKey<String> TOSCA_DELEGATE_ID = ConfigKeys.newStringConfigKey("tosca.delegate.id");
    public static ConfigKey<String> TOSCA_DEPLOYMENT_ID = ConfigKeys.newStringConfigKey("tosca.deployment.id");
-    
+
+    public static String POLICY_FLAG_TYPE = "type";
+    public static String POLICY_FLAG_NAME = "name";
+
     private ManagementContext mgmt;
     private Alien4CloudToscaPlatform platform;
 
@@ -177,8 +194,6 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return createApplicationSpec(application.getName(), dt, id);
     }
 
-
-
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo, String deploymentId) {
 
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
@@ -201,8 +216,9 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                         }
                         if ("brooklyn.location".equals(p.getName())) {
                             setLocationsOnSpecs(dt.getSpecs(), g, (GenericPolicy) p);
+                        } else {
+                            decorateEntityBrooklynWithPolicies(rootSpec, g, (GenericPolicy) p);
                         }
-                        // TODO: Other policies ignored, should we support them?
                     }
                 }
             }
@@ -210,6 +226,36 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
         log.debug("Created entity from TOSCA spec: " + rootSpec);
         return rootSpec;
+    }
+
+    public void decorateEntityBrooklynWithPolicies(EntitySpec<? extends Application> appSpec,
+                                                   NodeGroup group,
+                                                   GenericPolicy policy){
+        String type;
+        BrooklynClassLoadingContext loader = JavaBrooklynClassLoadingContext.create(mgmt);
+        BrooklynYamlTypeInstantiator.Factory yamlLoader =
+                new BrooklynYamlTypeInstantiator.Factory(loader, this);
+
+        type = getPolicyType(policy);
+        if(policy.getType()==null) {
+            throw new IllegalStateException("Type was nof found for policy " + policy.getName());
+        }
+
+        ImmutableMap policies = ImmutableMap.of(
+                BrooklynCampReservedKeys.BROOKLYN_POLICIES, ImmutableList.of(
+                        ImmutableMap.of(
+                                "policyType", type,
+                                BrooklynCampReservedKeys.BROOKLYN_CONFIG, getPolicyProperties(policy))));
+
+        for(String specId: group.getMembers()){
+            EntitySpec<?> spec = findChildEntitySpecByPlanId(appSpec, specId);
+            if(spec==null){
+                throw new IllegalStateException("Error: NodeTemplate " + specId +
+                        " defined by policy " + policy.getName() + " was not found");
+            }
+            new BrooklynEntityDecorationResolver.PolicySpecResolver(yamlLoader)
+                    .decorate(spec, ConfigBag.newInstance(policies));
+        }
     }
 
     private void setLocationsOnSpecs(Map<String, EntitySpec<?>> specs,
@@ -222,10 +268,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     .resolveLocations(ImmutableMap.of("location",
                                     policy.getData().get(GroupPolicyParser.VALUE)), true);
         } else {
-            Map<String, ?> data = MutableMap.copyOf(policy.getData());
-            /* name entry contains the policy name. This value is not necessary for the location
-            creating process which is carried out by BrooklynYamlLocationResolver.*/
-            data.remove("name");
+            Map<String, ?> data = getPolicyProperties(policy);
             foundLocations = new BrooklynYamlLocationResolver(mgmt)
                     .resolveLocations(ImmutableMap.of("location", data), true);
         }
@@ -239,6 +282,26 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
 
+    private String getPolicyType(GenericPolicy policy){
+        String type=null;
+        if(policy.getType()!=null){
+            type = policy.getType();
+        } else if( policy.getData().containsKey("type")) {
+            type = (String) policy.getData().get("type");
+        }
+        return type;
+    }
+
+    /**
+     * Returns policy properties. In this case, type or name are not considered as properties.
+     * @param policy
+     */
+    private Map<String, ?> getPolicyProperties(GenericPolicy policy){
+        Map<String, ?> data = MutableMap.copyOf(policy.getData());
+        data.remove(POLICY_FLAG_NAME);
+        data.remove(POLICY_FLAG_TYPE);
+        return data;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -254,6 +317,44 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             throw new PlanNotRecognizedException("TOSCA does not support: "+item.getCatalogItemType());
         default:
             throw new IllegalStateException("Unknown CI Type "+item.getCatalogItemType());
+        }
+    }
+
+    public static EntitySpec<?> findChildEntitySpecByPlanId(EntitySpec<? extends Application> app, String planId){
+
+        Optional<EntitySpec<?>> result = Iterables.tryFind(app.getChildren(),
+                configSatisfies(BrooklynCampConstants.PLAN_ID, planId));
+
+        if (result.isPresent()) {
+            return result.get();
+        }
+        //TODO: better NoSuchElementException? return null?
+        throw new IllegalStateException("Entity with planId  " + planId + " is not contained on" +
+                " ApplicationSpec "+ app +" children");
+    }
+
+    public static <T> Predicate<EntitySpec> configSatisfies(final ConfigKey<T> configKey, final T val) {
+        return new ConfigKeySatisfies<T>(configKey, Predicates.equalTo(val));
+    }
+
+    protected static class ConfigKeySatisfies<T> implements SerializablePredicate<EntitySpec> {
+        protected final ConfigKey<T> configKey;
+        protected final Predicate<T> condition;
+
+        private ConfigKeySatisfies(ConfigKey<T> configKey, Predicate<T> condition) {
+            this.configKey = configKey;
+            this.condition = condition;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public boolean apply(@Nullable EntitySpec input) {
+            return (input != null) && condition.apply((T)input.getConfig().get(configKey));
+        }
+
+        @Override
+        public String toString() {
+            return "configKeySatisfies("+configKey.getName()+","+condition+")";
         }
     }
 

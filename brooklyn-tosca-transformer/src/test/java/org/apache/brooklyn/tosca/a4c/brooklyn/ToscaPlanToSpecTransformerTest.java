@@ -4,13 +4,16 @@ import com.google.common.collect.Iterables;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
+import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
+import org.apache.brooklyn.entity.webapp.DynamicWebAppCluster;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.location.byon.FixedListMachineProvisioningLocation;
 import org.apache.brooklyn.location.jclouds.JcloudsLocation;
 import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocation;
 import org.apache.brooklyn.location.ssh.SshMachineLocation;
+import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaTest;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.BeforeMethod;
@@ -28,8 +31,9 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
     protected ToscaPlanToSpecTransformer transformer;
 
-    private String DATABASE_DEPENDENCY_INJECTION= "$brooklyn:formatString(\"jdbc:%s%s?user=%s\\\\&password=%s\"," +
-            "$brooklyn:entity(\"mysql_server\").attributeWhenReady(\"datastore.url\")," +
+    private String DATABASE_DEPENDENCY_INJECTION= "$brooklyn:formatString(\"jdbc:" +
+            "%s%s?user=%s\\\\&password=%s\",$brooklyn:entity(\"mysql_server\")" +
+            ".attributeWhenReady(\"datastore.url\")," +
             "visitors," +
             "brooklyn," +
             "br00k11n)";
@@ -84,7 +88,12 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertEquals(app.getChildren().size(), 2);
 
         EntitySpec<TomcatServer> tomcatServer =
-                (EntitySpec<TomcatServer>) findChildEntitySpecByPlanId(app, "tomcat_server");
+                (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
+                        .findChildEntitySpecByPlanId(app, "tomcat_server");
+        assertEquals(tomcatServer .getConfig().get(TomcatServer.ROOT_WAR),
+                "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
+                        "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
+                        "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
 
         Map javaSysProps = (Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS);
@@ -98,7 +107,8 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testFullJcloudsLocationDescription() {
-        String templateUrl = getClasspathUrlForResource("templates/full-location.jclouds.tosca.yaml");
+        String templateUrl =
+                getClasspathUrlForResource("templates/full-location.jclouds.tosca.yaml");
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -159,12 +169,46 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertEquals(app.getChildren().size(), 2);
 
         EntitySpec<TomcatServer> tomcatServer =
-                (EntitySpec<TomcatServer>) findChildEntitySpecByPlanId(app, "tomcat_server");
+                (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
+                        .findChildEntitySpecByPlanId(app, "tomcat_server");
+
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
         assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
         assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                         .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testParsingAutoscalingBrooklynPolicy(){
+        String templateUrl =
+                getClasspathUrlForResource("templates/autoscaling.policies.tosca.yaml");
+
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(app);
+        EntitySpec<DynamicWebAppCluster> cluster =
+                (EntitySpec<DynamicWebAppCluster>) ToscaPlanToSpecTransformer
+                .findChildEntitySpecByPlanId(app, "cluster");
+
+        assertEquals(cluster.getPolicySpecs().size(), 1);
+        assertTrue(cluster.getPolicySpecs().get(0).getType().equals(AutoScalerPolicy.class));
+
+        PolicySpec<?> autoScalerPolicy = cluster.getPolicySpecs().get(0);
+        assertNotNull(autoScalerPolicy.getFlags());
+
+        Map<String, ?> autoScalerPolicyFlags = autoScalerPolicy.getFlags();
+        assertEquals(autoScalerPolicyFlags.size(), 5);
+        assertEquals(autoScalerPolicyFlags.get("metricLowerBound"), "10");
+        assertEquals(autoScalerPolicyFlags.get("metricUpperBound"), "100");
+        assertEquals(autoScalerPolicyFlags.get("minPoolSize"), "1");
+        assertEquals(autoScalerPolicyFlags.get("maxPoolSize"), "5");
+        assertEquals(autoScalerPolicyFlags.get("metric"),"$brooklyn:sensor(" +
+                "\"org.apache.brooklyn.entity.webapp.DynamicWebAppCluster\"," +
+                " \"webapp.reqs.perSec.windowed.perNode\")" );
+    }
+
 
 
 }

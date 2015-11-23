@@ -69,6 +69,7 @@ public class ToscaNodeToEntityConverter {
     private IndexedArtifactToscaElement indexedNodeTemplate;
     private NodeTemplate nodeTemplate;
     private CsarFileRepository csarFileRepository;
+    private String env;
 
     private ToscaNodeToEntityConverter(ManagementContext mgmt) {
         this.mgnt = mgmt;
@@ -367,7 +368,7 @@ public class ToscaNodeToEntityConverter {
                     script = new ResourceUtils(this).getResourceAsString(ref);
                 }
 
-                spec.configure(cmdKey, script);
+                spec.configure(cmdKey, env + "\n" + script);
                 return;
             }
             log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no ref");
@@ -384,6 +385,7 @@ public class ToscaNodeToEntityConverter {
 
         final Map<String, String> filesToCopy = MutableMap.of();
         final List<String> preInstallCommands = MutableList.of();
+        final List<String> envCommands = MutableList.of();
 
         for (final Map.Entry<String, DeploymentArtifact> artifactEntry : indexedNodeTemplate.getArtifacts().entrySet()) {
             if (artifactEntry.getValue() == null) {
@@ -398,7 +400,7 @@ public class ToscaNodeToEntityConverter {
 
             preInstallCommands.add("mkdir -p " + destRoot);
             preInstallCommands.add("mkdir -p " + tempRoot);
-            preInstallCommands.add(String.format("export %s=%s", artifactEntry.getValue().getArtifactName(), destRoot));
+            envCommands.add(String.format("export %s=%s", artifactEntry.getValue().getArtifactName(), destRoot));
 
             try {
                 Path csarPath = csarFileRepository.getCSAR(artifactEntry.getValue().getArchiveName(), artifactEntry.getValue().getArchiveVersion());
@@ -425,8 +427,9 @@ public class ToscaNodeToEntityConverter {
             }
         }
 
+        env = Joiner.on("\n").join(envCommands) + "\n";
         entitySpec.configure(SoftwareProcess.PRE_INSTALL_FILES, filesToCopy);
-        entitySpec.configure(SoftwareProcess.PRE_INSTALL_COMMAND, Joiner.on("\n").join(preInstallCommands));
+        entitySpec.configure(SoftwareProcess.PRE_INSTALL_COMMAND, Joiner.on("\n").join(preInstallCommands) + "\n" + env);
     }
 
     public static Object resolve(Map<String, AbstractPropertyValue> props, String... keys) {

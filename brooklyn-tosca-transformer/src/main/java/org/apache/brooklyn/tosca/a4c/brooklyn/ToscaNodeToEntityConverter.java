@@ -164,18 +164,14 @@ public class ToscaNodeToEntityConverter {
         // Applying operations
         final Map<String, Operation> operations = getInterfaceOperations();
         if (!operations.isEmpty()) {
-            if (!spec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
-                throw new IllegalStateException("Brooklyn entity: " + spec.getImplementation() +
-                        " does not support interface operations defined by node template" + this.nodeTemplate.getType());
-            }
-
-            applyLifecycle(operations, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
-            applyLifecycle(operations, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
-            applyLifecycle(operations, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
-            applyLifecycle(operations, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
-
-            if (!operations.isEmpty()) {
-                log.warn("Could not translate some operations for " + this.nodeId + ": " + operations.keySet());
+            if (spec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
+                applyLifecycle(operations, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
+                applyLifecycle(operations, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
+                applyLifecycle(operations, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
+                applyLifecycle(operations, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
+                if (!operations.isEmpty()) {
+                    log.warn("Could not translate some operations for " + this.nodeId + ": " + operations.keySet());
+                }
             }
         }
 

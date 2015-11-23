@@ -6,6 +6,7 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
+import org.apache.brooklyn.core.test.policy.TestPolicy;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.webapp.DynamicWebAppCluster;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
@@ -180,7 +181,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testParsingAutoscalingBrooklynPolicy(){
+    public void testAddingBrooklynPolicyToEntitySpec(){
         String templateUrl =
                 getClasspathUrlForResource("templates/autoscaling.policies.tosca.yaml");
 
@@ -207,6 +208,32 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertEquals(autoScalerPolicyFlags.get("metric"),"$brooklyn:sensor(" +
                 "\"org.apache.brooklyn.entity.webapp.DynamicWebAppCluster\"," +
                 " \"webapp.reqs.perSec.windowed.perNode\")" );
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testAddingBrooklynPolicyToApplicationSpec(){
+        String templateUrl =
+                getClasspathUrlForResource("templates/simple.application-policies.tosca.yaml");
+
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(app);
+
+        assertEquals(app.getPolicySpecs().size(), 1);
+        assertTrue(app.getPolicySpecs().get(0).getType().equals(TestPolicy.class));
+
+        PolicySpec<?> testPolicy = app.getPolicySpecs().get(0);
+        assertNotNull(testPolicy.getFlags());
+
+        Map<String, ?> testPolicyFlags = testPolicy.getFlags();
+        assertEquals(testPolicyFlags.size(), 4);
+        assertEquals(testPolicyFlags.get("policyLiteralValue1"), "Hello");
+        assertEquals(testPolicyFlags.get("policyLiteralValue2"), "World");
+        assertEquals(testPolicyFlags.get("test.confName"), "Name from YAML");
+        assertEquals(testPolicyFlags.get("test.confFromFunction"),
+                "$brooklyn:formatString(\"%s: is a fun place\", \"$brooklyn\")");
     }
 
 

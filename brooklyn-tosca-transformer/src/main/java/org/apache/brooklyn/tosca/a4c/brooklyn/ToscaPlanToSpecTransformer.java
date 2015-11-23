@@ -241,7 +241,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             throw new IllegalStateException("Type was nof found for policy " + policy.getName());
         }
 
-        ImmutableMap policies = ImmutableMap.of(
+        ImmutableMap policyDefinition = ImmutableMap.of(
                 BrooklynCampReservedKeys.BROOKLYN_POLICIES, ImmutableList.of(
                         ImmutableMap.of(
                                 "policyType", type,
@@ -254,7 +254,12 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                         " defined by policy " + policy.getName() + " was not found");
             }
             new BrooklynEntityDecorationResolver.PolicySpecResolver(yamlLoader)
-                    .decorate(spec, ConfigBag.newInstance(policies));
+                    .decorate(spec, ConfigBag.newInstance(policyDefinition));
+        }
+
+        if(group.getMembers()==null || group.getMembers().isEmpty()){
+            new BrooklynEntityDecorationResolver.PolicySpecResolver(yamlLoader)
+                    .decorate(appSpec, ConfigBag.newInstance(policyDefinition));
         }
     }
 

@@ -18,6 +18,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
@@ -160,6 +161,13 @@ public class ToscaNodeToEntityConverter {
             spec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.STOP_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND, "true");
+            Map<String, Object> shellEnvironment = MutableMap.of();
+            for (Map.Entry<String, ?> entry : nodeTemplate.getProperties().entrySet()) {
+                if (entry.getValue() instanceof ScalarPropertyValue) {
+                    shellEnvironment.put(entry.getKey().toUpperCase(), ((ScalarPropertyValue) entry.getValue()).getValue());
+                }
+            }
+            spec.configure(SoftwareProcess.SHELL_ENVIRONMENT, shellEnvironment);
         }
 
         // Applying operations
@@ -444,7 +452,7 @@ public class ToscaNodeToEntityConverter {
 
     public static Object resolve(Map<String, AbstractPropertyValue> props, String... keys) {
         for (String key: keys) {
-            AbstractPropertyValue v = props.remove(key);
+            AbstractPropertyValue v = props.get(key);
             if (v == null) {
                 continue;
             }

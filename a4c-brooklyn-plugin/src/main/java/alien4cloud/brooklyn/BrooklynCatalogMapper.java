@@ -19,8 +19,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import alien4cloud.brooklyn.metadata.ToscaMetadataProvider;
-import alien4cloud.brooklyn.metadata.ToscaTypeProvider;
 import alien4cloud.component.repository.ICsarRepositry;
 import alien4cloud.csar.services.CsarService;
 import alien4cloud.model.components.AttributeDefinition;
@@ -39,6 +37,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.normative.ToscaType;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
+import io.cloudsoft.tosca.metadata.ToscaMetadataProvider;
 import lombok.extern.slf4j.Slf4j;
 
 /**

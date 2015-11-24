@@ -18,6 +18,7 @@
 
     <modules>
         <module>a4c-brooklyn-plugin</module>
+        <module>brooklyn-tosca-common</module>
         <module>brooklyn-tosca-transformer</module>
         <module>brooklyn-tosca-dist</module>
     </modules>

@@ -1,4 +1,4 @@
-package alien4cloud.brooklyn.metadata;
+package io.cloudsoft.tosca.metadata;
 
 import com.google.common.base.Optional;
 

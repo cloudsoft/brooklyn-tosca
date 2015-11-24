@@ -1,9 +1,9 @@
-package alien4cloud.brooklyn.metadata;
+package io.cloudsoft.tosca.metadata;
+
+import java.util.Map;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
-
-import java.util.Map;
 
 public class BrooklynToscaTypeProvider implements ToscaTypeProvider {
 

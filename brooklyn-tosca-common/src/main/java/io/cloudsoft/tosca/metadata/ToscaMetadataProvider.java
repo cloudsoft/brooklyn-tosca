@@ -1,4 +1,4 @@
-package alien4cloud.brooklyn.metadata;
+package io.cloudsoft.tosca.metadata;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class ToscaMetadataProvider {
     }
 
     /**
-     * @see alien4cloud.brooklyn.metadata.ToscaTypeProvider#getToscaType(String)
+     * @see ToscaTypeProvider#getToscaType(String)
      */
     public Optional<String> getToscaType(String type) {
         for (ToscaTypeProvider provider : providers) {

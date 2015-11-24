@@ -1,11 +1,10 @@
 package alien4cloud.brooklyn;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import alien4cloud.brooklyn.metadata.BrooklynToscaTypeProvider;
-import alien4cloud.brooklyn.metadata.DefaultToscaTypeProvider;
+import io.cloudsoft.tosca.metadata.BrooklynToscaTypeProvider;
+import io.cloudsoft.tosca.metadata.DefaultToscaTypeProvider;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.brooklyn.util.collections.MutableList;

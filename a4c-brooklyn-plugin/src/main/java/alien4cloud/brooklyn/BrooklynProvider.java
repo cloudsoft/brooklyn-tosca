@@ -25,8 +25,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import alien4cloud.application.ApplicationService;
-import alien4cloud.brooklyn.metadata.ToscaMetadataProvider;
-import alien4cloud.brooklyn.metadata.ToscaTypeProvider;
 import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.exception.NotFoundException;
 import alien4cloud.model.application.Application;
@@ -49,6 +47,8 @@ import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSDeploymentContext;
 import alien4cloud.paas.model.PaaSMessageMonitorEvent;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import io.cloudsoft.tosca.metadata.ToscaMetadataProvider;
+import io.cloudsoft.tosca.metadata.ToscaTypeProvider;
 import lombok.SneakyThrows;
 
 /**

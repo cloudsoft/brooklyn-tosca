@@ -42,6 +42,11 @@
             <version>${brooklyn.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+            <artifactId>brooklyn-tosca-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>3.1.0</version>
@@ -92,12 +97,6 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <version>${spring.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.brooklyn</groupId>
-            <artifactId>brooklyn-software-database</artifactId>
-            <version>${brooklyn.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

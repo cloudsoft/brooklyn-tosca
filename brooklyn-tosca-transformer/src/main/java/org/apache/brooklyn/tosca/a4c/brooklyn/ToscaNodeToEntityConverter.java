@@ -48,17 +48,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 
 public class ToscaNodeToEntityConverter {
 
@@ -406,20 +406,30 @@ public class ToscaNodeToEntityConverter {
                 Path csarPath = csarFileRepository.getCSAR(artifactEntry.getValue().getArchiveName(), artifactEntry.getValue().getArchiveVersion());
 
                 Path resourcesRootPath = Paths.get(csarPath.getParent().toAbsolutePath().toString(), "expanded", artifactEntry.getKey());
-                Files.find(resourcesRootPath, Integer.MAX_VALUE, new BiPredicate<Path, BasicFileAttributes>() {
+                Files.walkFileTree(resourcesRootPath, new SimpleFileVisitor<Path>() {
                     @Override
-                    public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
-                        return basicFileAttributes.isRegularFile();
-                    }
-                }).forEach(new Consumer<Path>() {
-                    @Override
-                    public void accept(Path file) {
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         String tempDest = Os.mergePaths(tempRoot, file.getFileName().toString());
                         String finalDest = Os.mergePaths(destRoot, file.getFileName().toString());
                         filesToCopy.put(file.toAbsolutePath().toString(), tempDest);
                         preInstallCommands.add(String.format("mv %s %s", tempDest, finalDest));
+                        return FileVisitResult.CONTINUE;
                     }
                 });
+//                Files.find(resourcesRootPath, Integer.MAX_VALUE, new BiPredicate<Path, BasicFileAttributes>() {
+//                    @Override
+//                    public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
+//                        return basicFileAttributes.isRegularFile();
+//                    }
+//                }).forEach(new Consumer<Path>() {
+//                    @Override
+//                    public void accept(Path file) {
+//                        String tempDest = Os.mergePaths(tempRoot, file.getFileName().toString());
+//                        String finalDest = Os.mergePaths(destRoot, file.getFileName().toString());
+//                        filesToCopy.put(file.toAbsolutePath().toString(), tempDest);
+//                        preInstallCommands.add(String.format("mv %s %s", tempDest, finalDest));
+//                    }
+//                });
             } catch (CSARVersionNotFoundException e) {
                 log.warn("CSAR " + artifactEntry.getValue().getArtifactName() + ":" + artifactEntry.getValue().getArchiveVersion() + " does not exists", e);
             } catch (IOException e) {

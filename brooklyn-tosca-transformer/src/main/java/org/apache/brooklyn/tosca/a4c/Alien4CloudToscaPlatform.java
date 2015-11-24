@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -136,6 +137,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
             Path artifactsDirectory = Paths.get(tmpRoot.toString(), "tosca-normative-types");
             Path zpb = artifactsDirectory.resolve(Paths.get("tosca-normative-types."+Identifiers.makeRandomId(6)));
             Path zpo = Paths.get(zpb.toString()+".orig.zip");
+            Files.createDirectories(zpo.getParent());
             Streams.copy(new ResourceUtils(Alien4CloudToscaPlatform.class).getResourceFromUrl(TOSCA_NORMATIVE_TYPES_GITHUB_URL),
                 new FileOutputStream(zpo.toString()) );
             Path zpe = Paths.get(zpb.toString()+"_expanded");

@@ -1,6 +1,8 @@
 brooklyn-tosca
 ===
 
+[![Build Status](https://travis-ci.org/cloudsoft/brooklyn-tosca.svg?branch=master)](https://travis-ci.org/cloudsoft/brooklyn-tosca)
+
 ## Overview
 
 This package provides support for [Apache Brooklyn](http://brooklyn.io)

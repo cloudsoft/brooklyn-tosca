@@ -9,7 +9,7 @@ imports:
  template_version: 1.0.0-SNAPSHOT
 
 description: Template for deploying a single server with predefined properties.
- 
+
 topology_template:
   node_templates:
     my_server:

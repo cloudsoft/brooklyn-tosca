@@ -91,7 +91,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         EntitySpec<TomcatServer> tomcatServer =
                 (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
                         .findChildEntitySpecByPlanId(app, "tomcat_server");
-        assertEquals(tomcatServer .getConfig().get(TomcatServer.ROOT_WAR),
+        assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");

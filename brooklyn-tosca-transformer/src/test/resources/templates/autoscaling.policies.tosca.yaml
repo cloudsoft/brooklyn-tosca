@@ -15,7 +15,7 @@ node_types:
       A simple Dynamic Cluster
 
 topology_template:
-  description: Dynamic Cluster and a austoscaling policy
+  description: Dynamic Cluster and a autoscaling policy
   node_templates:
     cluster:
       type: org.apache.brooklyn.entity.webapp.DynamicWebAppCluster

@@ -231,8 +231,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     }
 
     public void decorateEntityBrooklynWithPolicies(EntitySpec<? extends Application> appSpec,
-                                                   NodeGroup group,
-                                                   GenericPolicy policy){
+            NodeGroup group, GenericPolicy policy){
         String type;
         BrooklynClassLoadingContext loader = JavaBrooklynClassLoadingContext.create(mgmt);
         BrooklynYamlTypeInstantiator.Factory yamlLoader =
@@ -240,7 +239,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
         type = getPolicyType(policy);
         if(policy.getType()==null) {
-            throw new IllegalStateException("Type was nof found for policy " + policy.getName());
+            throw new IllegalStateException("Type was not found for policy " + policy.getName());
         }
 
         ImmutableMap policyDefinition = ImmutableMap.of(
@@ -249,7 +248,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                                 "policyType", type,
                                 BrooklynCampReservedKeys.BROOKLYN_CONFIG, getPolicyProperties(policy))));
 
-        for(String specId: group.getMembers()){
+        for (String specId: group.getMembers()){
             EntitySpec<?> spec = findChildEntitySpecByPlanId(appSpec, specId);
             if(spec==null){
                 throw new IllegalStateException("Error: NodeTemplate " + specId +
@@ -259,7 +258,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     .decorate(spec, ConfigBag.newInstance(policyDefinition));
         }
 
-        if(group.getMembers()==null || group.getMembers().isEmpty()){
+        if (group.getMembers()==null || group.getMembers().isEmpty()){
             new BrooklynEntityDecorationResolver.PolicySpecResolver(yamlLoader)
                     .decorate(appSpec, ConfigBag.newInstance(policyDefinition));
         }
@@ -270,7 +269,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                                      GenericPolicy policy) {
 
         List<Location> foundLocations;
-        if(policy.getData().containsKey(GroupPolicyParser.VALUE)){
+        if (policy.getData().containsKey(GroupPolicyParser.VALUE)){
             foundLocations = new BrooklynYamlLocationResolver(mgmt)
                     .resolveLocations(ImmutableMap.of("location",
                                     policy.getData().get(GroupPolicyParser.VALUE)), true);
@@ -305,10 +304,10 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     }
 
     private String getPolicyType(GenericPolicy policy){
-        String type=null;
-        if(policy.getType()!=null){
+        String type = null;
+        if (policy.getType() != null) {
             type = policy.getType();
-        } else if( policy.getData().containsKey("type")) {
+        } else if (policy.getData().containsKey("type")) {
             type = (String) policy.getData().get("type");
         }
         return type;

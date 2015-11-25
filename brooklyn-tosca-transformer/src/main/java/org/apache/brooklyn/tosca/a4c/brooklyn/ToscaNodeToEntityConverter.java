@@ -180,13 +180,6 @@ public class ToscaNodeToEntityConverter {
             spec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.STOP_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND, "true");
-            Map<String, Object> shellEnvironment = MutableMap.of();
-            for (Map.Entry<String, ?> entry : nodeTemplate.getProperties().entrySet()) {
-                if (entry.getValue() instanceof ScalarPropertyValue) {
-                    shellEnvironment.put(entry.getKey().toUpperCase(), ((ScalarPropertyValue) entry.getValue()).getValue());
-                }
-            }
-            spec.configure(SoftwareProcess.SHELL_ENVIRONMENT, shellEnvironment);
         }
 
         // Applying operations
@@ -437,7 +430,7 @@ public class ToscaNodeToEntityConverter {
                 continue;
             }
 
-            final String destRoot = Os.mergePaths("~", artifactEntry.getValue().getArtifactName());
+            final String destRoot = Os.mergePaths("~", "brooklyn-tosca-resources", artifactEntry.getValue().getArtifactName());
             final String tempRoot = Os.mergePaths("/tmp", artifactEntry.getValue().getArtifactName());
 
             preInstallCommands.add("mkdir -p " + destRoot);

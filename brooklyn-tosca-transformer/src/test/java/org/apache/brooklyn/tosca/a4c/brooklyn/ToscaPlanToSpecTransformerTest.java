@@ -43,7 +43,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     public void setUp() throws Exception {
         super.setUp();
         transformer = new ToscaPlanToSpecTransformer();
-        transformer.injectManagementContext(mgmt);
+        transformer.setManagementContext(mgmt);
     }
 
     @Test

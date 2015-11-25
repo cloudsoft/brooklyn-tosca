@@ -8,6 +8,9 @@ import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Requirement;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+
+import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
@@ -26,8 +29,8 @@ import java.util.Set;
 public class DependencyTree{
 
     private static final Logger LOG = LoggerFactory.getLogger(DependencyTree.class);
-
     private Map<String, String> roots = MutableMap.of();
+
     private Map<String, String> parents = MutableMap.of();
     private Multimap<String, String> children = ArrayListMultimap.create();
     private Map<String, EntitySpec<?>> specs = MutableMap.of();
@@ -36,12 +39,15 @@ public class DependencyTree{
     private Topology topo;
     private ICSARRepositorySearchService repositorySearchService;
     private CsarFileRepository csarFileRepository;
+    private TopologyTreeBuilderService treeBuilder;
 
-    public DependencyTree(Topology topo, ManagementContext mgmt, ICSARRepositorySearchService repositorySearchService, CsarFileRepository csarFileRepository) {
+    public DependencyTree(Topology topo, ManagementContext mgmt, ICSARRepositorySearchService repositorySearchService, CsarFileRepository csarFileRepository,
+                          TopologyTreeBuilderService treeBuilder) {
         this.topo = topo;
         this.repositorySearchService = repositorySearchService;
         this.csarFileRepository = csarFileRepository;
         this.nodeTemplates = topo.getNodeTemplates();
+        this.treeBuilder = treeBuilder;
         this.mgmt = mgmt;
         for(Map.Entry<String, NodeTemplate> nodeTemplate : nodeTemplates.entrySet()){
             String parentId = getParentId(nodeTemplate.getValue());
@@ -69,6 +75,8 @@ public class DependencyTree{
                 .setNodeTemplate(nodeTemplate)
                 .setIndexedNodeTemplate(indexedNodeTemplate)
                 .setCsarFileRepository(csarFileRepository)
+                .setTopology(topo)
+                .setTreeBuilder(treeBuilder)
                 .createSpec(hasMultipleChildren(root));
 
         for(String child : children.get(root)) {
@@ -91,11 +99,11 @@ public class DependencyTree{
         }
 
         // temporarily, fall back to looking for a *property* called 'host'
-        String parentId = (String) ToscaNodeToEntityConverter.resolve(nodeTemplate.getProperties(), "host");
-        if (parentId != null) {
+        Optional<Object> parentId = ToscaNodeToEntityConverter.resolve(nodeTemplate.getProperties(), "host");
+        if (parentId.isPresent()) {
             LOG.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
         }
-        return parentId;
+        return (String)parentId.orNull();
     }
 
     public String root(String id) {

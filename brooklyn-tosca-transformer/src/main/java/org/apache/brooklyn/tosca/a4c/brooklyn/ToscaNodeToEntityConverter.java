@@ -5,6 +5,8 @@ import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ComplexPropertyValue;
 import alien4cloud.model.components.DeploymentArtifact;
+import alien4cloud.model.components.FunctionPropertyValue;
+import alien4cloud.model.components.IValue;
 import alien4cloud.model.components.ImplementationArtifact;
 import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.components.Interface;
@@ -12,13 +14,17 @@ import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
+import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.function.FunctionEvaluator;
+import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 
 import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
@@ -61,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+
 public class ToscaNodeToEntityConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaNodeToEntityConverter.class);
@@ -70,7 +77,9 @@ public class ToscaNodeToEntityConverter {
     private IndexedArtifactToscaElement indexedNodeTemplate;
     private NodeTemplate nodeTemplate;
     private CsarFileRepository csarFileRepository;
-    private String env;
+    private String env = Strings.EMPTY;
+    private Topology topology;
+    private TopologyTreeBuilderService treeBuilder;
 
     private ToscaNodeToEntityConverter(ManagementContext mgmt) {
         this.mgnt = mgmt;
@@ -97,6 +106,16 @@ public class ToscaNodeToEntityConverter {
 
     public ToscaNodeToEntityConverter setCsarFileRepository(CsarFileRepository csarFileRepository) {
         this.csarFileRepository = csarFileRepository;
+        return this;
+    }
+
+    public ToscaNodeToEntityConverter setTopology(Topology topology) {
+        this.topology = topology;
+        return this;
+    }
+
+    public ToscaNodeToEntityConverter setTreeBuilder(TopologyTreeBuilderService treeBuilder) {
+        this.treeBuilder = treeBuilder;
         return this;
     }
 
@@ -143,11 +162,11 @@ public class ToscaNodeToEntityConverter {
         Map<String, AbstractPropertyValue> properties = this.nodeTemplate.getProperties();
         // Applying provisioning properties
         ConfigBag prov = ConfigBag.newInstance();
-        prov.putIfNotNull(JcloudsLocationConfig.MIN_RAM, resolve(properties, "mem_size"));
-        prov.putIfNotNull(JcloudsLocationConfig.MIN_DISK, resolve(properties, "disk_size"));
-        prov.putIfNotNull(JcloudsLocationConfig.MIN_CORES, TypeCoercions.coerce(resolve(properties, "num_cpus"), Integer.class));
-        prov.putIfNotNull(JcloudsLocationConfig.OS_FAMILY, TypeCoercions.coerce(resolve(properties, "os_distribution"), OsFamily.class));
-        prov.putIfNotNull(JcloudsLocationConfig.OS_VERSION_REGEX, (String)resolve(properties, "os_version"));
+        prov.putIfNotNull(JcloudsLocationConfig.MIN_RAM, resolve(properties, "mem_size").orNull());
+        prov.putIfNotNull(JcloudsLocationConfig.MIN_DISK, resolve(properties, "disk_size").orNull());
+        prov.putIfNotNull(JcloudsLocationConfig.MIN_CORES, TypeCoercions.coerce(resolve(properties, "num_cpus").orNull(), Integer.class));
+        prov.putIfNotNull(JcloudsLocationConfig.OS_FAMILY, TypeCoercions.coerce(resolve(properties, "os_distribution").orNull(), OsFamily.class));
+        prov.putIfNotNull(JcloudsLocationConfig.OS_VERSION_REGEX, (String)resolve(properties, "os_version").orNull());
         // TODO: Mapping for "os_arch" and "os_type" are missing
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
@@ -174,10 +193,10 @@ public class ToscaNodeToEntityConverter {
         final Map<String, Operation> operations = getInterfaceOperations();
         if (!operations.isEmpty()) {
             if (spec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
-                applyLifecycle(operations, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
-                applyLifecycle(operations, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
-                applyLifecycle(operations, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
-                applyLifecycle(operations, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.CREATE, spec, VanillaSoftwareProcess.INSTALL_COMMAND);
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.CONFIGURE, spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.START, spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.STOP, spec, VanillaSoftwareProcess.STOP_COMMAND);
                 if (!operations.isEmpty()) {
                     log.warn("Could not translate some operations for " + this.nodeId + ": " + operations.keySet());
                 }
@@ -328,7 +347,7 @@ public class ToscaNodeToEntityConverter {
 
         for (String propertyKey : propertyKeys) {
             propertyMap.put(propertyKey,
-                    resolve(propertyValueMap, propertyKey));
+                    resolve(propertyValueMap, propertyKey).or(""));
         }
         return propertyMap;
     }
@@ -365,7 +384,7 @@ public class ToscaNodeToEntityConverter {
         if (artifact != null) {
             String ref = artifact.getArtifactRef();
             if (ref != null) {
-                String script = null;
+                String script;
 
                 // Trying to get the CSAR file based on the artifact reference. If it fails, then we try to get the
                 // content of the script from any resources
@@ -376,7 +395,22 @@ public class ToscaNodeToEntityConverter {
                     script = new ResourceUtils(this).getResourceAsString(ref);
                 }
 
-                spec.configure(cmdKey, env + "\n" + script);
+                Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
+                String computeName = nodeTemplate.getName();
+                PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
+                Operation configOp = paasNodeTemplate.getIndexedToscaElement().getInterfaces().get(ToscaNodeLifecycleConstants.STANDARD).getOperations()
+                        .get(opKey);
+                StringBuilder inputBuilder = new StringBuilder();
+                Map<String, IValue> inputParameters = configOp.getInputParameters();
+                if (inputParameters != null) {
+                    for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
+                        // case keyword SOURCE used on a NodeType
+                        Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates);
+                        inputBuilder.append(String.format("export %s=%s%n", entry.getKey(), value.or("")));
+                    }
+                }
+
+                spec.configure(cmdKey, inputBuilder.toString() + env + "\n" + script);
                 return;
             }
             log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no ref");
@@ -424,20 +458,6 @@ public class ToscaNodeToEntityConverter {
                         return FileVisitResult.CONTINUE;
                     }
                 });
-//                Files.find(resourcesRootPath, Integer.MAX_VALUE, new BiPredicate<Path, BasicFileAttributes>() {
-//                    @Override
-//                    public boolean test(Path path, BasicFileAttributes basicFileAttributes) {
-//                        return basicFileAttributes.isRegularFile();
-//                    }
-//                }).forEach(new Consumer<Path>() {
-//                    @Override
-//                    public void accept(Path file) {
-//                        String tempDest = Os.mergePaths(tempRoot, file.getFileName().toString());
-//                        String finalDest = Os.mergePaths(destRoot, file.getFileName().toString());
-//                        filesToCopy.put(file.toAbsolutePath().toString(), tempDest);
-//                        preInstallCommands.add(String.format("mv %s %s", tempDest, finalDest));
-//                    }
-//                });
             } catch (CSARVersionNotFoundException e) {
                 log.warn("CSAR " + artifactEntry.getValue().getArtifactName() + ":" + artifactEntry.getValue().getArchiveVersion() + " does not exists", e);
             } catch (IOException e) {
@@ -450,20 +470,26 @@ public class ToscaNodeToEntityConverter {
         entitySpec.configure(SoftwareProcess.PRE_INSTALL_COMMAND, Joiner.on("\n").join(preInstallCommands) + "\n" + env);
     }
 
-    public static Object resolve(Map<String, AbstractPropertyValue> props, String... keys) {
-        for (String key: keys) {
-            AbstractPropertyValue v = props.get(key);
-            if (v == null) {
-                continue;
-            }
-            if (v instanceof ScalarPropertyValue) {
-                return ((ScalarPropertyValue)v).getValue();
-            }
-            if (v instanceof ComplexPropertyValue){
-                return ((ComplexPropertyValue)v).getValue();
-            }
+    public static Optional<Object> resolve(Map<String, ? extends IValue> props, String key) {
+        IValue v = props.get(key);
+        if (v instanceof ScalarPropertyValue) {
+            return Optional.<Object>fromNullable(((ScalarPropertyValue) v).getValue());
+        }
+        if (v instanceof ComplexPropertyValue) {
+            return Optional.<Object>fromNullable(((ComplexPropertyValue) v).getValue());
+        }
+        if (!(v instanceof FunctionPropertyValue)) {
             log.warn("Ignoring unsupported property value " + v);
         }
-        return null;
+        return Optional.absent();
     }
+
+    public Optional<Object> resolve(Map<String, ? extends IValue> props, String key, PaaSNodeTemplate template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
+        Optional<Object> value = resolve(props, key);
+        if (!value.isPresent()) {
+            value = Optional.<Object>fromNullable(FunctionEvaluator.evaluateGetPropertyFunction((FunctionPropertyValue) props.get(key), template, builtPaaSNodeTemplates));
+        }
+        return value;
+    }
+
 }

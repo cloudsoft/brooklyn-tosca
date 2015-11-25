@@ -51,6 +51,7 @@ import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
@@ -81,7 +82,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     private Alien4CloudToscaPlatform platform;
 
     @Override
-    public void injectManagementContext(ManagementContext managementContext) {
+    public void setManagementContext(ManagementContext managementContext) {
         if (this.mgmt!=null && this.mgmt!=managementContext) throw new IllegalStateException("Cannot switch mgmt context");
         this.mgmt = managementContext;
         
@@ -211,7 +212,8 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         rootSpec.configure(TOSCA_DELEGATE_ID, topo.getDelegateId());
         rootSpec.configure(TOSCA_DEPLOYMENT_ID, deploymentId);
 
-        DependencyTree dt = new DependencyTree(topo, mgmt, repositorySearchService, csarFileRepository);
+        DependencyTree dt = new DependencyTree(topo, mgmt, repositorySearchService, csarFileRepository,
+                platform.getBean(TopologyTreeBuilderService.class));
         dt.addSpecsAsChildrenOf(rootSpec);
 
         if (topo.getGroups()!=null) {

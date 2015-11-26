@@ -1,13 +1,17 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
+
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
+import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
+import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.entity.webapp.DynamicWebAppCluster;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.location.byon.FixedListMachineProvisioningLocation;
@@ -15,6 +19,7 @@ import org.apache.brooklyn.location.jclouds.JcloudsLocation;
 import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocation;
 import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
+import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaTest;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.BeforeMethod;
@@ -31,6 +36,7 @@ import static org.testng.Assert.assertTrue;
 public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
     protected ToscaPlanToSpecTransformer transformer;
+    private Alien4CloudToscaPlatform platform;
 
     private String DATABASE_DEPENDENCY_INJECTION= "$brooklyn:formatString(\"jdbc:" +
             "%s%s?user=%s\\\\&password=%s\",$brooklyn:entity(\"mysql_server\")" +
@@ -42,6 +48,10 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
         super.setUp();
+        Alien4CloudToscaPlatform.grantAdminAuth();
+        platform = Alien4CloudToscaPlatform.newInstance();
+        mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
+        platform.loadNormativeTypes();
         transformer = new ToscaPlanToSpecTransformer();
         transformer.setManagementContext(mgmt);
     }
@@ -236,6 +246,44 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                 "$brooklyn:formatString(\"%s: is a fun place\", \"$brooklyn\")");
     }
 
+    @Test
+    public void testMysqlTopology() throws Exception {
+        try {
+            String name = "mysql.zip";
+            String url = "classpath://templates/" + name;
+            platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
+            platform.uploadArchive(new ResourceUtils(platform).getResourceFromUrl(url), name);
 
+            String templateUrl = getClasspathUrlForResource("templates/mysql-topology.tosca");
 
+            EntitySpec<?> spec = transformer.createApplicationSpec(
+                    new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+            // Check the basic structure
+            assertNotNull(spec, "spec");
+            assertEquals(spec.getType(), BasicApplication.class);
+
+            assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
+            EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
+            assertEquals(compute.getType(), BasicApplication.class);
+
+            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
+            EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
+            assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
+
+            // Check the config has been set
+            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_port")), "3361");
+            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
+
+            // Check that the inputs have been set as exports on the scripts
+            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export PORT=3361"));
+            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_USER=martin"));
+            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_NAME=wordpress"));
+
+        } finally {
+            if (platform!=null) {
+                platform.close();
+            }
+        }
+    }
 }

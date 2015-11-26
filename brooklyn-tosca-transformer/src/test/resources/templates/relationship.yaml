@@ -1,7 +1,7 @@
 tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
 
 imports:
-  - tosca-normative-types:1.0.0.wd03-SNAPSHOT
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
 
 template_name: brooklyn.a4c.simple.chatApplication
 template_version: 1.0.0-SNAPSHOT
@@ -56,7 +56,7 @@ node_types:
         type: string
         required: false
     capabilities:
-      dbConnection: tosca.capabilities.DatabaseEndpoint
+      dbConnection: tosca.capabilities.Endpoint.Database
 
 
 topology_template:

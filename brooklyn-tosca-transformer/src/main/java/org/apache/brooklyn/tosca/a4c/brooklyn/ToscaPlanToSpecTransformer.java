@@ -1,24 +1,11 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
-import alien4cloud.application.ApplicationService;
-import alien4cloud.component.CSARRepositorySearchService;
-import alien4cloud.deployment.DeploymentTopologyService;
-import alien4cloud.model.components.Csar;
-import alien4cloud.model.deployment.DeploymentTopology;
-import alien4cloud.model.topology.AbstractPolicy;
-import alien4cloud.model.topology.GenericPolicy;
-import alien4cloud.model.topology.NodeGroup;
-import alien4cloud.model.topology.Topology;
-import alien4cloud.tosca.ArchiveUploadService;
-import alien4cloud.tosca.parser.ParsingErrorLevel;
-import alien4cloud.tosca.parser.ParsingResult;
-import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -54,10 +41,28 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import alien4cloud.application.ApplicationService;
+import alien4cloud.component.CSARRepositorySearchService;
+import alien4cloud.component.repository.CsarFileRepository;
+import alien4cloud.deployment.DeploymentTopologyService;
+import alien4cloud.model.components.Csar;
+import alien4cloud.model.deployment.DeploymentTopology;
+import alien4cloud.model.topology.AbstractPolicy;
+import alien4cloud.model.topology.GenericPolicy;
+import alien4cloud.model.topology.NodeGroup;
+import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import alien4cloud.tosca.ArchiveUploadService;
+import alien4cloud.tosca.parser.ParsingErrorLevel;
+import alien4cloud.tosca.parser.ParsingResult;
+import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
+
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
@@ -77,7 +82,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     private Alien4CloudToscaPlatform platform;
 
     @Override
-    public void injectManagementContext(ManagementContext managementContext) {
+    public void setManagementContext(ManagementContext managementContext) {
         if (this.mgmt!=null && this.mgmt!=managementContext) throw new IllegalStateException("Cannot switch mgmt context");
         this.mgmt = managementContext;
         
@@ -197,16 +202,18 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     }
 
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo, String deploymentId) {
+        final CSARRepositorySearchService repositorySearchService = platform.getBean(CSARRepositorySearchService.class);
+        final CsarFileRepository csarFileRepository = platform.getBean(CsarFileRepository.class);
 
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
-        CSARRepositorySearchService repositorySearchService = platform.getBean(CSARRepositorySearchService.class);
         EntitySpec<BasicApplication> rootSpec = EntitySpec.create(BasicApplication.class).displayName(name);
 
         rootSpec.configure(TOSCA_ID, topo.getId());
         rootSpec.configure(TOSCA_DELEGATE_ID, topo.getDelegateId());
         rootSpec.configure(TOSCA_DEPLOYMENT_ID, deploymentId);
 
-        DependencyTree dt = new DependencyTree(topo, mgmt, repositorySearchService);
+        DependencyTree dt = new DependencyTree(topo, mgmt, repositorySearchService, csarFileRepository,
+                platform.getBean(TopologyTreeBuilderService.class));
         dt.addSpecsAsChildrenOf(rootSpec);
 
         if (topo.getGroups()!=null) {

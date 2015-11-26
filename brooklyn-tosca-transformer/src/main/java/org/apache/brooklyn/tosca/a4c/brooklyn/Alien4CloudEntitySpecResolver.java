@@ -17,7 +17,7 @@ public class Alien4CloudEntitySpecResolver extends AbstractEntitySpecResolver {
     @Override
     public EntitySpec<?> resolve(String type, BrooklynClassLoadingContext loader, Set<String> encounteredTypes) {
         ToscaPlanToSpecTransformer transformer = new ToscaPlanToSpecTransformer();
-        transformer.injectManagementContext(mgmt);
+        transformer.setManagementContext(mgmt);
 
         return transformer.createApplicationSpecFromTopologyId(getLocalType(type));
     }

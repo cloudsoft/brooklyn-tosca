@@ -1,7 +1,12 @@
 package org.apache.brooklyn.tosca.a4c.brooklyn;
 
+import alien4cloud.component.repository.CsarFileRepository;
+import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.ComplexPropertyValue;
+import alien4cloud.model.components.DeploymentArtifact;
+import alien4cloud.model.components.FunctionPropertyValue;
+import alien4cloud.model.components.IValue;
 import alien4cloud.model.components.ImplementationArtifact;
 import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.components.Interface;
@@ -9,6 +14,13 @@ import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
+import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.function.FunctionEvaluator;
+import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+
+import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -28,31 +40,46 @@ import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.location.jclouds.JcloudsLocationConfig;
+import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.core.flags.FlagUtils;
 import org.apache.brooklyn.util.core.flags.TypeCoercions;
+import org.apache.brooklyn.util.os.Os;
 import org.apache.brooklyn.util.text.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.jclouds.compute.domain.OsFamily;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 
 public class ToscaNodeToEntityConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaNodeToEntityConverter.class);
 
     private final ManagementContext mgnt;
-    private NodeTemplate nodeTemplate;
     private String nodeId;
     private IndexedArtifactToscaElement indexedNodeTemplate;
+    private NodeTemplate nodeTemplate;
+    private CsarFileRepository csarFileRepository;
+    private String env = Strings.EMPTY;
+    private Topology topology;
+    private TopologyTreeBuilderService treeBuilder;
 
     private ToscaNodeToEntityConverter(ManagementContext mgmt) {
         this.mgnt = mgmt;
@@ -62,18 +89,33 @@ public class ToscaNodeToEntityConverter {
         return new ToscaNodeToEntityConverter(mgmt);
     }
 
-    public ToscaNodeToEntityConverter setNodeTemplate(NodeTemplate nodeTemplate) {
-        this.nodeTemplate = nodeTemplate;
-        return this;
-    }
-
     public ToscaNodeToEntityConverter setNodeId(String nodeId) {
         this.nodeId = nodeId;
         return this;
     }
 
+    public ToscaNodeToEntityConverter setNodeTemplate(NodeTemplate nodeTemplate) {
+        this.nodeTemplate = nodeTemplate;
+        return this;
+    }
+
     public ToscaNodeToEntityConverter setIndexedNodeTemplate(IndexedArtifactToscaElement indexedNodeTemplate) {
         this.indexedNodeTemplate = indexedNodeTemplate;
+        return this;
+    }
+
+    public ToscaNodeToEntityConverter setCsarFileRepository(CsarFileRepository csarFileRepository) {
+        this.csarFileRepository = csarFileRepository;
+        return this;
+    }
+
+    public ToscaNodeToEntityConverter setTopology(Topology topology) {
+        this.topology = topology;
+        return this;
+    }
+
+    public ToscaNodeToEntityConverter setTreeBuilder(TopologyTreeBuilderService treeBuilder) {
+        this.treeBuilder = treeBuilder;
         return this;
     }
 
@@ -120,15 +162,17 @@ public class ToscaNodeToEntityConverter {
         Map<String, AbstractPropertyValue> properties = this.nodeTemplate.getProperties();
         // Applying provisioning properties
         ConfigBag prov = ConfigBag.newInstance();
-        prov.putIfNotNull(JcloudsLocationConfig.MIN_RAM, resolve(properties, "mem_size"));
-        prov.putIfNotNull(JcloudsLocationConfig.MIN_DISK, resolve(properties, "disk_size"));
-        prov.putIfNotNull(JcloudsLocationConfig.MIN_CORES, TypeCoercions.coerce(resolve(properties, "num_cpus"), Integer.class));
-        prov.putIfNotNull(JcloudsLocationConfig.OS_FAMILY, TypeCoercions.coerce(resolve(properties, "os_distribution"), OsFamily.class));
-        prov.putIfNotNull(JcloudsLocationConfig.OS_VERSION_REGEX, (String)resolve(properties, "os_version"));
+        prov.putIfNotNull(JcloudsLocationConfig.MIN_RAM, resolve(properties, "mem_size").orNull());
+        prov.putIfNotNull(JcloudsLocationConfig.MIN_DISK, resolve(properties, "disk_size").orNull());
+        prov.putIfNotNull(JcloudsLocationConfig.MIN_CORES, TypeCoercions.coerce(resolve(properties, "num_cpus").orNull(), Integer.class));
+        prov.putIfNotNull(JcloudsLocationConfig.OS_FAMILY, TypeCoercions.coerce(resolve(properties, "os_distribution").orNull(), OsFamily.class));
+        prov.putIfNotNull(JcloudsLocationConfig.OS_VERSION_REGEX, (String)resolve(properties, "os_version").orNull());
         // TODO: Mapping for "os_arch" and "os_type" are missing
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
         configurePropertiesForSpec(spec, nodeTemplate);
+
+        configureRuntimeEnvironment(spec);
 
         // If the entity spec is of type VanillaSoftwareProcess, we assume that it's running. The operations should
         // then take care of setting up the correct scripts.
@@ -141,18 +185,14 @@ public class ToscaNodeToEntityConverter {
         // Applying operations
         final Map<String, Operation> operations = getInterfaceOperations();
         if (!operations.isEmpty()) {
-            if (!spec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
-                throw new IllegalStateException("Brooklyn entity: " + spec.getImplementation() +
-                        " does not support interface operations defined by node template" + this.nodeTemplate.getType());
-            }
-
-            applyLifecycle(operations, "create", spec, VanillaSoftwareProcess.INSTALL_COMMAND);
-            applyLifecycle(operations, "configure", spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
-            applyLifecycle(operations, "start", spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
-            applyLifecycle(operations, "stop", spec, VanillaSoftwareProcess.STOP_COMMAND);
-
-            if (!operations.isEmpty()) {
-                log.warn("Could not translate some operations for " + this.nodeId + ": " + operations.keySet());
+            if (spec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.CREATE, spec, VanillaSoftwareProcess.INSTALL_COMMAND);
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.CONFIGURE, spec, VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.START, spec, VanillaSoftwareProcess.LAUNCH_COMMAND);
+                applyLifecycle(operations, ToscaNodeLifecycleConstants.STOP, spec, VanillaSoftwareProcess.STOP_COMMAND);
+                if (!operations.isEmpty()) {
+                    log.warn("Could not translate some operations for " + this.nodeId + ": " + operations.keySet());
+                }
             }
         }
 
@@ -300,7 +340,7 @@ public class ToscaNodeToEntityConverter {
 
         for (String propertyKey : propertyKeys) {
             propertyMap.put(propertyKey,
-                    resolve(propertyValueMap, propertyKey));
+                    resolve(propertyValueMap, propertyKey).or(""));
         }
         return propertyMap;
     }
@@ -309,9 +349,9 @@ public class ToscaNodeToEntityConverter {
     protected Map<String, Operation> getInterfaceOperations() {
         final Map<String, Operation> operations = MutableMap.of();
 
-        if (this.nodeTemplate.getInterfaces() != null) {
+        if (indexedNodeTemplate.getInterfaces() != null) {
             final ImmutableList<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-            final MutableMap<String, Interface> interfaces = MutableMap.copyOf(this.nodeTemplate.getInterfaces());
+            final MutableMap<String, Interface> interfaces = MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
 
             for (String validInterfaceName : validInterfaceNames) {
                 Interface validInterface = interfaces.remove(validInterfaceName);
@@ -337,15 +377,33 @@ public class ToscaNodeToEntityConverter {
         if (artifact != null) {
             String ref = artifact.getArtifactRef();
             if (ref != null) {
-                // TODO get script/artifact relative to CSAR
-                String script = new ResourceUtils(this).getResourceAsString(ref);
-                String setScript = (String) spec.getConfig().get(cmdKey);
-                if (Strings.isBlank(setScript) || setScript.trim().equals("true")) {
-                    setScript = script;
-                } else {
-                    setScript += "\n"+script;
+                String script;
+
+                // Trying to get the CSAR file based on the artifact reference. If it fails, then we try to get the
+                // content of the script from any resources
+                try {
+                    Path csarPath = csarFileRepository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
+                    script = new ResourceUtils(this).getResourceAsString(csarPath.getParent().toString() + "/expanded/" + ref);
+                } catch (CSARVersionNotFoundException e) {
+                    script = new ResourceUtils(this).getResourceAsString(ref);
                 }
-                spec.configure(cmdKey, setScript);
+
+                Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
+                String computeName = nodeTemplate.getName();
+                PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
+                Operation configOp = paasNodeTemplate.getIndexedToscaElement().getInterfaces().get(ToscaNodeLifecycleConstants.STANDARD).getOperations()
+                        .get(opKey);
+                StringBuilder inputBuilder = new StringBuilder();
+                Map<String, IValue> inputParameters = configOp.getInputParameters();
+                if (inputParameters != null) {
+                    for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
+                        // case keyword SOURCE used on a NodeType
+                        Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates);
+                        inputBuilder.append(String.format("export %s=%s%n", entry.getKey(), value.or("")));
+                    }
+                }
+
+                spec.configure(cmdKey, inputBuilder.toString() + env + "\n" + script);
                 return;
             }
             log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no ref");
@@ -355,20 +413,76 @@ public class ToscaNodeToEntityConverter {
 
     }
 
-    public static Object resolve(Map<String, AbstractPropertyValue> props, String... keys) {
-        for (String key: keys) {
-            AbstractPropertyValue v = props.remove(key);
-            if (v == null) {
+    protected void configureRuntimeEnvironment(EntitySpec<?> entitySpec) {
+        if (indexedNodeTemplate.getArtifacts() == null) {
+            return;
+        }
+
+        final Map<String, String> filesToCopy = MutableMap.of();
+        final List<String> preInstallCommands = MutableList.of();
+        final List<String> envCommands = MutableList.of();
+
+        for (final Map.Entry<String, DeploymentArtifact> artifactEntry : indexedNodeTemplate.getArtifacts().entrySet()) {
+            if (artifactEntry.getValue() == null) {
                 continue;
             }
-            if (v instanceof ScalarPropertyValue) {
-                return ((ScalarPropertyValue)v).getValue();
+            if (!"tosca.artifacts.File".equals(artifactEntry.getValue().getArtifactType())) {
+                continue;
             }
-            if (v instanceof ComplexPropertyValue){
-                return ((ComplexPropertyValue)v).getValue();
+
+            final String destRoot = Os.mergePaths("~", "brooklyn-tosca-resources", artifactEntry.getValue().getArtifactName());
+            final String tempRoot = Os.mergePaths("/tmp", artifactEntry.getValue().getArtifactName());
+
+            preInstallCommands.add("mkdir -p " + destRoot);
+            preInstallCommands.add("mkdir -p " + tempRoot);
+            envCommands.add(String.format("export %s=%s", artifactEntry.getValue().getArtifactName(), destRoot));
+
+            try {
+                Path csarPath = csarFileRepository.getCSAR(artifactEntry.getValue().getArchiveName(), artifactEntry.getValue().getArchiveVersion());
+
+                Path resourcesRootPath = Paths.get(csarPath.getParent().toAbsolutePath().toString(), "expanded", artifactEntry.getKey());
+                Files.walkFileTree(resourcesRootPath, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        String tempDest = Os.mergePaths(tempRoot, file.getFileName().toString());
+                        String finalDest = Os.mergePaths(destRoot, file.getFileName().toString());
+                        filesToCopy.put(file.toAbsolutePath().toString(), tempDest);
+                        preInstallCommands.add(String.format("mv %s %s", tempDest, finalDest));
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (CSARVersionNotFoundException e) {
+                log.warn("CSAR " + artifactEntry.getValue().getArtifactName() + ":" + artifactEntry.getValue().getArchiveVersion() + " does not exists", e);
+            } catch (IOException e) {
+                log.warn("Cannot parse CSAR resources", e);
             }
+        }
+
+        env = Joiner.on("\n").join(envCommands) + "\n";
+        entitySpec.configure(SoftwareProcess.PRE_INSTALL_FILES, filesToCopy);
+        entitySpec.configure(SoftwareProcess.PRE_INSTALL_COMMAND, Joiner.on("\n").join(preInstallCommands) + "\n" + env);
+    }
+
+    public static Optional<Object> resolve(Map<String, ? extends IValue> props, String key) {
+        IValue v = props.get(key);
+        if (v instanceof ScalarPropertyValue) {
+            return Optional.<Object>fromNullable(((ScalarPropertyValue) v).getValue());
+        }
+        if (v instanceof ComplexPropertyValue) {
+            return Optional.<Object>fromNullable(((ComplexPropertyValue) v).getValue());
+        }
+        if (!(v instanceof FunctionPropertyValue)) {
             log.warn("Ignoring unsupported property value " + v);
         }
-        return null;
+        return Optional.absent();
     }
+
+    public Optional<Object> resolve(Map<String, ? extends IValue> props, String key, PaaSNodeTemplate template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
+        Optional<Object> value = resolve(props, key);
+        if (!value.isPresent()) {
+            value = Optional.<Object>fromNullable(FunctionEvaluator.evaluateGetPropertyFunction((FunctionPropertyValue) props.get(key), template, builtPaaSNodeTemplates));
+        }
+        return value;
+    }
+
 }

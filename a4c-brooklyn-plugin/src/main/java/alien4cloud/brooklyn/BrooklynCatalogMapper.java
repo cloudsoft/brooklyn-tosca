@@ -175,15 +175,6 @@ public class BrooklynCatalogMapper {
             addRequirements(brooklynEntity, toscaType);
             addCapabilities(brooklynEntity, toscaType);
 
-            // TODO: Can this be removed now derivedFrom is coming from the metadataprovider?
-//            String derivedFrom = "brooklyn.nodes.SoftwareProcess";
-//            for (Object tag : brooklynEntity.getTags()) {
-//                Map<String, ?> tagMap = (Map<String, ?>) tag;
-//                if (!tagMap.containsKey("derivedFrom")) continue;
-//                derivedFrom = String.valueOf(tagMap.get("tosca:derivedFrom"));
-//            }
-//            toscaType.setDerivedFrom(Arrays.asList(derivedFrom));
-
             archiveRoot.getNodeTypes().put(brooklynEntity.getSymbolicName(), toscaType);
 
         } catch (Exception e) {

@@ -279,11 +279,15 @@ public class ToscaNodeToEntityConverter {
                 keyNamesUsed.add(r.getFlagName());
             }
             if (r.getConfigKeyMaybeValue().isPresent()) {
-                Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(), Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
-                if (resolvedValue.isPresent()) {
-                    spec.configure(r.getConfigKey(), resolvedValue.get());
+                try {
+                    Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(), Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
+                    if (resolvedValue.isPresent()) {
+                        spec.configure(r.getConfigKey(), resolvedValue.get());
+                    }
+                    keyNamesUsed.add(r.getConfigKey().getName());
+                } catch (Exception e) {
+                    log.warn("Cannot set config key {}, could not coerce {} to {}", r.getConfigKey(), r.getConfigKeyMaybeValue(), r.getConfigKey().getTypeToken());
                 }
-                keyNamesUsed.add(r.getConfigKey().getName());
             }
         }
 

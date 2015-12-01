@@ -344,7 +344,7 @@ public class ToscaNodeToEntityConverter {
 
         for (String propertyKey : propertyKeys) {
             propertyMap.put(propertyKey,
-                    resolve(propertyValueMap, propertyKey).or(""));
+                    resolve(propertyValueMap, propertyKey).orNull());
         }
         return propertyMap;
     }

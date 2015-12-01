@@ -26,6 +26,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -61,12 +66,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 
 public class ToscaNodeToEntityConverter {
 
@@ -203,7 +203,7 @@ public class ToscaNodeToEntityConverter {
             RelationshipTemplate relationshipTemplate =
                     findRelationshipRequirement(nodeTemplate, requirementId);
             if((relationshipTemplate!=null)
-                    &&(relationshipTemplate.getType().equals("tosca.relationships.Configure"))){
+                    &&(relationshipTemplate.getType().equals("brooklyn.relationships.Configure"))){
 
                 Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate);
 
@@ -279,11 +279,15 @@ public class ToscaNodeToEntityConverter {
                 keyNamesUsed.add(r.getFlagName());
             }
             if (r.getConfigKeyMaybeValue().isPresent()) {
-                Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(), Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
-                if (resolvedValue.isPresent()) {
-                    spec.configure(r.getConfigKey(), resolvedValue.get());
+                try {
+                    Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(), Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
+                    if (resolvedValue.isPresent()) {
+                        spec.configure(r.getConfigKey(), resolvedValue.get());
+                    }
+                    keyNamesUsed.add(r.getConfigKey().getName());
+                } catch (Exception e) {
+                    log.warn("Cannot set config key {}, could not coerce {} to {}", r.getConfigKey(), r.getConfigKeyMaybeValue(), r.getConfigKey().getTypeToken());
                 }
-                keyNamesUsed.add(r.getConfigKey().getName());
             }
         }
 
@@ -340,7 +344,7 @@ public class ToscaNodeToEntityConverter {
 
         for (String propertyKey : propertyKeys) {
             propertyMap.put(propertyKey,
-                    resolve(propertyValueMap, propertyKey).or(""));
+                    resolve(propertyValueMap, propertyKey).orNull());
         }
         return propertyMap;
     }

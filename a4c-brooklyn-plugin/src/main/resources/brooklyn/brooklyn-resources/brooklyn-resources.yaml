@@ -21,4 +21,31 @@ node_types:
 
   brooklyn.nodes.Database:
     derived_from: brooklyn.nodes.SoftwareProcess
+    capabilities:
+      database_endpoint:
+        type: tosca.capabilities.Endpoint.Database
+        upper_bound: UNBOUNDED
 
+  brooklyn.nodes.WebServer:
+    derived_from: brooklyn.nodes.SoftwareProcess
+    requirements:
+      database_endpoint:
+        type: tosca.capabilities.Endpoint.Database
+        relationship: brooklyn.relationships.Configure
+        upper_bound: 1
+        lower_bound: 0
+
+relationship_types:
+  brooklyn.relationships.Configure:
+    derived_from: tosca.relationships.DependsOn
+    valid_targets: [ tosca.capabilities.Endpoint.Database ]
+    properties:
+      prop.name:
+        type: string
+        required: true
+      prop.value:
+        type: string
+        required: true
+      prop.collection:
+        type: string
+        required: false

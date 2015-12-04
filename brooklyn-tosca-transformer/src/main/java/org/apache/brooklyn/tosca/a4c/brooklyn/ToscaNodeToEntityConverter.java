@@ -171,6 +171,7 @@ public class ToscaNodeToEntityConverter {
         spec.configure(SoftwareProcess.PROVISIONING_PROPERTIES, prov.getAllConfig());
 
         configurePropertiesForSpec(spec, nodeTemplate);
+        configureArtifactsForSpec(spec, nodeTemplate);
 
         configureRuntimeEnvironment(spec);
 
@@ -264,6 +265,18 @@ public class ToscaNodeToEntityConverter {
         ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate));
         // now set configuration for all the items in the bag
         configureConfigKeysSpec(spec, bag);
+    }
+
+    private void configureArtifactsForSpec(EntitySpec<?> spec, NodeTemplate nodeTemplate) {
+        Map<String, Object> a= MutableMap.of();
+        Map<String, DeploymentArtifact> artifacts = nodeTemplate.getArtifacts();
+        if(artifacts!=null) {
+            for(String artifactId: artifacts.keySet() ){
+                a.put(artifactId, artifacts.get(artifactId).getArtifactRef());
+            }
+            ConfigBag bag = ConfigBag.newInstance(a);
+            configureConfigKeysSpec(spec, bag);
+        }
     }
 
     private void configureConfigKeysSpec(EntitySpec spec, ConfigBag bag){

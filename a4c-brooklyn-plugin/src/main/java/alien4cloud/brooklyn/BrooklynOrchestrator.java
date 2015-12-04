@@ -39,6 +39,12 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
     }
 
     @Override
+    public List<PluginArchive> pluginArchives() {
+        // TODO: Implement if required (will this obviate the need to upload the normative types?)
+        return null;
+    }
+
+    @Override
     public List<Location> getLocations() {
         List<LocationSummary> locations = getNewBrooklynApi().getLocationApi().list();
         List<Location> newLocations = Lists.newArrayList();

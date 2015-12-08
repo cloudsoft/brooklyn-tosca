@@ -1,5 +1,6 @@
 package alien4cloud.brooklyn;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +42,7 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
     @Override
     public List<PluginArchive> pluginArchives() {
         // TODO: Implement if required (will this obviate the need to upload the normative types?)
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

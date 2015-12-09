@@ -1,29 +1,5 @@
 package alien4cloud.brooklyn;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import javax.ws.rs.core.Response;
-
-import org.apache.brooklyn.rest.client.BrooklynApi;
-import org.apache.brooklyn.rest.domain.ApplicationSummary;
-import org.apache.brooklyn.rest.domain.EntitySummary;
-import org.apache.brooklyn.rest.domain.TaskSummary;
-import org.apache.brooklyn.util.text.Strings;
-import org.elasticsearch.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
 import alien4cloud.application.ApplicationService;
 import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.exception.NotFoundException;
@@ -45,11 +21,40 @@ import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.InstanceStatus;
 import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
 import alien4cloud.paas.model.PaaSMessageMonitorEvent;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import io.cloudsoft.tosca.metadata.ToscaMetadataProvider;
 import io.cloudsoft.tosca.metadata.ToscaTypeProvider;
 import lombok.SneakyThrows;
+import org.apache.brooklyn.rest.client.BrooklynApi;
+import org.apache.brooklyn.rest.domain.ApplicationSummary;
+import org.apache.brooklyn.rest.domain.EntitySummary;
+import org.apache.brooklyn.rest.domain.Status;
+import org.apache.brooklyn.rest.domain.TaskSummary;
+import org.apache.brooklyn.util.text.Strings;
+import org.elasticsearch.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import javax.annotation.Nullable;
+import javax.ws.rs.core.Response;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  *
@@ -59,18 +64,31 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
 
     private Configuration configuration;
     // TODO mock cache while we flesh out the impl
-    protected Map<String,Object> knownDeployments = Maps.newLinkedHashMap();
+    protected Map<String,PaaSTopologyDeploymentContext> knownDeployments = Maps.newConcurrentMap();
+    protected Map<String, Optional<DeploymentStatus>> deploymentStatuses = Maps.newConcurrentMap();
 
     // TODO: Sanity check correct InstanceStatuses are being used
-    private static final Map<String, InstanceStatus> SERVICE_STATE_TO_INSTANCE_STATUS = ImmutableMap.<String, InstanceStatus>builder()
-        .put("CREATED", InstanceStatus.SUCCESS)
-        .put("STARTING", InstanceStatus.PROCESSING)
-        .put("RUNNING", InstanceStatus.SUCCESS)
-        .put("STOPPING", InstanceStatus.MAINTENANCE)
-        .put("STOPPED", InstanceStatus.MAINTENANCE)
-        .put("DESTROYED", InstanceStatus.FAILURE)
-        .put("ON_FIRE", InstanceStatus.FAILURE)
-        .build();
+    private static final Map<Status, InstanceStatus> SERVICE_STATE_TO_INSTANCE_STATUS = ImmutableMap.<Status, InstanceStatus>builder()
+            .put(Status.ACCEPTED, InstanceStatus.PROCESSING)
+            .put(Status.STARTING, InstanceStatus.PROCESSING)
+            .put(Status.RUNNING, InstanceStatus.SUCCESS)
+            .put(Status.STOPPING, InstanceStatus.MAINTENANCE)
+            .put(Status.STOPPED, InstanceStatus.MAINTENANCE)
+            .put(Status.DESTROYED, InstanceStatus.MAINTENANCE)
+            .put(Status.ERROR, InstanceStatus.FAILURE)
+            .put(Status.UNKNOWN, InstanceStatus.PROCESSING)
+            .build();
+
+    private static final Map<Status, DeploymentStatus> SERVICE_STATE_TO_DEPLOYMENT_STATUS = ImmutableMap.<Status, DeploymentStatus>builder()
+            .put(Status.ACCEPTED, DeploymentStatus.DEPLOYMENT_IN_PROGRESS)
+            .put(Status.STARTING, DeploymentStatus.DEPLOYMENT_IN_PROGRESS)
+            .put(Status.RUNNING, DeploymentStatus.DEPLOYED)
+            .put(Status.STOPPING, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS)
+            .put(Status.STOPPED, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS)
+            .put(Status.DESTROYED, DeploymentStatus.UNDEPLOYED)
+            .put(Status.ERROR, DeploymentStatus.FAILURE)
+            .put(Status.UNKNOWN, DeploymentStatus.UNKNOWN)
+            .build();
 
     @Autowired
     private ApplicationService applicationService;
@@ -86,6 +104,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     private IGenericSearchDAO alienDAO;
 
     ThreadLocal<ClassLoader> oldContextClassLoader = new ThreadLocal<ClassLoader>();
+
     private void useLocalContextClassLoader() {
         if (oldContextClassLoader.get()==null) {
             oldContextClassLoader.set( Thread.currentThread().getContextClassLoader() );
@@ -99,7 +118,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         Thread.currentThread().setContextClassLoader(oldContextClassLoader.get());
         oldContextClassLoader.remove();
     }
-    
+
     @Override
     public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
         useLocalContextClassLoader();
@@ -131,9 +150,8 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     public void deploy(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
         log.info("DEPLOY "+deploymentContext+" / "+callback);
         knownDeployments.put(deploymentContext.getDeploymentId(), deploymentContext);
-
         String topologyId = deploymentContext.getDeploymentTopology().getId();
-        
+
         Map<String,Object> campYaml = Maps.newLinkedHashMap();
         addRootPropertiesAsCamp(deploymentContext, campYaml);
 
@@ -163,11 +181,13 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             alienDAO.save(deploymentContext.getDeployment());
             // (the result is a 204 creating, whose entity is a TaskSummary
             // with an entityId of the entity which is created and id of the task)
+            deploymentStatuses.put(entityId, Optional.<DeploymentStatus>absent());
+            // inital entry which will immediately trigger an event in getEventsSince()
         } catch (Throwable e) {
             log.warn("ERROR DEPLOYING", e);
             throw e;
         } finally { revertContextClassLoader(); }
-        
+
         if (callback!=null) callback.onSuccess(null);
     }
 
@@ -183,14 +203,14 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
                 if (app!=null) {
                     result.put("name", app.getName());
                     if (app.getDescription()!=null) result.put("description", app.getDescription());
-                    
+
                     List<String> tags = Lists.newArrayList();
                     for (Tag tag: app.getTags()) {
                         tags.add(tag.getName()+": "+tag.getValue());
                     }
                     if (!tags.isEmpty())
                         result.put("tags", tags);
-                    
+
                     // TODO icon, from app.getImageId());
                     return;
                 }
@@ -202,26 +222,26 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         } else {
             log.warn("Application service not available when deploying "+deploymentContext+"; using less information");
         }
-        
+
         // no app or app service - use what limited information we have
         result.put("name", "A4C: "+deploymentContext.getDeployment().getSourceName());
         result.put("description", "Created by Alien4Cloud from application "+deploymentContext.getDeployment().getSourceId());
     }
-    
+
     private void addNodeTemplatesAsCampServicesList(List<Object> svcs, Topology topology) {
         for (Entry<String, NodeTemplate> nodeEntry : topology.getNodeTemplates().entrySet()) {
             Map<String,Object> svc = Maps.newLinkedHashMap();
-            
+
             NodeTemplate nt = nodeEntry.getValue();
             svc.put("name", nodeEntry.getKey());
-            
+
             // TODO mangle according to the tag brooklyn_blueprint_catalog_id on the type (but how do we get the IndexedNodeType?)
             // this will give us the type, based on TopologyValidationService
 //            IndexedNodeType relatedIndexedNodeType = csarRepoSearchService.getRequiredElementInDependencies(IndexedNodeType.class, nodeTemp.getType(),
 //                topology.getDependencies());
 
             svc.put("type", nt.getType());
-            
+
             for (Entry<String, AbstractPropertyValue> prop: nt.getProperties().entrySet()) {
                 String propName = prop.getKey();
                 // TODO mangle prop name according to the tag  brooklyn_property_map__<propName>
@@ -239,14 +259,12 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             svcs.add(svc);
         }
     }
-    
+
     @Override
-    public void undeploy(PaaSDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
-        knownDeployments.remove(deploymentContext.getDeploymentId());
+    public void undeploy(PaaSDeploymentContext deploymentContext, IPaaSCallback callback) {
         log.info("UNDEPLOY " + deploymentContext + " / " + callback);
         Response result = getNewBrooklynApi().getEntityApi().expunge(deploymentContext.getDeployment().getOrchestratorDeploymentId(), deploymentContext.getDeployment().getOrchestratorDeploymentId(), true);
         validate(result);
-        if (callback!=null) callback.onSuccess(null);
     }
 
     @Override
@@ -256,9 +274,12 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
 
     @Override
     public void getStatus(PaaSDeploymentContext deploymentContext, IPaaSCallback<DeploymentStatus> callback) {
-        Object dep = knownDeployments.get(deploymentContext.getDeploymentId());
-        log.info("GET STATUS - "+dep);
-        if (callback!=null) callback.onSuccess(dep==null ? DeploymentStatus.UNDEPLOYED : DeploymentStatus.DEPLOYED);
+        if (callback!=null) {
+            String entityId = deploymentContext.getDeployment().getOrchestratorDeploymentId();
+            log.info("GET STATUS - " + entityId);
+            Optional<DeploymentStatus> deploymentStatus = deploymentStatuses.get(entityId);
+            callback.onSuccess(!deploymentStatus.isPresent() ? DeploymentStatus.UNDEPLOYED : deploymentStatus.get());
+        }
     }
 
     @Override
@@ -292,7 +313,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             instanceInformation.setRuntimeProperties(sensorValuesStringBuilder.build());
             String serviceState = String.valueOf(sensorValues.get("service.state"));
             instanceInformation.setState(serviceState);
-            instanceInformation.setInstanceStatus(SERVICE_STATE_TO_INSTANCE_STATUS.get(serviceState));
+            instanceInformation.setInstanceStatus(SERVICE_STATE_TO_INSTANCE_STATUS.get(Status.valueOf(serviceState)));
             topology.put(templateId, ImmutableMap.of(entityId, instanceInformation));
         }
 
@@ -382,15 +403,61 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         BrooklynApi brooklynApi = getNewBrooklynApi();
         try {
             Collection<AbstractMonitorEvent> events = Sets.newHashSet();
-            for (ApplicationSummary appSummary : brooklynApi.getApplicationApi().list(null)) {
+            List<ApplicationSummary> appSummaries = brooklynApi.getApplicationApi().list(null);
+			for (ApplicationSummary appSummary : appSummaries) {
                 String appId = appSummary.getId();
                 String deploymentId = String.valueOf(brooklynApi.getEntityConfigApi().get(appId, appId, "tosca.deployment.id", false));
+
                 for (EntitySummary entitySummary : brooklynApi.getEntityApi().getDescendants(appId, appId, null)) {
                     String entityId = entitySummary.getId();
                     List<TaskSummary> taskSummaries = brooklynApi.getEntityApi().listTasks(appId, entityId);
                     addTasksAndDescendants(taskSummaries, events, deploymentId, date, brooklynApi);
                 }
             }
+
+            for(Entry<String, Optional<DeploymentStatus>> deploymentStatus : ImmutableSet.copyOf(deploymentStatuses.entrySet())) {
+                final String entityId = deploymentStatus.getKey();
+                final Optional<PaaSTopologyDeploymentContext> deployment = Iterables.tryFind(knownDeployments.values(), new Predicate<PaaSTopologyDeploymentContext>() {
+                    @Override
+                    public boolean apply(@Nullable PaaSTopologyDeploymentContext input) {
+                        return input.getDeployment().getOrchestratorDeploymentId().equals(entityId);
+                    }
+                });
+                if (!deployment.isPresent()) {
+                    continue;
+                }
+                Optional<ApplicationSummary> applicationSummary = Iterables.tryFind(appSummaries, new Predicate<ApplicationSummary>() {
+                    @Override
+                    public boolean apply(ApplicationSummary app) {
+                        return app.getId().equals(entityId);
+                    }
+                });
+                if (applicationSummary.isPresent()) {
+                    DeploymentStatus lastKnownStatus = deploymentStatuses.get(entityId).orNull();
+                    DeploymentStatus currentStatus =  SERVICE_STATE_TO_DEPLOYMENT_STATUS.get(applicationSummary.get().getStatus());
+                    if (!currentStatus.equals(lastKnownStatus)) {
+                        PaaSDeploymentStatusMonitorEvent updatedStatus = new PaaSDeploymentStatusMonitorEvent();
+                        String deploymentId = deployment.get().getDeploymentId();
+                        updatedStatus.setDeploymentId(deploymentId);
+                        updatedStatus.setDeploymentStatus(currentStatus);
+                        events.add(updatedStatus);
+                        deploymentStatuses.put(entityId, Optional.of(currentStatus));
+                    }
+                } else {
+                    PaaSDeploymentStatusMonitorEvent undeployed = new PaaSDeploymentStatusMonitorEvent();
+                    String deploymentId = deployment.get().getDeploymentId();
+                    undeployed.setDeploymentId(deploymentId);
+                    undeployed.setDeploymentStatus(DeploymentStatus.UNDEPLOYED);
+                    events.add(undeployed);
+                    // If it's never been seen before, it's most likely not yet been managed by Brooklyn
+                    // If it's previously been seen, and is now absent, it's been deleted (expunged)
+                    if (deploymentStatus.getValue().isPresent()) {
+                        knownDeployments.remove(deploymentId);
+                        deploymentStatuses.remove(entityId);
+                    }
+                }
+            }
+
             eventCallback.onSuccess(events.toArray(new AbstractMonitorEvent[]{}));
         } catch (Exception e) {
             eventCallback.onFailure(e);
@@ -419,7 +486,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         log.info("Setting configuration: " + configuration);
         this.configuration = configuration;
     }
-    
+
     protected BrooklynApi getNewBrooklynApi() {
 		return BrooklynApi.newInstance(configuration.getUrl(), configuration.getUser(), configuration.getPassword());
 	}

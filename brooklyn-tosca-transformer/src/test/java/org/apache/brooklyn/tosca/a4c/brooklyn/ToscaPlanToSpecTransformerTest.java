@@ -10,6 +10,7 @@ import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
+import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.entity.webapp.DynamicWebAppCluster;
@@ -69,6 +70,9 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
         EntitySpec<VanillaSoftwareProcess> hostVanilla =
                 (EntitySpec<VanillaSoftwareProcess>) app.getChildren().get(0);
+        assertEquals(hostVanilla.getConfig().get(SoftwareProcess.CHILDREN_STARTABLE_MODE),
+                SoftwareProcess.ChildStartableMode.BACKGROUND_LATE);
+
         assertEquals(hostVanilla.getChildren().size(), 1);
 
         EntitySpec<VanillaSoftwareProcess> hostedSoftwareComponent =

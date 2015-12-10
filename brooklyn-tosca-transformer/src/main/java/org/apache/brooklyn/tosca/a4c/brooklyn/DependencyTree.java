@@ -18,6 +18,7 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.slf4j.Logger;
@@ -81,7 +82,9 @@ public class DependencyTree{
 
         for(String child : children.get(root)) {
             if(!visited.contains(child)) {
-                spec.child(build(child, visited, nodeTemplates.get(child)));
+                spec.child(
+                        build(child, visited, nodeTemplates.get(child)))
+                        .configure(SoftwareProcess.CHILDREN_STARTABLE_MODE, SoftwareProcess.ChildStartableMode.BACKGROUND_LATE);
             }
         }
 

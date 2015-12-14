@@ -290,4 +290,25 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
             }
         }
     }
+
+    @Test
+    public void testDeploymentArtifacts() {
+        String templateUrl = getClasspathUrlForResource("templates/deployment-artifact.tosca.yaml");
+
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+
+        EntitySpec<TomcatServer> tomcatServer =
+                (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
+                        .findChildEntitySpecByPlanId(app, "tomcat_server");
+        assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
+                "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
+                        "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
+                        "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
+    }
+
+
 }

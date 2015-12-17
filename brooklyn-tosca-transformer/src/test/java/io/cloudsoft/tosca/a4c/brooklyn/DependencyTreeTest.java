@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c.brooklyn;
+package io.cloudsoft.tosca.a4c.brooklyn;
 
 import alien4cloud.component.ICSARRepositorySearchService;
 import alien4cloud.component.repository.CsarFileRepository;
@@ -9,6 +9,7 @@ import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Requirement;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -16,7 +17,6 @@ import com.google.common.collect.ImmutableSet;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
-import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaTest;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;

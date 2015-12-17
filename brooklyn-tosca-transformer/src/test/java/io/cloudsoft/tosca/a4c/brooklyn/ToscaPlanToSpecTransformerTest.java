@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c.brooklyn;
+package io.cloudsoft.tosca.a4c.brooklyn;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -20,8 +20,9 @@ import org.apache.brooklyn.location.jclouds.JcloudsLocation;
 import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocation;
 import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
-import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
-import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -90,7 +91,6 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                 "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess");
     }
 
-    // FIXME: Test fails when asserting the size of the tomcat server's config map.
     @Test
     @SuppressWarnings("unchecked")
     public void testDslInChatApplication() {
@@ -107,8 +107,8 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                         .findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
-                        "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
-                        "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
+                "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
+                "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
 
         Map javaSysProps = (Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS);

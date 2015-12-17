@@ -18,7 +18,7 @@
     <description>Brooklyn with TOSCA support bundled.</description>
 
     <properties>
-        <project.entry>org.apache.brooklyn.tosca.a4c.brooklyn.BrooklynToscaMain</project.entry>
+        <project.entry>io.cloudsoft.tosca.a4c.brooklyn.BrooklynToscaMain</project.entry>
     </properties>
 
     <dependencies>

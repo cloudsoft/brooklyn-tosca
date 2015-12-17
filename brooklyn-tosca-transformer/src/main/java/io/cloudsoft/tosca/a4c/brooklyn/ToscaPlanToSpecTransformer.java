@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c.brooklyn;
+package io.cloudsoft.tosca.a4c.brooklyn;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,7 @@ import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
 import org.apache.brooklyn.entity.stock.BasicApplication;
-import org.apache.brooklyn.tosca.a4c.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.config.ConfigBag;

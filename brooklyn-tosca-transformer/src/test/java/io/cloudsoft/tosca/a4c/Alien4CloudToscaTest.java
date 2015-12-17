@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c;
+package io.cloudsoft.tosca.a4c;
 
 import org.apache.brooklyn.camp.CampPlatform;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampPlatformLauncherNoServer;

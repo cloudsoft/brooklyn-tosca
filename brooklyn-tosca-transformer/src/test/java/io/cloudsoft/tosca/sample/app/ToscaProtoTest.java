@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.sample.app;
+package io.cloudsoft.tosca.sample.app;
 
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.core.entity.Entities;

@@ -1,4 +1,4 @@
-package org.apache.brooklyn.tosca.a4c;
+package io.cloudsoft.tosca.a4c;
 
 import java.util.Set;
 
@@ -64,7 +64,7 @@ public class Alien4CloudToscaPlatformTest {
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {
         ToscaParser parser = platform.getToscaParser();
         ParsingResult<ArchiveRoot> tp = parser.parseFile("<classpath>", "pizza.tosca",
-            new ResourceUtils(this).getResourceFromUrl("classpath:/org/apache/brooklyn/tosca/a4c/sample/pizza.tosca"), null);
+            new ResourceUtils(this).getResourceFromUrl("classpath:/io/cloudsoft/tosca/a4c/sample/pizza.tosca"), null);
         return tp;
     }
 

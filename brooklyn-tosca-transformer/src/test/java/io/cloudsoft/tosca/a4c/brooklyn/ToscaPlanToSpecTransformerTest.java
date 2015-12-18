@@ -112,7 +112,6 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                 .toString().contains("# launch in background (ensuring no streams open), and record PID to file"));
         assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.STOP_COMMAND)
                 .toString().contains("kill -9 `cat ${PID_FILE:-pid.txt}`"));
-
     }
 
     @Test

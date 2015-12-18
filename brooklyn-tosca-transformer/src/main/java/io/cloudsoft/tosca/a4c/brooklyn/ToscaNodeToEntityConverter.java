@@ -368,8 +368,7 @@ public class ToscaNodeToEntityConverter {
             return MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
         }
     }
-
-
+    
     protected Map<String, Operation> getStandardInterfaceOperations() {
         final Map<String, Operation> operations = MutableMap.of();
         MutableMap<String, Interface> interfaces;
@@ -388,7 +387,6 @@ public class ToscaNodeToEntityConverter {
                 }
             }
         }
-
         return operations;
     }
 

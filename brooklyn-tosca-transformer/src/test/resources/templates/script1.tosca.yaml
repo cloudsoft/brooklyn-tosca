@@ -19,10 +19,11 @@ topology_template:
       - host: a_server
       interfaces:
         Standard:
-           create: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/create.sh
-           configure: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/configure.sh
-           start: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/start.sh
-           stop: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/stop.sh
+           create: classpath:///artifacts/lifecycle/create.sh
+           configure: classpath:///artifacts/lifecycle/configure.sh
+           start: classpath:///artifacts/lifecycle/start.sh
+           stop: classpath:///artifacts/lifecycle/stop.sh
+
         
     a_server:
       type: tosca.nodes.Compute

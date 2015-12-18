@@ -35,7 +35,7 @@ public class Alien4CloudToscaPlatformTest {
         platform.loadNormativeTypes();
         
         String name = "script1.tosca.yaml";
-        String url = "classpath://templates/" + name;
+        String url = "classpath://io/cloudsoft/brooklyn/tosca/test/templates/" + name;
         ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
         
         explore(platform, tp);
@@ -64,7 +64,7 @@ public class Alien4CloudToscaPlatformTest {
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {
         ToscaParser parser = platform.getToscaParser();
         ParsingResult<ArchiveRoot> tp = parser.parseFile("<classpath>", "pizza.tosca",
-            new ResourceUtils(this).getResourceFromUrl("classpath:/io/cloudsoft/tosca/a4c/sample/pizza.tosca"), null);
+            new ResourceUtils(this).getResourceFromUrl("classpath://io/cloudsoft/tosca/a4c/sample/pizza.tosca"), null);
         return tp;
     }
 
@@ -92,7 +92,7 @@ public class Alien4CloudToscaPlatformTest {
             platform = Alien4CloudToscaPlatform.newInstance();
             platform.loadNormativeTypes();
             String name = "script1.tosca.yaml";
-            String url = "classpath://templates/" + name;
+            String url = "classpath://io/cloudsoft/brooklyn/tosca/test/templates/" + name;
             ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
             Topology t = platform.getTopologyOfCsar(tp.getResult());
             NodeGroup g1 = t.getGroups().values().iterator().next();

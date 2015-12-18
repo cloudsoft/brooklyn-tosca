@@ -74,6 +74,10 @@ public class ToscaNodeToEntityConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaNodeToEntityConverter.class);
 
+    private static final ImmutableList<String> VALID_INTERFACE_NAMES=
+            ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
+    private static final String EXPANDED_FOLDER= "/expanded/";
+
     private final ManagementContext mgnt;
     private String nodeId;
     private IndexedArtifactToscaElement indexedNodeTemplate;
@@ -360,20 +364,16 @@ public class ToscaNodeToEntityConverter {
         Map<String, Operation> operations = MutableMap.of();
 
         if (indexedNodeTemplate.getInterfaces() != null) {
-            final ImmutableList<String> validInterfaceNames =
-                    ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-
             MutableMap<String, Interface> indexedNodeTemplateInterfaces =
                     MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
 
             Interface indexedNodeTemplateInterface = findInterfaceOfNodeTemplate(
-                    indexedNodeTemplateInterfaces,
-                    validInterfaceNames);
+                    indexedNodeTemplateInterfaces, VALID_INTERFACE_NAMES);
+
 
             if (indexedNodeTemplateInterface != null) {
                 Interface nodeTemplateInterface = findInterfaceOfNodeTemplate(
-                        MutableMap.copyOf(nodeTemplate.getInterfaces()),
-                        validInterfaceNames);
+                        MutableMap.copyOf(nodeTemplate.getInterfaces()), VALID_INTERFACE_NAMES);
                 for (Map.Entry<String, Operation> entry :
                         indexedNodeTemplateInterface.getOperations().entrySet()) {
                     String operationName = entry.getKey();
@@ -433,7 +433,8 @@ public class ToscaNodeToEntityConverter {
                 // content of the script from any resources
                 try {
                     Path csarPath = csarFileRepository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
-                    script = new ResourceUtils(this).getResourceAsString(csarPath.getParent().toString() + "/expanded/" + ref);
+                    script = new ResourceUtils(this)
+                            .getResourceAsString(csarPath.getParent().toString()+ EXPANDED_FOLDER + ref);
                 } catch (CSARVersionNotFoundException | NullPointerException  e) {
                     script = new ResourceUtils(this).getResourceAsString(ref);
                 }

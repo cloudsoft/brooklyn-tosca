@@ -26,11 +26,11 @@ topology_template:
     add_brooklyn_location:
       members: [ cluster ]
       policies:
-      - brooklyn.location: localhost
-      - autoscaling:
-          type: org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy
-          metric: $brooklyn:sensor("org.apache.brooklyn.entity.webapp.DynamicWebAppCluster", "webapp.reqs.perSec.windowed.perNode")
-          metricLowerBound: 10
-          metricUpperBound: 100
-          minPoolSize: 1
-          maxPoolSize: 5
+        - brooklyn.location: localhost
+        - autoscaling:
+            type: org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy
+            metric: $brooklyn:sensor("org.apache.brooklyn.entity.webapp.DynamicWebAppCluster", "webapp.reqs.perSec.windowed.perNode")
+            metricLowerBound: 10
+            metricUpperBound: 100
+            minPoolSize: 1
+            maxPoolSize: 5

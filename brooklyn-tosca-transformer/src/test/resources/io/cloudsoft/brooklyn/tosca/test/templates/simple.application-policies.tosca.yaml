@@ -26,9 +26,9 @@ topology_template:
     add_brooklyn_location:
       members: [ ]
       policies:
-      - test-policy:
-          type: org.apache.brooklyn.core.test.policy.TestPolicy
-          policyLiteralValue1: Hello
-          policyLiteralValue2: World
-          test.confName: Name from YAML
-          test.confFromFunction:  "$brooklyn:formatString(\"%s: is a fun place\", \"$brooklyn\")"
+        - test-policy:
+            type: org.apache.brooklyn.core.test.policy.TestPolicy
+            policyLiteralValue1: Hello
+            policyLiteralValue2: World
+            test.confName: Name from YAML
+            test.confFromFunction:  "$brooklyn:formatString(\"%s: is a fun place\", \"$brooklyn\")"

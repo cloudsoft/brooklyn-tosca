@@ -57,4 +57,4 @@ topology_template:
           description: configs
       interfaces:
         Standard:
-           start: classpath:///artifacts/lifecycle/mock/mysql/start.sh
+           start: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/mock/start.sh

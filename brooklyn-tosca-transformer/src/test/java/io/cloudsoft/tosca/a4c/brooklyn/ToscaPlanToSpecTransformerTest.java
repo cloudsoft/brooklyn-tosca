@@ -103,6 +103,16 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                 "tosca.nodes.SoftwareComponent");
         assertEquals(hostedSoftwareComponent.getType().getName(),
                 "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess");
+
+        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.INSTALL_COMMAND)
+                .toString().contains("# install python if not present"));
+        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND)
+                .toString().contains("# create the web page to serve"));
+        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND)
+                .toString().contains("# launch in background (ensuring no streams open), and record PID to file"));
+        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.STOP_COMMAND)
+                .toString().contains("kill -9 `cat ${PID_FILE:-pid.txt}`"));
+
     }
 
     @Test

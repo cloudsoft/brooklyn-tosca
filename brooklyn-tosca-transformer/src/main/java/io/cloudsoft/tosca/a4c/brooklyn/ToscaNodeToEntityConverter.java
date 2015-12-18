@@ -355,39 +355,67 @@ public class ToscaNodeToEntityConverter {
         }
         return propertyMap;
     }
-
-    /**
-     * It finds the NodeTemplate interfaces defined by topoloy template. If any interface is found
-     * this method will return the default interface defined by NodeType.
-     * @return
-     */
-    private MutableMap<String, Interface> findNodeTemplateInterfaces(){
-        if(nodeTemplate.getInterfaces()!=null){
-            return MutableMap.copyOf(nodeTemplate.getInterfaces());
-        } else {
-            return MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
-        }
-    }
     
     protected Map<String, Operation> getStandardInterfaceOperations() {
-        final Map<String, Operation> operations = MutableMap.of();
-        MutableMap<String, Interface> interfaces;
-        if (findNodeTemplateInterfaces() != null) {
-            final ImmutableList<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-            interfaces = MutableMap.copyOf(findNodeTemplateInterfaces());
+        Map<String, Operation> operations = MutableMap.of();
 
-            for (String validInterfaceName : validInterfaceNames) {
-                Interface validInterface = interfaces.remove(validInterfaceName);
-                if (validInterface != null) {
-                    operations.putAll(validInterface.getOperations());
-                    if (!interfaces.isEmpty()) {
-                        log.warn("Could not translate some interfaces for " + this.nodeId + ": " + interfaces.keySet());
+        if (indexedNodeTemplate.getInterfaces() != null) {
+            final ImmutableList<String> validInterfaceNames =
+                    ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
+
+            MutableMap<String, Interface> indexedNodeTemplateInterfaces =
+                    MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
+
+            Interface indexedNodeTemplateInterface = findInterfaceOfNodeTemplate(
+                    indexedNodeTemplateInterfaces,
+                    validInterfaceNames);
+
+            if (indexedNodeTemplateInterface != null) {
+                Interface nodeTemplateInterface = findInterfaceOfNodeTemplate(
+                        MutableMap.copyOf(nodeTemplate.getInterfaces()),
+                        validInterfaceNames);
+                for (Map.Entry<String, Operation> entry :
+                        indexedNodeTemplateInterface.getOperations().entrySet()) {
+                    String operationName = entry.getKey();
+                    Operation operation = entry.getValue();
+
+                    if ((nodeTemplateInterface != null) &&
+                            (!Strings.isBlank(
+                                    getOpImplArtifactRef(nodeTemplateInterface, operationName)))) {
+                        operation = nodeTemplateInterface.getOperations().get(operationName);
                     }
-                    break;
+                    operations.put(operationName, operation);
                 }
             }
         }
         return operations;
+    }
+
+    private Interface findInterfaceOfNodeTemplate(Map<String, Interface> nodeTemplateInterfaces,
+                                                  List<String> validInterfaceNames){
+        for(String interfaceName: validInterfaceNames){
+            if(nodeTemplateInterfaces.containsKey(interfaceName)){
+                return nodeTemplateInterfaces.get(interfaceName);
+            }
+        }
+        return null;
+    }
+
+    private ImplementationArtifact getOpImplArtifact(Interface interfaze, String operationName){
+        ImplementationArtifact result = null;
+        if(interfaze.getOperations().containsKey(operationName)){
+            result = interfaze.getOperations().get(operationName).getImplementationArtifact();
+        }
+        return result;
+    }
+
+    private String getOpImplArtifactRef(Interface interfaze, String operationName){
+        String result = null;
+        ImplementationArtifact implArtifact = getOpImplArtifact(interfaze, operationName);
+        if(implArtifact!=null){
+            result = implArtifact.getArtifactRef();
+        }
+        return result;
     }
 
     protected void applyLifecycle(Map<String, Operation> ops, String opKey, EntitySpec<? extends Entity> spec, ConfigKey<String> cmdKey) {

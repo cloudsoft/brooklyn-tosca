@@ -190,7 +190,7 @@ public class ToscaNodeToEntityConverter {
         }
 
         // Applying operations
-        final Map<String, Operation> operations = getInterfaceOperations();
+        final Map<String, Operation> operations = getStandardInterfaceOperations();
         if (!operations.isEmpty()) {
             if (spec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
                 applyLifecycle(operations, ToscaNodeLifecycleConstants.CREATE, spec, VanillaSoftwareProcess.INSTALL_COMMAND);
@@ -356,13 +356,26 @@ public class ToscaNodeToEntityConverter {
         return propertyMap;
     }
 
+    /**
+     * It finds the NodeTemplate interfaces defined by topoloy template. If any interface is found
+     * this method will return the default interface defined by NodeType.
+     * @return
+     */
+    private MutableMap<String, Interface> findNodeTemplateInterfaces(){
+        if(nodeTemplate.getInterfaces()!=null){
+            return MutableMap.copyOf(nodeTemplate.getInterfaces());
+        } else {
+            return MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
+        }
+    }
 
-    protected Map<String, Operation> getInterfaceOperations() {
+
+    protected Map<String, Operation> getStandardInterfaceOperations() {
         final Map<String, Operation> operations = MutableMap.of();
-
-        if (indexedNodeTemplate.getInterfaces() != null) {
+        MutableMap<String, Interface> interfaces;
+        if (findNodeTemplateInterfaces() != null) {
             final ImmutableList<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-            final MutableMap<String, Interface> interfaces = MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
+            interfaces = MutableMap.copyOf(findNodeTemplateInterfaces());
 
             for (String validInterfaceName : validInterfaceNames) {
                 Interface validInterface = interfaces.remove(validInterfaceName);
@@ -395,17 +408,16 @@ public class ToscaNodeToEntityConverter {
                 try {
                     Path csarPath = csarFileRepository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
                     script = new ResourceUtils(this).getResourceAsString(csarPath.getParent().toString() + "/expanded/" + ref);
-                } catch (CSARVersionNotFoundException e) {
+                } catch (CSARVersionNotFoundException | NullPointerException  e) {
                     script = new ResourceUtils(this).getResourceAsString(ref);
                 }
 
                 Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
-                String computeName = nodeTemplate.getName();
+                String computeName = (nodeTemplate.getName()!=null) ? nodeTemplate.getName() : (String) spec.getFlags().get("tosca.template.id");
                 PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
-                Operation configOp = paasNodeTemplate.getIndexedToscaElement().getInterfaces().get(ToscaNodeLifecycleConstants.STANDARD).getOperations()
-                        .get(opKey);
+
                 StringBuilder inputBuilder = new StringBuilder();
-                Map<String, IValue> inputParameters = configOp.getInputParameters();
+                Map<String, IValue> inputParameters = op.getInputParameters();
                 if (inputParameters != null) {
                     for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
                         // case keyword SOURCE used on a NodeType

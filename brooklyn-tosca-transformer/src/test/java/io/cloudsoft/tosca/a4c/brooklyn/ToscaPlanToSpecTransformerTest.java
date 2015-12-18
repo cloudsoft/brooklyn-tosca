@@ -3,6 +3,7 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
 
 import java.util.Collection;
 import java.util.List;
@@ -329,6 +330,51 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
     }
+
+    @Test
+    public void testOverwriteInterfaceOnMysqlTopology() throws Exception {
+        try {
+            String name = "mysql.zip";
+            String url = "classpath://templates/" + name;
+            platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
+            platform.uploadArchive(new ResourceUtils(platform).getResourceFromUrl(url), name);
+
+            String templateUrl =
+                    getClasspathUrlForResource("templates/mysql-topology-overwrited-interface.tosca.yaml");
+
+            EntitySpec<?> spec = transformer.createApplicationSpec(
+                    new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+            // Check the basic structure
+            assertNotNull(spec, "spec");
+            assertEquals(spec.getType(), BasicApplication.class);
+
+            assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
+            EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
+            assertEquals(compute.getType(), BasicApplication.class);
+
+            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
+            EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
+            assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
+
+            // Check the config has been set
+            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_port")), "3361");
+            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
+
+            // Check that the inputs have been set as exports on the scripts
+            assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export PORT=3361"));
+            assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_USER=martin"));
+            assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_NAME=wordpress"));
+            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("#launch mysql service"));
+
+        } finally {
+            if (platform!=null) {
+                platform.close();
+            }
+        }
+    }
+
+
 
     @Test(enabled = false) //failing to parse tosca
     public void testEntitiesOnSameNodeBecomeSameServerEntities() {

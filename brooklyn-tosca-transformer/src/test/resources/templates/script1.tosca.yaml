@@ -19,11 +19,10 @@ topology_template:
       - host: a_server
       interfaces:
         Standard:
-           create: classpath:///artifacts/lifecycle/create.sh
-           configure: classpath:///artifacts/lifecycle/configure.sh
-           start: classpath:///artifacts/lifecycle/start.sh
-           stop: classpath:///artifacts/lifecycle/stop.sh
-
+           create: classpath:///artifacts/lifecycle/softwarecomponent/create.sh
+           configure: classpath:///artifacts/lifecycle/softwarecomponent/configure.sh
+           start: classpath:///artifacts/lifecycle/softwarecomponent/start.sh
+           stop: classpath:///artifacts/lifecycle/softwarecomponent/stop.sh
         
     a_server:
       type: tosca.nodes.Compute

@@ -56,13 +56,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-/**
- *
- */
 public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Configuration> {
     private static final Logger log = LoggerFactory.getLogger(BrooklynProvider.class);
 
     private Configuration configuration;
+
     // TODO mock cache while we flesh out the impl
     protected Map<String,PaaSTopologyDeploymentContext> knownDeployments = Maps.newConcurrentMap();
     protected Map<String, Optional<DeploymentStatus>> deploymentStatuses = Maps.newConcurrentMap();

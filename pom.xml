@@ -25,7 +25,7 @@
 
     <properties>
         <java.version>1.7</java.version>
-        <alien.version>1.1.0-SM9-SNAPSHOT</alien.version>
+        <alien.version>1.1.0-SM8</alien.version>
         <spring.version>4.1.4.RELEASE</spring.version>
     </properties>
 

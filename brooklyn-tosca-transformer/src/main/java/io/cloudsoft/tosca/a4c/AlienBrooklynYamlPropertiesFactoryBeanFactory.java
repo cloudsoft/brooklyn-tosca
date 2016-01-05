@@ -12,6 +12,8 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
+import com.google.common.base.Charsets;
+
 import alien4cloud.utils.AlienYamlPropertiesFactoryBeanFactory;
 
 /**
@@ -47,10 +49,12 @@ public class AlienBrooklynYamlPropertiesFactoryBeanFactory {
             }
             if (Strings.isNonBlank(configFile)) {
                 log.info("Loading A4C config from "+configFile);
-                Resource resource = new ByteArrayResource(new ResourceUtils(AlienBrooklynYamlPropertiesFactoryBeanFactory.class).getResourceAsString(configFile).getBytes(),
-                    configFile);
+                final byte[] resourceArr = new ResourceUtils(AlienBrooklynYamlPropertiesFactoryBeanFactory.class)
+                        .getResourceAsString(configFile)
+                        .getBytes(Charsets.UTF_8);
+                Resource resource = new ByteArrayResource(resourceArr, configFile);
                 INSTANCE = new YamlPropertiesFactoryBean();
-                INSTANCE.setResources(new Resource[] { resource });
+                INSTANCE.setResources(resource);
                 return INSTANCE;
             }
             INSTANCE = AlienYamlPropertiesFactoryBeanFactory.get(resourceLoader);

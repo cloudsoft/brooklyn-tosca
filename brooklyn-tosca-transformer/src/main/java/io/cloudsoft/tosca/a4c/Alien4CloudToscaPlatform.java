@@ -66,7 +66,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
     public static final String TOSCA_NORMATIVE_TYPES_GITHUB_URL = "https://github.com/alien4cloud/tosca-normative-types/archive/master.zip";
 
     public static Alien4CloudToscaPlatform newInstance(String ...args) throws Exception {
-        return newInstance((ManagementContext)new LocalManagementContext(), args);
+        return newInstance(new LocalManagementContext(), args);
     }
     
     public static Alien4CloudToscaPlatform newInstance(ManagementContext mgmt, String ...args) throws Exception {
@@ -191,8 +191,10 @@ public class Alien4CloudToscaPlatform implements Closeable {
             File tmpBase = new File(tmpRoot, nameCleaned+"_"+Identifiers.makeRandomId(6));
             File tmpExpanded = new File(tmpBase, nameCleaned+"_"+Identifiers.makeRandomId(6));
             File tmpTarget = new File(tmpExpanded.toString()+".csar.zip");
-            tmpExpanded.mkdir();
-
+            boolean created = tmpExpanded.mkdirs();
+            if (!created) {
+                throw new Exception("Failed to create '" + tmpExpanded + "' when uploading yaml from " + nameCleaned);
+            }
             FileUtils.copyInputStreamToFile(resourceFromUrl, new File(tmpExpanded, nameCleaned+".yaml"));
             ArchiveBuilder.archive(tmpTarget.toString()).addDirContentsAt(tmpExpanded, "").create();
 

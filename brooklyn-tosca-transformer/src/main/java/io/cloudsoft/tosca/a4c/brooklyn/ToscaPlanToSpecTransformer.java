@@ -3,7 +3,6 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.annotation.Nullable;
 
 import org.apache.brooklyn.api.catalog.CatalogItem;
@@ -27,7 +26,6 @@ import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
 import org.apache.brooklyn.entity.stock.BasicApplication;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.config.ConfigBag;
@@ -40,6 +38,13 @@ import org.apache.brooklyn.util.text.Strings;
 import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.component.CSARRepositorySearchService;
@@ -56,27 +61,21 @@ import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
-
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
 
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaPlanToSpecTransformer.class);
     
-    public static ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
+    public static final ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
         .name("tosca.a4c.platform").build();
 
-   public static ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");
-   public static ConfigKey<String> TOSCA_DELEGATE_ID = ConfigKeys.newStringConfigKey("tosca.delegate.id");
-   public static ConfigKey<String> TOSCA_DEPLOYMENT_ID = ConfigKeys.newStringConfigKey("tosca.deployment.id");
+    private static final ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");
+    private static final ConfigKey<String> TOSCA_DELEGATE_ID = ConfigKeys.newStringConfigKey("tosca.delegate.id");
+    private static final ConfigKey<String> TOSCA_DEPLOYMENT_ID = ConfigKeys.newStringConfigKey("tosca.deployment.id");
 
-    public static String POLICY_FLAG_TYPE = "type";
-    public static String POLICY_FLAG_NAME = "name";
+    private static final String POLICY_FLAG_TYPE = "type";
+    private static final String POLICY_FLAG_NAME = "name";
 
     private ManagementContext mgmt;
     private Alien4CloudToscaPlatform platform;

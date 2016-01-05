@@ -270,9 +270,9 @@ public class ToscaNodeToEntityConverter {
     private void configureArtifactsForSpec(EntitySpec<?> spec, NodeTemplate nodeTemplate) {
         Map<String, Object> a= MutableMap.of();
         Map<String, DeploymentArtifact> artifacts = nodeTemplate.getArtifacts();
-        if(artifacts!=null) {
-            for(String artifactId: artifacts.keySet() ){
-                a.put(artifactId, artifacts.get(artifactId).getArtifactRef());
+        if (artifacts != null) {
+            for (Map.Entry<String, DeploymentArtifact> entry : artifacts.entrySet()) {
+                a.put(entry.getKey(), entry.getValue().getArtifactRef());
             }
             ConfigBag bag = ConfigBag.newInstance(a);
             configureConfigKeysSpec(spec, bag);
@@ -421,13 +421,12 @@ public class ToscaNodeToEntityConverter {
                 }
 
                 spec.configure(cmdKey, inputBuilder.toString() + env + "\n" + script);
-                return;
+            } else {
+                log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no ref");
             }
-            log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no ref");
-            return;
+        } else {
+            log.warn("Unsupported operation implementation for " + opKey + ":  artifact has no impl");
         }
-        log.warn("Unsupported operation implementation for " + opKey + ": " + artifact + " has no impl");
-
     }
 
     protected void configureRuntimeEnvironment(EntitySpec<?> entitySpec) {

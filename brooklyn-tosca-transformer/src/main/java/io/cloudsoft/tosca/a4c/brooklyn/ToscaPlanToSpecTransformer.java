@@ -3,7 +3,7 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 
 import org.apache.brooklyn.api.catalog.CatalogItem;
@@ -27,7 +27,6 @@ import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
 import org.apache.brooklyn.entity.stock.BasicApplication;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.config.ConfigBag;
@@ -40,6 +39,13 @@ import org.apache.brooklyn.util.text.Strings;
 import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.component.CSARRepositorySearchService;
@@ -56,48 +62,47 @@ import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
-
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
 
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaPlanToSpecTransformer.class);
     
-    public static ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
+    public static final ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
         .name("tosca.a4c.platform").build();
 
-   public static ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");
-   public static ConfigKey<String> TOSCA_DELEGATE_ID = ConfigKeys.newStringConfigKey("tosca.delegate.id");
-   public static ConfigKey<String> TOSCA_DEPLOYMENT_ID = ConfigKeys.newStringConfigKey("tosca.deployment.id");
+    private static final ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");
+    private static final ConfigKey<String> TOSCA_DELEGATE_ID = ConfigKeys.newStringConfigKey("tosca.delegate.id");
+    private static final ConfigKey<String> TOSCA_DEPLOYMENT_ID = ConfigKeys.newStringConfigKey("tosca.deployment.id");
 
-    public static String POLICY_FLAG_TYPE = "type";
-    public static String POLICY_FLAG_NAME = "name";
+    private static final String POLICY_FLAG_TYPE = "type";
+    private static final String POLICY_FLAG_NAME = "name";
 
     private ManagementContext mgmt;
     private Alien4CloudToscaPlatform platform;
+    private final AtomicBoolean alienInitialised = new AtomicBoolean();
 
     @Override
     public void setManagementContext(ManagementContext managementContext) {
-        if (this.mgmt!=null && this.mgmt!=managementContext) throw new IllegalStateException("Cannot switch mgmt context");
-        this.mgmt = managementContext;
-        
-        try {
-            synchronized (ToscaPlanToSpecTransformer.class) {
-                platform = (Alien4CloudToscaPlatform) mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
-                if (platform==null) {
-                    Alien4CloudToscaPlatform.grantAdminAuth();
-                    platform = Alien4CloudToscaPlatform.newInstance();
-                    ((LocalManagementContext)mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
-                    platform.loadNormativeTypes();
+        if (this.mgmt != null && this.mgmt != managementContext) {
+            throw new IllegalStateException("Cannot switch mgmt context");
+        } else if (this.mgmt == null) {
+            this.mgmt = managementContext;
+
+            try {
+                synchronized (ToscaPlanToSpecTransformer.class) {
+                    platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
+                    if (platform == null) {
+                        Alien4CloudToscaPlatform.grantAdminAuth();
+                        platform = Alien4CloudToscaPlatform.newInstance();
+                        ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
+                        platform.loadNormativeTypes();
+                    }
                 }
+                alienInitialised.set(true);
+            } catch (Exception e) {
+                throw Exceptions.propagate(e);
             }
-        } catch (Exception e) {
-            Exceptions.propagate(e);
         }
     }
 
@@ -108,7 +113,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     @Override
     public boolean accepts(String planType) {
-        return getShortDescription().equals(planType);
+        return alienInitialised.get() && getShortDescription().equals(planType);
     }
 
     public static class PlanTypeChecker {
@@ -158,6 +163,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     
     @Override
     public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
+        assertA4CInitialised();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
             ParsingResult<Csar> tp;
@@ -334,6 +340,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     @SuppressWarnings("unchecked")
     @Override
     public <T, SpecT extends AbstractBrooklynObjectSpec<? extends T, SpecT>> SpecT createCatalogSpec(CatalogItem<T, SpecT> item, Set<String> encounteredTypes) throws PlanNotRecognizedException {
+        assertA4CInitialised();
         switch (item.getCatalogItemType()) {
         case TEMPLATE:
         case ENTITY:
@@ -345,6 +352,12 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             throw new PlanNotRecognizedException("TOSCA does not support: "+item.getCatalogItemType());
         default:
             throw new IllegalStateException("Unknown CI Type "+item.getCatalogItemType());
+        }
+    }
+
+    private void assertA4CInitialised() {
+        if (!alienInitialised.get()) {
+            throw new IllegalStateException("A4C platform is uninitialised for " + this);
         }
     }
 

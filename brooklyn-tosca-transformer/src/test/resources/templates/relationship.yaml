@@ -81,7 +81,7 @@ topology_template:
     mysql_server:
       type: org.apache.brooklyn.entity.database.mysql.MySqlNode
       properties:
-        datastore.creation.script.url: "https://github.com/apache/incubator-brooklyn/raw/master/usage/launcher/src/test/resources/visitors-creation-script.sql"
+        datastore.creation.script.url: "https://raw.githubusercontent.com/apache/incubator-brooklyn/286448623c417f099a8bce1a4764d6aa4589c6ea/brooklyn-server/launcher/src/test/resources/visitors-creation-script.sql"
 
   groups:
     add_brooklyn_location:

@@ -29,6 +29,7 @@ import org.elasticsearch.common.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -56,6 +57,7 @@ import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
+import alien4cloud.utils.AlienYamlPropertiesFactoryBeanFactory;
 import alien4cloud.utils.FileUtil;
 
 public class Alien4CloudToscaPlatform implements Closeable {
@@ -66,7 +68,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
     public static final String TOSCA_NORMATIVE_TYPES_GITHUB_URL = "https://github.com/alien4cloud/tosca-normative-types/archive/master.zip";
 
     public static Alien4CloudToscaPlatform newInstance(String ...args) throws Exception {
-        return newInstance((ManagementContext)new LocalManagementContext(), args);
+        return newInstance(new LocalManagementContext(), args);
     }
     
     public static Alien4CloudToscaPlatform newInstance(ManagementContext mgmt, String ...args) throws Exception {
@@ -79,8 +81,14 @@ public class Alien4CloudToscaPlatform implements Closeable {
             
             // messy, but seems we must manually load the properties before loading the beans; otherwise we get e.g.
             // Caused by: java.lang.IllegalArgumentException: Could not resolve placeholder 'directories.alien' in string value "${directories.alien}/plugins"
-            ctx.getEnvironment().getPropertySources().addFirst(new PropertiesPropertySource("user", 
-                AlienBrooklynYamlPropertiesFactoryBeanFactory.get(mgmt, ctx).getObject()));
+            final YamlPropertiesFactoryBean yamlPropertiesFactoryBean = AlienBrooklynYamlPropertiesFactoryBeanFactory.get(mgmt, ctx);
+            if (yamlPropertiesFactoryBean == null) {
+                throw new IllegalStateException("Could not load configuration for A4C. Expected either a value for ConfigKey " +
+                        AlienBrooklynYamlPropertiesFactoryBeanFactory.ALIEN_CONFIG_FILE.getName() + " or for a resource named " +
+                        AlienYamlPropertiesFactoryBeanFactory.ALIEN_CONFIGURATION_YAML + " to be available.");
+            }
+            ctx.getEnvironment().getPropertySources().addFirst(new PropertiesPropertySource("user",
+                    yamlPropertiesFactoryBean.getObject()));
             ctx.getBeanFactory().registerSingleton("brooklynManagementContext", mgmt);
             ctx.register(A4CSpringConfig.class);
             ctx.refresh();
@@ -191,8 +199,10 @@ public class Alien4CloudToscaPlatform implements Closeable {
             File tmpBase = new File(tmpRoot, nameCleaned+"_"+Identifiers.makeRandomId(6));
             File tmpExpanded = new File(tmpBase, nameCleaned+"_"+Identifiers.makeRandomId(6));
             File tmpTarget = new File(tmpExpanded.toString()+".csar.zip");
-            tmpExpanded.mkdir();
-
+            boolean created = tmpExpanded.mkdirs();
+            if (!created) {
+                throw new Exception("Failed to create '" + tmpExpanded + "' when uploading yaml from " + nameCleaned);
+            }
             FileUtils.copyInputStreamToFile(resourceFromUrl, new File(tmpExpanded, nameCleaned+".yaml"));
             ArchiveBuilder.archive(tmpTarget.toString()).addDirContentsAt(tmpExpanded, "").create();
 

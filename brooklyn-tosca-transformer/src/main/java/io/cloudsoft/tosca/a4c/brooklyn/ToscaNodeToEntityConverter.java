@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -197,41 +198,36 @@ public class ToscaNodeToEntityConverter {
             }
         }
 
-        //This is only a fist prototype.
-        Map<String, Object> propertiesAndTypedValues = MutableMap.of();
-        //ProcessConfigurationRequirement
-        for(String requirementId: nodeTemplate.getRequirements().keySet()){
-            RelationshipTemplate relationshipTemplate =
-                    findRelationshipRequirement(nodeTemplate, requirementId);
-            if((relationshipTemplate!=null)
-                    &&(relationshipTemplate.getType().equals("brooklyn.relationships.Configure"))){
+        Map<String, Object> propertiesAndTypedValues = Collections.emptyMap();
+        for (String requirementId: nodeTemplate.getRequirements().keySet()){
+            RelationshipTemplate relationshipTemplate = findRelationshipRequirement(nodeTemplate, requirementId);
+            if (relationshipTemplate != null && relationshipTemplate.getType().equals("brooklyn.relationships.Configure")) {
 
                 Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate);
 
+                // TODO: Use target properly.
                 String target = relationshipTemplate.getTarget();
-                String propName= (String)relationProperties.get("prop.name");
-                String propCollection= (String)relationProperties.get("prop.collection");
-                String propValue= managePropertyTargetNode(target,
-                        (String)relationProperties.get("prop.value"));
+                String propName = relationProperties.get("prop.name").toString();
+                String propCollection = relationProperties.get("prop.collection").toString();
+                String propValue = relationProperties.get("prop.value").toString();
 
-
-                if(Strings.isBlank(propCollection)&&(Strings.isBlank(propName))){
+                if (Strings.isBlank(propCollection) && (Strings.isBlank(propName))) {
                     throw new IllegalStateException("Relationship for Requirement "
                             + relationshipTemplate.getRequirementName() + " on NodeTemplate "
                             + nodeTemplate.getName() + ". Collection Name or Property Name should" +
                             " be defined for RelationsType " + relationshipTemplate.getType());
                 }
 
-                Map<String, String> simpleProperty=null;
-                if(!Strings.isBlank(propName)){
-                    simpleProperty=ImmutableMap.of(propName, propValue);
+                Map<String, String> simpleProperty = null;
+                if (!Strings.isBlank(propName)) {
+                    simpleProperty = ImmutableMap.of(propName, propValue);
                 }
-                if(simpleProperty==null) {
-                    propertiesAndTypedValues=
-                            ImmutableMap.of(propCollection, ((Object)ImmutableList.of(propValue)));
+                if (simpleProperty == null) {
+                    propertiesAndTypedValues = ImmutableMap.<String, Object>of(
+                            propCollection, ImmutableList.of(propValue));
                 } else {
-                    propertiesAndTypedValues =
-                            ImmutableMap.of(propCollection, (Object)simpleProperty);
+                    propertiesAndTypedValues = ImmutableMap.<String, Object>of(
+                            propCollection, simpleProperty);
                 }
             }
         }
@@ -241,23 +237,16 @@ public class ToscaNodeToEntityConverter {
         return spec;
     }
 
-    private RelationshipTemplate findRelationshipRequirement(NodeTemplate node, String requirementId){
-        if(node.getRelationships()!=null){
-            for(Map.Entry<String, RelationshipTemplate> entry: node.getRelationships().entrySet()){
-                if(entry.getValue().getRequirementName().equals(requirementId)){
+    private RelationshipTemplate findRelationshipRequirement(NodeTemplate node, String requirementId) {
+        if (node.getRelationships() != null) {
+            for (Map.Entry<String, RelationshipTemplate> entry : node.getRelationships().entrySet()) {
+                if (entry.getValue().getRequirementName().equals(requirementId)) {
                     return entry.getValue();
                 }
             }
-            log.warn("Requirement {} is not described by any relationship ", requirementId);
         }
+        log.warn("Requirement {} is not described by any relationship ", requirementId);
         return null;
-    }
-
-    private String managePropertyTargetNode(String targetId, String value){
-        if(!Strings.containsLiteralIgnoreCase(value, "TARGET")){
-            log.warn("TARGET identifier was not found on value {} in value {}", value);
-        }
-        return value.replaceAll("(?i)TARGET", "\\$brooklyn:component(\""+ targetId+"\")");
     }
 
     //TODO PROVISION_PROPERTIES should be added to this method.

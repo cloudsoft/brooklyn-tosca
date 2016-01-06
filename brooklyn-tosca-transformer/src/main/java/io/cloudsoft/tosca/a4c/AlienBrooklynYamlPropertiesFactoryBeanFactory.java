@@ -27,7 +27,7 @@ public class AlienBrooklynYamlPropertiesFactoryBeanFactory {
     // (or classpath?); that can be overridden using `es.config`
     // (however this shouldn't be confused with elasticsearchConfig which *is* the same as a4c-config,
     // referring to an es block therein and defining a handful of properties used by luc's fork)
-    private static final ConfigKey<String> ALIEN_CONFIG_FILE = ConfigKeys.newStringConfigKey("alien4cloud-config.file",
+    public static final ConfigKey<String> ALIEN_CONFIG_FILE = ConfigKeys.newStringConfigKey("alien4cloud-config.file",
         "URL or classpath or file of the alien4cloud-config.yml file containing the A4C configuration, "
         + "including the address of the ES instance to use. "
         + "If not defined, a default in-memory instance will be used.");
@@ -39,7 +39,7 @@ public class AlienBrooklynYamlPropertiesFactoryBeanFactory {
      * @param mgmt 
      * 
      * @param resourceLoader The loader to use to find the yaml file.
-     * @return an instance of the {@link YamlPropertiesFactoryBean}.
+     * @return an instance of the {@link YamlPropertiesFactoryBean} or null if one could not be loaded.
      */
     public static YamlPropertiesFactoryBean get(ManagementContext mgmt, ResourceLoader resourceLoader) {
         if (INSTANCE == null) {
@@ -55,9 +55,9 @@ public class AlienBrooklynYamlPropertiesFactoryBeanFactory {
                 Resource resource = new ByteArrayResource(resourceArr, configFile);
                 INSTANCE = new YamlPropertiesFactoryBean();
                 INSTANCE.setResources(resource);
-                return INSTANCE;
+            } else {
+                INSTANCE = AlienYamlPropertiesFactoryBeanFactory.get(resourceLoader);
             }
-            INSTANCE = AlienYamlPropertiesFactoryBeanFactory.get(resourceLoader);
         }
         return INSTANCE;
     }

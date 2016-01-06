@@ -86,7 +86,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     public void setManagementContext(ManagementContext managementContext) {
         if (this.mgmt != null && this.mgmt != managementContext) {
             throw new IllegalStateException("Cannot switch mgmt context");
-        } else if (!alienInitialised.get()) {
+        } else if (this.mgmt == null) {
             this.mgmt = managementContext;
 
             try {

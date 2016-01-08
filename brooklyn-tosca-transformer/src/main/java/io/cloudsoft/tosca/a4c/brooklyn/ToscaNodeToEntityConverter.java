@@ -19,6 +19,7 @@ import alien4cloud.paas.function.FunctionEvaluator;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import alien4cloud.tosca.normative.NormativeComputeConstants;
 
 import com.google.api.client.repackaged.com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -123,24 +124,28 @@ public class ToscaNodeToEntityConverter {
     public EntitySpec<? extends Entity> createSpec(boolean hasMultipleChildren) {
         if (this.nodeTemplate == null) {
             throw new IllegalStateException("TOSCA node template is missing. You must specify it by using the method #setNodeTemplate(NodeTemplate nodeTemplate)");
-        }
-        if (StringUtils.isEmpty(this.nodeId)) {
+        } else if (StringUtils.isEmpty(this.nodeId)) {
             throw new IllegalStateException("TOSCA node ID is missing. You must specify it by using the method #setNodeId(String nodeId)");
         }
 
-        EntitySpec<?> spec = null;
+        // TODO: decide on how to behave if indexedNodeTemplate.getElementId is abstract.
+        // Currently we create a VanillaSoftwareProcess.
 
+        EntitySpec<?> spec;
         CatalogItem catalogItem = CatalogUtils.getCatalogItemOptionalVersion(this.mgnt, this.nodeTemplate.getType());
         if (catalogItem != null) {
             log.info("Found Brooklyn catalog item that match node type: " + this.nodeTemplate.getType());
             spec = (EntitySpec<?>) this.mgnt.getCatalog().createSpec(catalogItem);
-        } else if (indexedNodeTemplate.getDerivedFrom().contains("tosca.nodes.Compute")) {
+
+        } else if (indexedNodeTemplate.getDerivedFrom().contains(NormativeComputeConstants.COMPUTE_TYPE)) {
             spec = hasMultipleChildren ? EntitySpec.create(SameServerEntity.class)
                     : EntitySpec.create(BasicApplication.class);
+
         } else {
             try {
                 log.info("Found Brooklyn entity that match node type: " + this.nodeTemplate.getType());
                 spec = EntitySpec.create((Class<? extends Entity>) Class.forName(this.nodeTemplate.getType()));
+
             } catch (ClassNotFoundException e) {
                 log.info("Cannot find any Brooklyn catalog item nor Brooklyn entities that match node type: " +
                         this.nodeTemplate.getType() + ". Defaulting to a VanillaSoftwareProcess");

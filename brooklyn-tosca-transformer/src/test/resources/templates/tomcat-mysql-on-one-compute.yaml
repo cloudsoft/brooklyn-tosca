@@ -1,0 +1,100 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: same-server-entity-test
+template_version: 1.0.0-SNAPSHOT
+
+description: Deploys Tomcat and MySQL on the same compute node.
+
+relationship_types:
+  tosca.relationships.Configure:
+    derived_from: tosca.relationships.DependsOn
+    valid_targets: [ tosca.capabilities.Endpoint ]
+    properties:
+      prop.name:
+        type: string
+        required: false
+      prop.value:
+        type: string
+        required: true
+      prop.collection:
+        type: string
+        required: false
+
+
+node_types:
+  brooklyn.nodes.Compute:
+     derived_from: tosca.nodes.Compute
+
+  org.apache.brooklyn.entity.webapp.tomcat.TomcatServer:
+    derived_from: tosca.nodes.Root
+    description: >
+      A simple Tomcat server
+    properties:
+      wars.root:
+        type: string
+        required: false
+      java.sysprops:
+        type: map
+        required: false
+        entry_schema:
+          type: string
+    requirements:
+      - database_endpoint: tosca.nodes.Root
+        type: tosca.relationships.Configure
+      - host: tosca.capabilities.Container
+
+  org.apache.brooklyn.entity.database.mysql.MySqlNode:
+    derived_from: tosca.nodes.Root
+    description: >
+      A MySQL server
+    properties:
+      "datastore.creation.script.url":
+        type: string
+        required: false
+    requirements:
+      - host: tosca.capabilities.Container
+    capabilities:
+      database_endpoint: tosca.capabilities.Endpoint.Database
+
+
+topology_template:
+  node_templates:
+    Compute:
+      type: brooklyn.nodes.Compute
+
+    MySqlNode:
+      type: org.apache.brooklyn.entity.database.mysql.MySqlNode
+      properties:
+        datastore.creation.script.url: "https://github.com/apache/incubator-brooklyn/blob/7bcb3920d4d1770e031800addd902a2c3c507894/brooklyn-library/examples/simple-web-cluster/src/main/resources/visitors-creation-script.sql"
+      requirements:
+        - host:
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+
+    TomcatServer:
+      type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
+      properties:
+        wars.root: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
+      requirements:
+        - host:
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+        - database_endpoint:
+            node: MySqlNode
+            capability: tosca.capabilities.Endpoint.Database
+            relationship: tosca.relationships.Configure
+            properties:
+              prop.collection: java.sysprops
+              prop.name: brooklyn.example.db.url
+              prop.value: "$brooklyn:formatString(\"jdbc:%s%s?user=%s%spassword=%s\", $brooklyn:component(\"MySqlNode\").attributeWhenReady(\"datastore.url\"), \"visitors\", \"brooklyn\", \"&\", \"br00k11n\")"
+
+  groups:
+    add_brooklyn_location:
+      members: [ Compute ]
+      policies:
+      - brooklyn.location: jclouds:aws-ec2:us-east-1

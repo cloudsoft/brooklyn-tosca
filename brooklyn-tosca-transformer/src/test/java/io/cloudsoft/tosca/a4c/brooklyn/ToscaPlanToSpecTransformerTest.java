@@ -1,15 +1,25 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.brooklyn.api.entity.Application;
+import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
+import org.apache.brooklyn.entity.database.mysql.MySqlNode;
+import org.apache.brooklyn.entity.proxy.nginx.NginxController;
+import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
@@ -20,20 +30,16 @@ import org.apache.brooklyn.location.jclouds.JcloudsLocation;
 import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocation;
 import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
-
 import org.apache.brooklyn.util.core.ResourceUtils;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
 
 public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
@@ -47,6 +53,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
             "brooklyn," +
             "br00k11n)";
 
+    @Override
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
         super.setUp();
@@ -56,6 +63,14 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         platform.loadNormativeTypes();
         transformer = new ToscaPlanToSpecTransformer();
         transformer.setManagementContext(mgmt);
+    }
+
+    @Override
+    @AfterMethod(alwaysRun = true)
+    public void tearDown() throws Exception {
+        if (platform != null) {
+            platform.close();
+        }
     }
 
     @Test
@@ -301,14 +316,33 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
 
-        EntitySpec<TomcatServer> tomcatServer =
-                (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
-                        .findChildEntitySpecByPlanId(app, "tomcat_server");
+        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
     }
 
+    @Test
+    public void testEntitiesOnSameNodeBecomeSameServerEntities() {
+        String templateUrl = getClasspathUrlForResource("templates/tomcat-mysql-on-one-compute.yaml");
+
+        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(spec);
+        Application app = this.mgmt.getEntityManager().createEntity(spec);
+
+        assertEquals(app.getChildren().size(), 1);
+        Entity appChild = Iterables.getOnlyElement(app.getChildren());
+        assertTrue(appChild instanceof SameServerEntity, "Expected " + SameServerEntity.class.getName() + ", got " + appChild);
+
+        assertEquals(appChild.getChildren().size(), 2);
+        assertEquals(Iterables.size(Entities.descendants(appChild, MySqlNode.class)), 1,
+                "expected " + MySqlNode.class.getName() + " in " + appChild.getChildren());
+        assertEquals(Iterables.size(Entities.descendants(appChild, TomcatServer.class)), 1,
+                "expected " + TomcatServer.class.getName() + " in " + appChild.getChildren());
+    }
 
 }

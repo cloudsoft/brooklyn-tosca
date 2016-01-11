@@ -218,6 +218,9 @@
                     <logViolationsToConsole>true</logViolationsToConsole>
                     <checkstyleRules>
                         <module name="Checker">
+                            <module name="FileTabCharacter">
+                                <property name="eachLine" value="true" />
+                            </module>
                             <module name="TreeWalker">
                                 <module name="IllegalImport">
                                     <property name="illegalPkgs" value="com.google.api.client,org.python.google"/>

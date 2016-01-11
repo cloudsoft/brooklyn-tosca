@@ -27,6 +27,7 @@
             <groupId>org.apache.brooklyn</groupId>
             <artifactId>brooklyn-test-support</artifactId>
             <version>${brooklyn.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.brooklyn</groupId>

@@ -28,7 +28,7 @@ Then simply:
 ## Running
 
 See the README.md file in the resulting archive (in `target`) for runtime instructions.
-You may also find that file [here](src/main/assembly/files/README.md).
+You may also find that file [here](brooklyn-tosca-dist/src/main/assembly/files/README.md).
 
 
 ## TODO Tasks

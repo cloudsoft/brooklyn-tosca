@@ -86,6 +86,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     private ManagementContext mgmt;
     private Alien4CloudToscaPlatform platform;
     private final AtomicBoolean alienInitialised = new AtomicBoolean();
+    private boolean hasLoggedDisabled = false;
 
     static {
         BrooklynFeatureEnablement.setDefault(FEATURE_TOSCA_ENABLED, true);
@@ -94,7 +95,10 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     @Override
     public void setManagementContext(ManagementContext managementContext) {
         if (!isEnabled()) {
-            log.info("Not loading brooklyn-tosca platform: feature disabled");
+            if (!hasLoggedDisabled) {
+                log.info("Not loading brooklyn-tosca platform: feature disabled");
+                hasLoggedDisabled = true;
+            }
             return;
         }
         if (this.mgmt != null && this.mgmt != managementContext) {

@@ -305,10 +305,16 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             InstanceInformation instanceInformation = new InstanceInformation();
             Map<String, Object> sensorValues = brooklynApi.getSensorApi().batchSensorRead(appId, entityId, null);
             ImmutableMap.Builder<String, String> sensorValuesStringBuilder = ImmutableMap.builder();
+            ImmutableMap.Builder<String, String> attributeValuesStringBuilder = ImmutableMap.builder();
             for (Entry<String, Object> entry : sensorValues.entrySet()) {
-                sensorValuesStringBuilder.put(entry.getKey(), String.valueOf(entry.getValue()));
+                if(entry.getKey().startsWith("tosca.attribute")) {
+                    attributeValuesStringBuilder.put(entry.getKey(), String.valueOf(entry.getValue()));
+                } else {
+                    sensorValuesStringBuilder.put(entry.getKey(), String.valueOf(entry.getValue()));
+                }
             }
             instanceInformation.setRuntimeProperties(sensorValuesStringBuilder.build());
+            instanceInformation.setAttributes(attributeValuesStringBuilder.build());
             String serviceState = String.valueOf(sensorValues.get("service.state"));
             instanceInformation.setState(serviceState);
             instanceInformation.setInstanceStatus(SERVICE_STATE_TO_INSTANCE_STATUS.get(Status.valueOf(serviceState)));

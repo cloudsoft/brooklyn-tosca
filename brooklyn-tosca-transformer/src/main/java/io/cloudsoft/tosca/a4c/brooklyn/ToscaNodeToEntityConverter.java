@@ -16,7 +16,9 @@ import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.function.FunctionEvaluator;
+import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.tosca.normative.NormativeComputeConstants;
@@ -35,6 +37,7 @@ import java.util.Set;
 
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Entity;
+import org.apache.brooklyn.api.entity.EntityInitializer;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
@@ -42,6 +45,9 @@ import org.apache.brooklyn.camp.brooklyn.spi.creation.CampCatalogUtils;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.effector.AddSensor;
+import org.apache.brooklyn.core.sensor.BasicAttributeSensorAndConfigKey;
+import org.apache.brooklyn.core.sensor.StaticSensor;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
@@ -136,6 +142,7 @@ public class ToscaNodeToEntityConverter {
         // Currently we create a VanillaSoftwareProcess.
 
         EntitySpec<?> spec;
+
         CatalogItem catalogItem = CatalogUtils.getCatalogItemOptionalVersion(this.mgnt, this.nodeTemplate.getType());
         if (catalogItem != null) {
             log.info("Found Brooklyn catalog item that match node type: " + this.nodeTemplate.getType());
@@ -161,6 +168,7 @@ public class ToscaNodeToEntityConverter {
         if (Strings.isNonBlank(this.nodeTemplate.getName())) {
             spec.displayName(this.nodeTemplate.getName());
         } else {
+            this.nodeTemplate.setName(this.nodeId);
             spec.displayName(this.nodeId);
         }
         // Add TOSCA node type as a property
@@ -191,6 +199,18 @@ public class ToscaNodeToEntityConverter {
             spec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.STOP_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND, "true");
+        }
+
+        Optional<PaaSNodeTemplate> optionalPaaSNodeTemplate = getPaasNodeTemplate();
+        if(optionalPaaSNodeTemplate.isPresent()) {
+            Map<String, PaaSNodeTemplate> allNodes = treeBuilder.buildPaaSTopology(topology).getAllNodes();
+            for (Map.Entry<String, IValue> attribute : indexedNodeTemplate.getAttributes().entrySet()) {
+                String value = FunctionEvaluator.parseAttribute(attribute.getKey(), attribute.getValue(), topology, ImmutableMap.<String, Map<String, InstanceInformation>>of(), "", optionalPaaSNodeTemplate.get(), allNodes);
+                spec.addInitializer(new StaticSensor<String>(ConfigBag.newInstance()
+                        .configure(StaticSensor.SENSOR_NAME, "tosca.attribute." + attribute.getKey().replaceAll("\\s+", "."))
+                        .configure(StaticSensor.STATIC_VALUE, value)
+                ));
+            }
         }
 
         // Applying operations
@@ -242,7 +262,6 @@ public class ToscaNodeToEntityConverter {
         }
 
         configureConfigKeysSpec(spec, ConfigBag.newInstance(propertiesAndTypedValues));
-
         return spec;
     }
 
@@ -412,6 +431,16 @@ public class ToscaNodeToEntityConverter {
             result = implArtifact.getArtifactRef();
         }
         return result;
+    }
+
+    private Optional<PaaSNodeTemplate> getPaasNodeTemplate(){
+        PaaSTopology paaSTopology = treeBuilder.buildPaaSTopology(topology);
+        if(paaSTopology != null) {
+            Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = paaSTopology.getAllNodes();
+            String computeName = nodeTemplate.getName();
+            return Optional.of(builtPaaSNodeTemplates.get(computeName));
+        }
+        return Optional.absent();
     }
 
     protected void applyLifecycle(Map<String, Operation> ops, String opKey, EntitySpec<? extends Entity> spec, ConfigKey<String> cmdKey) {

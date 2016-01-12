@@ -23,6 +23,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.apache.brooklyn</groupId>
+            <artifactId>brooklyn-all</artifactId>
+            <version>${brooklyn.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.cloudsoft.brooklyn.tosca</groupId>
             <artifactId>brooklyn-tosca-transformer</artifactId>
             <version>${project.version}</version>

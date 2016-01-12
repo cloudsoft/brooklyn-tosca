@@ -402,7 +402,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         try {
             Collection<AbstractMonitorEvent> events = Sets.newHashSet();
             List<ApplicationSummary> appSummaries = brooklynApi.getApplicationApi().list(null);
-			for (ApplicationSummary appSummary : appSummaries) {
+            for (ApplicationSummary appSummary : appSummaries) {
                 String appId = appSummary.getId();
                 String deploymentId = String.valueOf(brooklynApi.getEntityConfigApi().get(appId, appId, "tosca.deployment.id", false));
 
@@ -486,6 +486,6 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     }
 
     protected BrooklynApi getNewBrooklynApi() {
-		return BrooklynApi.newInstance(configuration.getUrl(), configuration.getUser(), configuration.getPassword());
-	}
+        return BrooklynApi.newInstance(configuration.getUrl(), configuration.getUser(), configuration.getPassword());
+    }
 }

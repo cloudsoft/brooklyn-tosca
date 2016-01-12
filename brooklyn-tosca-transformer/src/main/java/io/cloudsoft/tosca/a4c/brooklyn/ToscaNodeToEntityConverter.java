@@ -21,7 +21,7 @@ import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.tosca.normative.NormativeComputeConstants;
 
-import com.google.api.client.repackaged.com.google.common.base.Joiner;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -293,7 +293,8 @@ public class ToscaNodeToEntityConverter {
                     }
                     keyNamesUsed.add(r.getConfigKey().getName());
                 } catch (Exception e) {
-                    log.warn("Cannot set config key {}, could not coerce {} to {}", r.getConfigKey(), r.getConfigKeyMaybeValue(), r.getConfigKey().getTypeToken());
+                    log.warn("Cannot set config key {}, could not coerce {} to {}",
+                            new Object[]{r.getConfigKey(), r.getConfigKeyMaybeValue(), r.getConfigKey().getTypeToken()});
                 }
             }
         }

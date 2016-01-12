@@ -14,7 +14,7 @@ node_types:
     derived_from: tosca.nodes.Compute
 
   brooklyn.nodes.SoftwareProcess:
-    derived_from: tosca.nodes.Root
+    derived_from: tosca.nodes.SoftwareComponent
     requirements:
     - host: tosca.capabilities.Container
       relationship: tosca.relationships.HostedOn

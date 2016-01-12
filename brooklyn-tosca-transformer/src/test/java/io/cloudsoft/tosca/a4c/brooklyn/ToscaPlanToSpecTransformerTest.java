@@ -46,7 +46,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     protected ToscaPlanToSpecTransformer transformer;
     private Alien4CloudToscaPlatform platform;
 
-    public static final String TEMPLATES_FOLDER = "io/cloudsoft/brooklyn/tosca/test/templates/";
+    public static final String TEMPLATES_FOLDER = "templates/";
     private String DATABASE_DEPENDENCY_INJECTION= "$brooklyn:formatString(\"jdbc:" +
             "%s%s?user=%s\\\\&password=%s\",$brooklyn:entity(\"mysql_server\")" +
             ".attributeWhenReady(\"datastore.url\")," +

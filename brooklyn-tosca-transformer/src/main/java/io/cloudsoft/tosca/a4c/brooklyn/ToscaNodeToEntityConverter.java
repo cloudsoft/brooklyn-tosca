@@ -366,10 +366,8 @@ public class ToscaNodeToEntityConverter {
         if (indexedNodeTemplate.getInterfaces() != null) {
             MutableMap<String, Interface> indexedNodeTemplateInterfaces =
                     MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
-
             Interface indexedNodeTemplateInterface = findInterfaceOfNodeTemplate(
                     indexedNodeTemplateInterfaces, VALID_INTERFACE_NAMES);
-
 
             if (indexedNodeTemplateInterface != null) {
                 Interface nodeTemplateInterface = findInterfaceOfNodeTemplate(
@@ -392,7 +390,7 @@ public class ToscaNodeToEntityConverter {
     }
 
     private Interface findInterfaceOfNodeTemplate(Map<String, Interface> nodeTemplateInterfaces,
-                                                  List<String> validInterfaceNames){
+                                                              List<String> validInterfaceNames){
         for(String interfaceName: validInterfaceNames){
             if(nodeTemplateInterfaces.containsKey(interfaceName)){
                 return nodeTemplateInterfaces.get(interfaceName);
@@ -412,7 +410,7 @@ public class ToscaNodeToEntityConverter {
     private String getOpImplArtifactRef(Interface interfaze, String operationName){
         String result = null;
         ImplementationArtifact implArtifact = getOpImplArtifact(interfaze, operationName);
-        if(implArtifact!=null){
+        if (implArtifact != null) {
             result = implArtifact.getArtifactRef();
         }
         return result;
@@ -434,7 +432,7 @@ public class ToscaNodeToEntityConverter {
                 try {
                     Path csarPath = csarFileRepository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
                     script = new ResourceUtils(this)
-                            .getResourceAsString(csarPath.getParent().toString()+ EXPANDED_FOLDER + ref);
+                            .getResourceAsString(csarPath.getParent().toString() + EXPANDED_FOLDER + ref);
                 } catch (CSARVersionNotFoundException | NullPointerException  e) {
                     script = new ResourceUtils(this).getResourceAsString(ref);
                 }

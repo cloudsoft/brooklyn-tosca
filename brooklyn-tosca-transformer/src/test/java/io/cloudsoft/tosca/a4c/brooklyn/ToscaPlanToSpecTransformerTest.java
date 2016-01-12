@@ -324,8 +324,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
 
-        EntitySpec<TomcatServer> tomcatServer =
-                (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
+        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer
                         .findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
@@ -341,7 +340,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
             platform.loadTypesFromUrl(AlienSamplesLiveTest.ALIEN_SAMPLE_TYPES_GITHUB_URL, true);
 
             String templateUrl =
-                    getClasspathUrlForResource(TEMPLATES_FOLDER + "mysql-topology-overwrited-interface.tosca.yaml");
+                    getClasspathUrlForResource(TEMPLATES_FOLDER + "mysql-topology-overwritten-interface.tosca.yaml");
 
             EntitySpec<?> spec = transformer.createApplicationSpec(
                     new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -358,15 +357,12 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
             EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
             assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
 
-            // Check the config has been set
-            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("port")), "3306");
-            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
 
             // Check that the inputs have been set as exports on the scripts
             assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export PORT=3361"));
             assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_USER=martin"));
             assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_NAME=wordpress"));
-            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("#launch mysql service"));
+            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("#OVERWRITTEN VALUE"));
 
         } finally {
             if (platform!=null) {
@@ -374,8 +370,6 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
             }
         }
     }
-
-
 
     @Test(enabled = false) //failing to parse tosca
     public void testEntitiesOnSameNodeBecomeSameServerEntities() {

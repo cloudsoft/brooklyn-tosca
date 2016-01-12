@@ -50,13 +50,21 @@ Any ElasticSearch data stored by this instance will use default ES file location
 The recommended way to configure ES data is by launching a separate Alien4Cloud instance 
 configured as desired, with this instance pointing at that.
 
+### Quickstart: TOSCA disabled
+
+If you wish to start Brooklyn with TOSCA modules disabled then run:
+
+    nohup ./brooklyn.sh launch -Dbrooklyn.experimental.feature.tosca=false
+
+You may also set `brooklyn.experimental.feature.tosca` in your `brooklyn.properties` file.
+
 
 ## Supported TOSCA Syntax
 
 This currently supports nearly all TOSCA elements at parse time, 
 and the following at deploy time:
 
-* `tosca.nodes.Compute` nodes for VM's
+* `tosca.nodes.Compute` nodes for VMs
 * Other node types which define `standard` lifecycle `interfaces` as scripts by URL, 
   optionally declaring their `host` requirement pointing at a compute node template
 

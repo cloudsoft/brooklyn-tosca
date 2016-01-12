@@ -20,6 +20,7 @@ import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationRe
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlLocationResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlTypeInstantiator;
 import org.apache.brooklyn.config.ConfigKey;
+import org.apache.brooklyn.core.BrooklynFeatureEnablement;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
@@ -40,6 +41,7 @@ import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -71,6 +73,9 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     public static final ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
         .name("tosca.a4c.platform").build();
 
+    @VisibleForTesting
+    static final String FEATURE_TOSCA_ENABLED = BrooklynFeatureEnablement.FEATURE_PROPERTY_PREFIX + ".tosca";
+
     private static final ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");
     private static final ConfigKey<String> TOSCA_DELEGATE_ID = ConfigKeys.newStringConfigKey("tosca.delegate.id");
     private static final ConfigKey<String> TOSCA_DEPLOYMENT_ID = ConfigKeys.newStringConfigKey("tosca.deployment.id");
@@ -82,8 +87,16 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     private Alien4CloudToscaPlatform platform;
     private final AtomicBoolean alienInitialised = new AtomicBoolean();
 
+    static {
+        BrooklynFeatureEnablement.setDefault(FEATURE_TOSCA_ENABLED, true);
+    }
+
     @Override
     public void setManagementContext(ManagementContext managementContext) {
+        if (!isEnabled()) {
+            log.info("Not loading brooklyn-tosca platform: feature disabled");
+            return;
+        }
         if (this.mgmt != null && this.mgmt != managementContext) {
             throw new IllegalStateException("Cannot switch mgmt context");
         } else if (this.mgmt == null) {
@@ -113,7 +126,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     @Override
     public boolean accepts(String planType) {
-        return alienInitialised.get() && getShortDescription().equals(planType);
+        return isEnabled() && alienInitialised.get() && getShortDescription().equals(planType);
     }
 
     public static class PlanTypeChecker {
@@ -163,7 +176,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     
     @Override
     public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
-        assertA4CInitialised();
+        assertAvailable();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
             ParsingResult<Csar> tp;
@@ -340,7 +353,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     @SuppressWarnings("unchecked")
     @Override
     public <T, SpecT extends AbstractBrooklynObjectSpec<? extends T, SpecT>> SpecT createCatalogSpec(CatalogItem<T, SpecT> item, Set<String> encounteredTypes) throws PlanNotRecognizedException {
-        assertA4CInitialised();
+        assertAvailable();
         switch (item.getCatalogItemType()) {
         case TEMPLATE:
         case ENTITY:
@@ -355,8 +368,18 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
 
-    private void assertA4CInitialised() {
-        if (!alienInitialised.get()) {
+    private boolean isEnabled() {
+        return BrooklynFeatureEnablement.isEnabled(FEATURE_TOSCA_ENABLED);
+    }
+
+    /**
+     * Throws {@link IllegalStateException} if {@link BrooklynFeatureEnablement#isEnabled(String)}
+     * returns false for {@link #FEATURE_TOSCA_ENABLED} or if {@link #alienInitialised} is false.
+     */
+    private void assertAvailable() {
+        if (!BrooklynFeatureEnablement.isEnabled(FEATURE_TOSCA_ENABLED)) {
+            throw new IllegalStateException("Brooklyn TOSCA support is disabled");
+        } else if (!alienInitialised.get()) {
             throw new IllegalStateException("A4C platform is uninitialised for " + this);
         }
     }

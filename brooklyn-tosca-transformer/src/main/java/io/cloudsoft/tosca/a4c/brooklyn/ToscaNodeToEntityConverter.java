@@ -12,6 +12,7 @@ import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.ScalarPropertyValue;
+import alien4cloud.model.topology.AbstractTemplate;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Topology;
@@ -361,11 +362,7 @@ public class ToscaNodeToEntityConverter {
         return allKeys;
     }
 
-    private Map<String, Object> getTemplatePropertyObjects(NodeTemplate template) {
-        return getPropertyObjects(template.getProperties());
-    }
-
-    private Map<String, Object> getTemplatePropertyObjects(RelationshipTemplate template) {
+    private Map<String, Object> getTemplatePropertyObjects(AbstractTemplate template) {
         return getPropertyObjects(template.getProperties());
     }
 

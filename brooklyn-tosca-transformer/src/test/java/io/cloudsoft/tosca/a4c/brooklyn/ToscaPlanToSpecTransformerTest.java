@@ -17,6 +17,7 @@ import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.entity.Entities;
+import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
@@ -390,6 +391,21 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                 "expected " + MySqlNode.class.getName() + " in " + appChild.getChildren());
         assertEquals(Iterables.size(Entities.descendants(appChild, TomcatServer.class)), 1,
                 "expected " + TomcatServer.class.getName() + " in " + appChild.getChildren());
+    }
+
+    @Test
+    public void testConcatFunctionInTopology() {
+        String templateUrl = getClasspathUrlForResource("templates/concat-function.yaml");
+        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(spec);
+        Application app = this.mgmt.getEntityManager().createEntity(spec);
+
+        assertEquals(app.getChildren().size(), 1);
+        Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
+        String value = entity.sensors().get(Sensors.newStringSensor("tosca.attribute.my_message"));
+        assertEquals(value, "Message: It Works!");
     }
 
 }

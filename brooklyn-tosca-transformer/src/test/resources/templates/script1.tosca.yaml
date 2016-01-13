@@ -19,10 +19,10 @@ topology_template:
       - host: a_server
       interfaces:
         Standard:
-           create: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/create.sh
-           configure: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/configure.sh
-           start: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/start.sh
-           stop: https://raw.githubusercontent.com/ahgittin/tosca-demo/master/script1/scripts/stop.sh
+           create: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/create.sh
+           configure: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/configure.sh
+           start: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/start.sh
+           stop: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/stop.sh
         
     a_server:
       type: tosca.nodes.Compute

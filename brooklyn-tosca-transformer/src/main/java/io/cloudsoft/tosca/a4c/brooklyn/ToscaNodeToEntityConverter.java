@@ -74,6 +74,10 @@ public class ToscaNodeToEntityConverter {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaNodeToEntityConverter.class);
 
+    private static final ImmutableList<String> VALID_INTERFACE_NAMES=
+            ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
+    private static final String EXPANDED_FOLDER= "/expanded/";
+
     private final ManagementContext mgnt;
     private String nodeId;
     private IndexedArtifactToscaElement indexedNodeTemplate;
@@ -190,7 +194,7 @@ public class ToscaNodeToEntityConverter {
         }
 
         // Applying operations
-        final Map<String, Operation> operations = getInterfaceOperations();
+        final Map<String, Operation> operations = getStandardInterfaceOperations();
         if (!operations.isEmpty()) {
             if (spec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
                 applyLifecycle(operations, ToscaNodeLifecycleConstants.CREATE, spec, VanillaSoftwareProcess.INSTALL_COMMAND);
@@ -356,28 +360,61 @@ public class ToscaNodeToEntityConverter {
         }
         return propertyMap;
     }
-
-
-    protected Map<String, Operation> getInterfaceOperations() {
-        final Map<String, Operation> operations = MutableMap.of();
+    
+    protected Map<String, Operation> getStandardInterfaceOperations() {
+        Map<String, Operation> operations = MutableMap.of();
 
         if (indexedNodeTemplate.getInterfaces() != null) {
-            final ImmutableList<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-            final MutableMap<String, Interface> interfaces = MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
+            MutableMap<String, Interface> indexedNodeTemplateInterfaces =
+                    MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
+            Interface indexedNodeTemplateInterface = findInterfaceOfNodeTemplate(
+                    indexedNodeTemplateInterfaces, VALID_INTERFACE_NAMES);
 
-            for (String validInterfaceName : validInterfaceNames) {
-                Interface validInterface = interfaces.remove(validInterfaceName);
-                if (validInterface != null) {
-                    operations.putAll(validInterface.getOperations());
-                    if (!interfaces.isEmpty()) {
-                        log.warn("Could not translate some interfaces for " + this.nodeId + ": " + interfaces.keySet());
+            if (indexedNodeTemplateInterface != null) {
+                Interface nodeTemplateInterface = findInterfaceOfNodeTemplate(
+                        MutableMap.copyOf(nodeTemplate.getInterfaces()), VALID_INTERFACE_NAMES);
+                for (Map.Entry<String, Operation> entry :
+                        indexedNodeTemplateInterface.getOperations().entrySet()) {
+                    String operationName = entry.getKey();
+                    Operation operation = entry.getValue();
+
+                    if ((nodeTemplateInterface != null) &&
+                            (!Strings.isBlank(
+                                    getOpImplArtifactRef(nodeTemplateInterface, operationName)))) {
+                        operation = nodeTemplateInterface.getOperations().get(operationName);
                     }
-                    break;
+                    operations.put(operationName, operation);
                 }
             }
         }
-
         return operations;
+    }
+
+    private Interface findInterfaceOfNodeTemplate(Map<String, Interface> nodeTemplateInterfaces,
+                                                              List<String> validInterfaceNames){
+        for(String interfaceName: validInterfaceNames){
+            if(nodeTemplateInterfaces.containsKey(interfaceName)){
+                return nodeTemplateInterfaces.get(interfaceName);
+            }
+        }
+        return null;
+    }
+
+    private ImplementationArtifact getOpImplArtifact(Interface interfaze, String operationName){
+        ImplementationArtifact result = null;
+        if(interfaze.getOperations().containsKey(operationName)){
+            result = interfaze.getOperations().get(operationName).getImplementationArtifact();
+        }
+        return result;
+    }
+
+    private String getOpImplArtifactRef(Interface interfaze, String operationName){
+        String result = null;
+        ImplementationArtifact implArtifact = getOpImplArtifact(interfaze, operationName);
+        if (implArtifact != null) {
+            result = implArtifact.getArtifactRef();
+        }
+        return result;
     }
 
     protected void applyLifecycle(Map<String, Operation> ops, String opKey, EntitySpec<? extends Entity> spec, ConfigKey<String> cmdKey) {
@@ -395,18 +432,18 @@ public class ToscaNodeToEntityConverter {
                 // content of the script from any resources
                 try {
                     Path csarPath = csarFileRepository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
-                    script = new ResourceUtils(this).getResourceAsString(csarPath.getParent().toString() + "/expanded/" + ref);
-                } catch (CSARVersionNotFoundException e) {
+                    script = new ResourceUtils(this)
+                            .getResourceAsString(csarPath.getParent().toString() + EXPANDED_FOLDER + ref);
+                } catch (CSARVersionNotFoundException | NullPointerException  e) {
                     script = new ResourceUtils(this).getResourceAsString(ref);
                 }
 
                 Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
-                String computeName = nodeTemplate.getName();
+                String computeName = (nodeTemplate.getName()!=null) ? nodeTemplate.getName() : (String) spec.getFlags().get("tosca.template.id");
                 PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
-                Operation configOp = paasNodeTemplate.getIndexedToscaElement().getInterfaces().get(ToscaNodeLifecycleConstants.STANDARD).getOperations()
-                        .get(opKey);
+
                 StringBuilder inputBuilder = new StringBuilder();
-                Map<String, IValue> inputParameters = configOp.getInputParameters();
+                Map<String, IValue> inputParameters = op.getInputParameters();
                 if (inputParameters != null) {
                     for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
                         // case keyword SOURCE used on a NodeType

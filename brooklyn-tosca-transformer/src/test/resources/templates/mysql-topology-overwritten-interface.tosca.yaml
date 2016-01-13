@@ -1,0 +1,33 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+template_name: mysql-overwritten-operation
+description: An operation was overwitten in a MySQL NodeTemplate
+template_version: 0.1.0-SNAPSHOT
+template_author: admin
+
+imports:
+  - mysql-type:2.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+  - brooklyn-types:0.1.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    Compute:
+      name: Compute
+      type: brooklyn.nodes.Compute
+
+    Mysql:
+      name: Mysql
+      type: alien.nodes.Mysql
+      requirements:
+        - host:
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      artifacts:
+        configs:
+          implementation: configs
+          type: tosca.artifacts.File
+          description: configs
+      interfaces:
+        Standard:
+           start: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/mock/start.sh

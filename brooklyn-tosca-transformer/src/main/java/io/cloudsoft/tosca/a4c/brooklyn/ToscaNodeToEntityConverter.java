@@ -359,30 +359,25 @@ public class ToscaNodeToEntityConverter {
         }
         return propertyMap;
     }
-    
+
     protected Map<String, Operation> getStandardInterfaceOperations() {
         Map<String, Operation> operations = MutableMap.of();
+        Interface indexedNodeTemplateInterface = findInterfaceOfNodeTemplate(
+                indexedNodeTemplate.getInterfaces(), VALID_INTERFACE_NAMES);
+        Interface nodeTemplateInterface = findInterfaceOfNodeTemplate(
+                nodeTemplate.getInterfaces(), VALID_INTERFACE_NAMES);
 
-        if (indexedNodeTemplate.getInterfaces() != null) {
-            MutableMap<String, Interface> indexedNodeTemplateInterfaces =
-                    MutableMap.copyOf(indexedNodeTemplate.getInterfaces());
-            Interface indexedNodeTemplateInterface = findInterfaceOfNodeTemplate(
-                    indexedNodeTemplateInterfaces, VALID_INTERFACE_NAMES);
+        if ((indexedNodeTemplateInterface != null)
+                && (indexedNodeTemplateInterface.getOperations()!=null)) {
+                operations = MutableMap.copyOf(indexedNodeTemplateInterface.getOperations());
+        }
 
-            if (indexedNodeTemplateInterface != null) {
-                Interface nodeTemplateInterface = findInterfaceOfNodeTemplate(
-                        MutableMap.copyOf(nodeTemplate.getInterfaces()), VALID_INTERFACE_NAMES);
-                for (Map.Entry<String, Operation> entry :
-                        indexedNodeTemplateInterface.getOperations().entrySet()) {
-                    String operationName = entry.getKey();
-                    Operation operation = entry.getValue();
-
-                    if ((nodeTemplateInterface != null) &&
-                            (!Strings.isBlank(
-                                    getOpImplArtifactRef(nodeTemplateInterface, operationName)))) {
-                        operation = nodeTemplateInterface.getOperations().get(operationName);
-                    }
-                    operations.put(operationName, operation);
+        if ((nodeTemplateInterface != null)
+                && (nodeTemplateInterface.getOperations()!=null)) {
+            for (String operationName : nodeTemplateInterface.getOperations().keySet()) {
+                if (operations.containsKey(operationName)) {
+                    operations.put(operationName,
+                            nodeTemplateInterface.getOperations().get(operationName));
                 }
             }
         }
@@ -391,9 +386,11 @@ public class ToscaNodeToEntityConverter {
 
     private Interface findInterfaceOfNodeTemplate(Map<String, Interface> nodeTemplateInterfaces,
                                                               List<String> validInterfaceNames){
-        for(String interfaceName: validInterfaceNames){
-            if(nodeTemplateInterfaces.containsKey(interfaceName)){
-                return nodeTemplateInterfaces.get(interfaceName);
+        if (nodeTemplateInterfaces != null) {
+            for (String interfaceName: validInterfaceNames){
+                if(nodeTemplateInterfaces.containsKey(interfaceName)){
+                    return nodeTemplateInterfaces.get(interfaceName);
+                }
             }
         }
         return null;

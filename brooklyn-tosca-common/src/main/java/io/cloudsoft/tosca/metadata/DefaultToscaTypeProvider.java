@@ -8,7 +8,7 @@ import com.google.common.base.Optional;
 public class DefaultToscaTypeProvider implements ToscaTypeProvider {
 
     @Override
-    public Optional<String> getToscaType(String type) {
+    public Optional<String> getToscaType(String type, String version) {
         return Optional.of("brooklyn.nodes.SoftwareProcess");
     }
 

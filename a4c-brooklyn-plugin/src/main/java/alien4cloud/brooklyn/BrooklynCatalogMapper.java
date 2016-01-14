@@ -1,7 +1,6 @@
 package alien4cloud.brooklyn;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -168,7 +167,7 @@ public class BrooklynCatalogMapper {
             addAttributeDefinitions(brooklynEntity, toscaType);
             addInterfaces(brooklynEntity, toscaType);
 
-            Optional<String> derivedFrom = metadataProvider.getToscaType(brooklynEntity.getType());
+            Optional<String> derivedFrom = metadataProvider.getToscaType(brooklynEntity.getType(), brooklynEntity.getVersion());
             if (derivedFrom.isPresent()) {
                 toscaType.setDerivedFrom(ImmutableList.of(derivedFrom.get()));
             }

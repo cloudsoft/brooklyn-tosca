@@ -35,6 +35,11 @@
             <version>${brooklyn.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.brooklyn</groupId>
+            <artifactId>brooklyn-rest-client</artifactId>
+            <version>0.9.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
 </project>

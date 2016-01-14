@@ -32,6 +32,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.cloudsoft.tosca.metadata.RequiresBrooklynApi;
 import io.cloudsoft.tosca.metadata.ToscaMetadataProvider;
 import io.cloudsoft.tosca.metadata.ToscaTypeProvider;
 import lombok.SneakyThrows;
@@ -44,8 +45,11 @@ import org.apache.brooklyn.util.text.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
@@ -88,6 +92,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             .put(Status.UNKNOWN, DeploymentStatus.UNKNOWN)
             .build();
 
+
     @Autowired
     private ApplicationService applicationService;
 
@@ -100,6 +105,9 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     @Autowired
     @Qualifier("alien-es-dao")
     private IGenericSearchDAO alienDAO;
+
+    @Autowired
+    private BeanFactory beanFactory;
 
     ThreadLocal<ClassLoader> oldContextClassLoader = new ThreadLocal<ClassLoader>();
 
@@ -128,11 +136,14 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             List<ToscaTypeProvider> metadataProviders = new LinkedList<>();
             for (String providerClass : configuration.getProviders()) {
                 try {
-                    Object provider = Class.forName(providerClass).newInstance();
+                    Object provider = beanFactory.getBean(Class.forName(providerClass));
+                    if(provider instanceof RequiresBrooklynApi) {
+                        ((RequiresBrooklynApi) provider).setBrooklynApi(getNewBrooklynApi());
+                    }
                     // Alien UI has higher priority items at the end of the list.
                     // Reverse the order here.
                     metadataProviders.add(0, ToscaTypeProvider.class.cast(provider));
-                } catch (IllegalAccessException| InstantiationException | ClassNotFoundException e) {
+                } catch (ClassNotFoundException e) {
                     log.warn("Could not load metadata provider " + providerClass, e);
                 }
             }

@@ -13,11 +13,11 @@ public class ToscaMetadataProvider {
     }
 
     /**
-     * @see ToscaTypeProvider#getToscaType(String)
+     * @see ToscaTypeProvider#getToscaType(String, String)
      */
-    public Optional<String> getToscaType(String type) {
+    public Optional<String> getToscaType(String type, String version) {
         for (ToscaTypeProvider provider : providers) {
-            Optional<String> providedType = provider.getToscaType(type);
+            Optional<String> providedType = provider.getToscaType(type, version);
             if (providedType.isPresent()) {
                 return providedType;
             }

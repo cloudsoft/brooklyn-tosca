@@ -17,33 +17,33 @@ public class ToscaMetadataProviderTest {
                 new AlwaysBobTypeProvider(),
                 new BrooklynToscaTypeProvider(),
                 new AlwaysAbsentTypeProvider()));
-        assertEquals(tmp.getToscaType("bib").get(), "bob");
+        assertEquals(tmp.getToscaType("bib", "1.0").get(), "bob");
     }
 
     @Test
     public void testNoGoodType() {
         ToscaMetadataProvider tmp = new ToscaMetadataProvider(ImmutableList.<ToscaTypeProvider>of(
                 new AlwaysAbsentTypeProvider()));
-        assertFalse(tmp.getToscaType("xyz").isPresent());
+        assertFalse(tmp.getToscaType("xyz", "1.0").isPresent());
     }
 
     @Test
     public void testBrooklynTypeProvider() {
         ToscaMetadataProvider tmp = new ToscaMetadataProvider(ImmutableList.<ToscaTypeProvider>of(
                 new BrooklynToscaTypeProvider()));
-        assertEquals(tmp.getToscaType(MySqlNode.class.getName()).get(), "brooklyn.nodes.Database");
+        assertEquals(tmp.getToscaType(MySqlNode.class.getName(), "1.0").get(), "brooklyn.nodes.Database");
     }
 
     private static class AlwaysBobTypeProvider implements ToscaTypeProvider {
         @Override
-        public Optional<String> getToscaType(String type) {
+        public Optional<String> getToscaType(String type, String version) {
             return Optional.of("bob");
         }
     }
 
     private static class AlwaysAbsentTypeProvider implements ToscaTypeProvider {
         @Override
-        public Optional<String> getToscaType(String type) {
+        public Optional<String> getToscaType(String type, String version) {
             return Optional.absent();
         }
     }

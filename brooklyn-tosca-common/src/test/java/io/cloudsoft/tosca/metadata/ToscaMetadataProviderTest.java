@@ -1,15 +1,42 @@
 package io.cloudsoft.tosca.metadata;
 
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
+import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
+import org.apache.brooklyn.rest.api.CatalogApi;
+import org.apache.brooklyn.rest.client.BrooklynApi;
+import org.apache.brooklyn.rest.domain.CatalogEntitySummary;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
+import java.util.Collection;
+
 public class ToscaMetadataProviderTest {
+
+    private static final Collection<Object> TAGS = ImmutableList.<Object>of(ImmutableMap.of(
+            "traits", ImmutableList.of("org.apache.brooklyn.entity.webapp.WebAppService")
+    ));
+    @Mock
+    private BrooklynApi brooklynApi;
+    @Mock
+    private CatalogApi catalogApi;
+    @Mock
+    private CatalogEntitySummary catalogEntitySummary;
+
+    @BeforeClass
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+    }
 
     @Test
     public void testOrdering() {
@@ -28,10 +55,14 @@ public class ToscaMetadataProviderTest {
     }
 
     @Test
-    public void testBrooklynTypeProvider() {
-        ToscaMetadataProvider tmp = new ToscaMetadataProvider(ImmutableList.<ToscaTypeProvider>of(
-                new BrooklynToscaTypeProvider()));
-        assertEquals(tmp.getToscaType(MySqlNode.class.getName(), "1.0").get(), "brooklyn.nodes.Database");
+    public void testBrooklynTypeProvider() throws Exception {
+        when(brooklynApi.getCatalogApi()).thenReturn(catalogApi);
+        when(catalogApi.getEntity(Mockito.anyString(), Mockito.anyString())).thenReturn(catalogEntitySummary);
+        when(catalogEntitySummary.getTags()).thenReturn(TAGS);
+        BrooklynToscaTypeProvider provider = new BrooklynToscaTypeProvider();
+        provider.setBrooklynApi(brooklynApi);
+        ToscaMetadataProvider tmp = new ToscaMetadataProvider(ImmutableList.<ToscaTypeProvider>of(provider));
+        assertEquals(tmp.getToscaType(TomcatServer.class.getName(), "1.0").get(), "brooklyn.nodes.WebServer");
     }
 
     private static class AlwaysBobTypeProvider implements ToscaTypeProvider {

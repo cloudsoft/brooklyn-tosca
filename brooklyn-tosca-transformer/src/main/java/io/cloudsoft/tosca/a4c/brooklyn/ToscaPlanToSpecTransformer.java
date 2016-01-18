@@ -50,8 +50,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 import alien4cloud.application.ApplicationService;
-import alien4cloud.component.CSARRepositorySearchService;
-import alien4cloud.component.repository.CsarFileRepository;
 import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.components.Csar;
 import alien4cloud.model.deployment.DeploymentTopology;
@@ -59,12 +57,11 @@ import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.Topology;
-import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
@@ -111,7 +108,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
                     if (platform == null) {
                         Alien4CloudToscaPlatform.grantAdminAuth();
-                        platform = Alien4CloudToscaPlatform.newInstance();
+                        platform = Alien4CloudToscaPlatform.newInstance(mgmt);
                         ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
                         platform.loadNormativeTypes();
                     }
@@ -133,7 +130,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return isEnabled() && alienInitialised.get() && getShortDescription().equals(planType);
     }
 
-    public static class PlanTypeChecker {
+    private static class PlanTypeChecker {
 
         Object obj;
         boolean isTosca = false;
@@ -180,6 +177,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     
     @Override
     public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
+
         assertAvailable();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
@@ -225,9 +223,6 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     }
 
     protected EntitySpec<? extends Application> createApplicationSpec(String name, Topology topo, String deploymentId) {
-        final CSARRepositorySearchService repositorySearchService = platform.getBean(CSARRepositorySearchService.class);
-        final CsarFileRepository csarFileRepository = platform.getBean(CsarFileRepository.class);
-
         // TODO we should support Relationships and have an OtherEntityMachineLocation ?
         EntitySpec<BasicApplication> rootSpec = EntitySpec.create(BasicApplication.class).displayName(name);
 
@@ -235,20 +230,21 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         rootSpec.configure(TOSCA_DELEGATE_ID, topo.getDelegateId());
         rootSpec.configure(TOSCA_DEPLOYMENT_ID, deploymentId);
 
-        DependencyTree dt = new DependencyTree(topo, mgmt, repositorySearchService, csarFileRepository,
-                platform.getBean(TopologyTreeBuilderService.class));
-        dt.addSpecsAsChildrenOf(rootSpec);
+        ApplicationSpecsBuilder dt = platform.getBean(ApplicationSpecsBuilder.class);
+        Map<String, EntitySpec<?>> specs = dt.getSpecs(topo);
+        rootSpec.children(specs.values());
 
-        if (topo.getGroups()!=null) {
-            for (NodeGroup g: topo.getGroups().values()) {
-                if (g.getPolicies()!=null) {
-                    for (AbstractPolicy p: g.getPolicies()) {
-                        if (p==null) {
+        // TODO: Move to dependencytree/specbuilder.
+        if (topo.getGroups() != null) {
+            for (NodeGroup g : topo.getGroups().values()) {
+                if (g.getPolicies() != null) {
+                    for (AbstractPolicy p : g.getPolicies()) {
+                        if (p == null) {
                             throw new NullPointerException("Null policy found in topology.");
                         }
                         if ("brooklyn.location".equals(p.getName())) {
-                            setLocationsOnSpecs(dt.getSpecs(), g, (GenericPolicy) p);
-                        } else if(isABrooklynPolicy(getPolicyType((GenericPolicy)p))){
+                            setLocationsOnSpecs(specs, g, (GenericPolicy) p);
+                        } else if (isABrooklynPolicy(getPolicyType((GenericPolicy) p))) {
                             decorateEntityBrooklynWithPolicies(rootSpec, g, (GenericPolicy) p);
                         }
                     }

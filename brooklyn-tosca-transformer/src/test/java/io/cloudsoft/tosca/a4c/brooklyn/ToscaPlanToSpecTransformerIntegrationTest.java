@@ -15,6 +15,7 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
+import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.sensor.Sensors;
@@ -39,44 +40,21 @@ import org.testng.annotations.Test;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
+import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
 
-public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
-
-    protected ToscaPlanToSpecTransformer transformer;
-    private Alien4CloudToscaPlatform platform;
+public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
     public static final String TEMPLATES_FOLDER = "templates/";
-    private String DATABASE_DEPENDENCY_INJECTION= "$brooklyn:formatString(\"jdbc:" +
+    private String DATABASE_DEPENDENCY_INJECTION = "$brooklyn:formatString(\"jdbc:" +
             "%s%s?user=%s\\\\&password=%s\",$brooklyn:entity(\"mysql_server\")" +
             ".attributeWhenReady(\"datastore.url\")," +
             "visitors," +
             "brooklyn," +
             "br00k11n)";
 
-    @Override
-    @BeforeMethod(alwaysRun = true)
-    public void setUp() throws Exception {
-        super.setUp();
-        Alien4CloudToscaPlatform.grantAdminAuth();
-        platform = Alien4CloudToscaPlatform.newInstance();
-        mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
-        platform.loadNormativeTypes();
-        transformer = new ToscaPlanToSpecTransformer();
-        transformer.setManagementContext(mgmt);
-    }
-
-    @Override
-    @AfterMethod(alwaysRun = true)
-    public void tearDown() throws Exception {
-        if (platform != null) {
-            platform.close();
-        }
-    }
-
     @Test
-    @SuppressWarnings("unchecked")
     public void testSimpleHostedTopologyParser() {
         String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "script1.tosca.yaml");
 
@@ -86,15 +64,13 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
 
-        EntitySpec<VanillaSoftwareProcess> hostVanilla =
-                (EntitySpec<VanillaSoftwareProcess>) app.getChildren().get(0);
+        EntitySpec<?> hostVanilla = app.getChildren().get(0);
         assertEquals(hostVanilla.getConfig().get(SoftwareProcess.CHILDREN_STARTABLE_MODE),
                 SoftwareProcess.ChildStartableMode.BACKGROUND_LATE);
 
         assertEquals(hostVanilla.getChildren().size(), 1);
 
-        EntitySpec<VanillaSoftwareProcess> hostedSoftwareComponent =
-                (EntitySpec<VanillaSoftwareProcess>) hostVanilla.getChildren().get(0);
+        EntitySpec<?> hostedSoftwareComponent = hostVanilla.getChildren().get(0);
 
         assertEquals(hostVanilla.getFlags().get("tosca.node.type"), "tosca.nodes.Compute");
         assertEquals(hostVanilla.getType().getName(),
@@ -107,18 +83,18 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertEquals(hostedSoftwareComponent.getType().getName(),
                 "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess");
 
-        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.INSTALL_COMMAND)
-                .toString().contains("# install python if not present"));
-        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND)
-                .toString().contains("# create the web page to serve"));
-        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND)
-                .toString().contains("# launch in background (ensuring no streams open), and record PID to file"));
-        assertTrue(hostedSoftwareComponent.getConfig().get(VanillaSoftwareProcess.STOP_COMMAND)
-                .toString().contains("kill -9 `cat ${PID_FILE:-pid.txt}`"));
+        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.INSTALL_COMMAND,
+                "# install python if not present");
+        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.CUSTOMIZE_COMMAND,
+                "# create the web page to serve");
+        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.LAUNCH_COMMAND,
+                "# launch in background (ensuring no streams open), and record PID to file");
+        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.STOP_COMMAND,
+                "kill -9 `cat ${PID_FILE:-pid.txt}`");
+
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testDslInChatApplication() {
         String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "helloworld-sql.tosca.yaml");
 
@@ -128,9 +104,8 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
 
-        EntitySpec<TomcatServer> tomcatServer =
-                (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
-                        .findChildEntitySpecByPlanId(app, "tomcat_server");
+        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                 "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
@@ -142,11 +117,11 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertTrue(javaSysProps.get("brooklyn.example.db.url") instanceof BrooklynDslDeferredSupplier);
         assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
 
+        assertEquals(tomcatServer.getLocations().size(), 1, "Expected one location");
         assertTrue(tomcatServer.getLocations().get(0) instanceof LocalhostMachineProvisioningLocation);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testFullJcloudsLocationDescription() {
         String templateUrl =
                 getClasspathUrlForResource(TEMPLATES_FOLDER + "full-location.jclouds.tosca.yaml");
@@ -156,8 +131,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
-        EntitySpec<VanillaSoftwareProcess> vanillaEntity =
-                (EntitySpec<VanillaSoftwareProcess>) Iterables.getOnlyElement(app.getChildren());
+        EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
 
         assertEquals(vanillaEntity.getLocations().size(), 1);
         Location location = Iterables.getOnlyElement(vanillaEntity.getLocations());
@@ -169,7 +143,6 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testFullByonLocationDescription() {
         String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "full-location.byon.tosca.yaml");
 
@@ -178,8 +151,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
 
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
-        EntitySpec<VanillaSoftwareProcess> vanillaEntity =
-                (EntitySpec<VanillaSoftwareProcess>) Iterables.getOnlyElement(app.getChildren());
+        EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
 
         assertEquals(vanillaEntity.getLocations().size(), 1);
         assertTrue(Iterables.getOnlyElement(vanillaEntity.getLocations())
@@ -194,12 +166,17 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertTrue(configByon.get("machines") instanceof Collection);
         assertEquals(((Collection)configByon.get("machines")).size(), 1);
 
-        List<SshMachineLocation> machines = (List<SshMachineLocation>) configByon.get("machines");
-        assertEquals(machines.get(0).getAddress().getHostAddress(), "192.168.0.18");
+        Object machinesObj = configByon.get("machines");
+        assertNotNull(machinesObj, "machines");
+        List<?> machines = List.class.cast(machinesObj);
+        assertFalse(machines.isEmpty(), "expected value for machines key in " + configByon);
+        Object obj = machines.get(0);
+        assertEquals(obj.getClass(), SshMachineLocation.class);
+        SshMachineLocation sml = SshMachineLocation.class.cast(obj);
+        assertEquals(sml.getAddress().getHostAddress(), "192.168.0.18");
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testRelation(){
         String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "relationship.yaml");
 
@@ -209,18 +186,16 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
 
-        EntitySpec<TomcatServer> tomcatServer =
-                (EntitySpec<TomcatServer>) ToscaPlanToSpecTransformer
-                        .findChildEntitySpecByPlanId(app, "tomcat_server");
+        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
         assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
         assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
-                        .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testAddingBrooklynPolicyToEntitySpec(){
         String templateUrl =
                 getClasspathUrlForResource(TEMPLATES_FOLDER + "autoscaling.policies.tosca.yaml");
@@ -229,8 +204,7 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 
         assertNotNull(app);
-        EntitySpec<DynamicWebAppCluster> cluster =
-                (EntitySpec<DynamicWebAppCluster>) ToscaPlanToSpecTransformer
+        EntitySpec<?> cluster = ToscaPlanToSpecTransformer
                 .findChildEntitySpecByPlanId(app, "cluster");
 
         assertEquals(cluster.getPolicySpecs().size(), 1);
@@ -251,7 +225,6 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testAddingBrooklynPolicyToApplicationSpec(){
         String templateUrl =
                 getClasspathUrlForResource(TEMPLATES_FOLDER + "simple.application-policies.tosca.yaml");
@@ -304,9 +277,9 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
             assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
 
             // Check that the inputs have been set as exports on the scripts
-            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export PORT=3306"));
-            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_USER=martin"));
-            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_NAME=wordpress"));
+            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export PORT=3306");
+            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_USER=martin");
+            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_NAME=wordpress");
 
         } finally {
             if (platform!=null) {
@@ -318,15 +291,13 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
     @Test
     public void testDeploymentArtifacts() {
         String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "deployment-artifact.tosca.yaml");
-
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
 
-        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer
-                        .findChildEntitySpecByPlanId(app, "tomcat_server");
+        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer.findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
@@ -358,12 +329,8 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
             EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
             assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
 
-
             // Check that the inputs have been set as exports on the scripts
-            assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export PORT=3361"));
-            assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_USER=martin"));
-            assertFalse(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("export DB_NAME=wordpress"));
-            assertTrue(mysql.getConfig().get(VanillaSoftwareProcess.LAUNCH_COMMAND).toString().contains("#OVERWRITTEN VALUE"));
+            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "#OVERWRITTEN VALUE");
 
         } finally {
             if (platform!=null) {
@@ -408,4 +375,22 @@ public class ToscaPlanToSpecTransformerTest extends Alien4CloudToscaTest {
         assertEquals(value, "Message: It Works!");
     }
 
+
+    private void assertConfigValueContains(EntitySpec<?> entity, ConfigKey<String> key, String needle) {
+        String haystack = (String) entity.getConfig().get(key);
+        assertConfigValueContains(haystack, needle);
+    }
+
+    private void assertConfigValueContains(Entity entity, ConfigKey<String> key, String needle) {
+        String haystack = entity.config().get(key);
+        assertConfigValueContains(haystack, needle);
+    }
+
+    private void assertConfigValueContains(String haystack, String needle) {
+        if (needle == null || haystack == null) {
+            throw new AssertionError("Expected non-null values: needle=" + needle + ", haystack=" + haystack);
+        } else if (!haystack.contains(needle)) {
+            throw new AssertionError("Expected to find '" + needle + "' in " + haystack);
+        }
+    }
 }

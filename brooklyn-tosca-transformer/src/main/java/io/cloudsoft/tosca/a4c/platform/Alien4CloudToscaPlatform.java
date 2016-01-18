@@ -1,21 +1,17 @@
-package io.cloudsoft.tosca.a4c;
+package io.cloudsoft.tosca.a4c.platform;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Properties;
 
 import alien4cloud.component.repository.exception.CSARVersionAlreadyExistsException;
-import alien4cloud.security.ResourceRoleService;
 import alien4cloud.tosca.parser.ParsingException;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.file.ArchiveBuilder;
@@ -30,21 +26,15 @@ import org.elasticsearch.common.collect.Iterables;
 import org.elasticsearch.common.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.core.env.PropertiesPropertySource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 
 import alien4cloud.csar.services.CsarService;
@@ -69,11 +59,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
     public static final String TOSCA_NORMATIVE_TYPES_LOCAL_URL = "classpath://org/apache/brooklyn/tosca/a4c/tosca-normative-types.zip";
     public static final String TOSCA_NORMATIVE_TYPES_GITHUB_URL = "https://github.com/alien4cloud/tosca-normative-types/archive/master.zip";
 
-    public static Alien4CloudToscaPlatform newInstance(String... args) throws Exception {
-        return newInstance(new LocalManagementContext(), args);
-    }
-
-    public static Alien4CloudToscaPlatform newInstance(ManagementContext mgmt, String... args) throws Exception {
+    public static Alien4CloudToscaPlatform newInstance(ManagementContext mgmt) throws Exception {
         log.info("Loading Alien4Cloud platform...");
         // TODO if ES cannot find a config file, it will hang waiting for peers; should warn if does not complete in 1m
         try {
@@ -92,8 +78,9 @@ public class Alien4CloudToscaPlatform implements Closeable {
             ctx.getEnvironment().getPropertySources().addFirst(new PropertiesPropertySource("user",
                     yamlPropertiesFactoryBean.getObject()));
             ctx.getBeanFactory().registerSingleton("brooklynManagementContext", mgmt);
-            ctx.register(A4CSpringConfig.class);
+            ctx.register(Alien4CloudSpringConfig.class);
             ctx.refresh();
+            ctx.registerShutdownHook();
 
             log.info("Finished loading Alien4Cloud platform (" + Duration.of(s) + ")");
             return new Alien4CloudToscaPlatform(ctx);
@@ -104,35 +91,15 @@ public class Alien4CloudToscaPlatform implements Closeable {
         }
     }
 
+    @VisibleForTesting
+    public static Alien4CloudToscaPlatform newInstance(ApplicationContext context) {
+        return new Alien4CloudToscaPlatform(context);
+    }
+
     public static void grantAdminAuth() {
         SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken("brooklyn", "java",
                 MutableList.of(new SimpleGrantedAuthority(Role.ADMIN.name()))));
     }
-
-    @Configuration
-    @EnableAutoConfiguration
-    @ComponentScan(basePackages = {"alien4cloud", "org.elasticsearch.mapping"}, excludeFilters = {
-            @ComponentScan.Filter(type = FilterType.REGEX, pattern = "alien4cloud.security.*"),
-            @ComponentScan.Filter(type = FilterType.REGEX, pattern = "alien4cloud.audit.*"),
-            @ComponentScan.Filter(type = FilterType.REGEX, pattern = "alien4cloud.ldap.*")})
-    public static class A4CSpringConfig {
-
-        @Bean
-        public ResourceRoleService getDummyRRS() {
-            return new ResourceRoleService();
-        }
-
-        // A4C code returns the YamlPropertiesFactoryBean, but that causes warnings at startup
-        @Bean(name = {"alienconfig", "elasticsearchConfig"})
-        public static Properties alienConfig(BeanFactory beans, ResourceLoader resourceLoader) throws IOException {
-            ManagementContext mgmt = null;
-            if (beans.containsBean("brooklynManagementContext"))
-                mgmt = beans.getBean("brooklynManagementContext", ManagementContext.class);
-            return AlienBrooklynYamlPropertiesFactoryBeanFactory.get(mgmt, resourceLoader).getObject();
-        }
-
-    }
-
 
     public void loadNormativeTypes() throws Exception {
         if (new ResourceUtils(this).doesUrlExist(TOSCA_NORMATIVE_TYPES_LOCAL_URL)) {
@@ -193,21 +160,17 @@ public class Alien4CloudToscaPlatform implements Closeable {
 
     }
 
-    private ConfigurableApplicationContext ctx;
+    private ApplicationContext ctx;
     File tmpRoot;
 
-    private Alien4CloudToscaPlatform(ConfigurableApplicationContext ctx) {
+    private Alien4CloudToscaPlatform(ApplicationContext ctx) {
         this.ctx = ctx;
         tmpRoot = Os.newTempDir("brooklyn-a4c");
         Os.deleteOnExitRecursively(tmpRoot);
     }
 
+    @Override
     public synchronized void close() {
-        if (ctx != null) {
-            log.info("Closing Alien4Cloud platform");
-            ctx.close();
-            ctx = null;
-        }
         Os.deleteRecursively(tmpRoot);
     }
 

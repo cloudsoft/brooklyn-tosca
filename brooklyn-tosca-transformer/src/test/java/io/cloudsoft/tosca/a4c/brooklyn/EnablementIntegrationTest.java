@@ -16,21 +16,15 @@ import org.testng.annotations.Test;
 
 import com.google.common.base.Predicates;
 
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
+import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
-public class EnablementTest extends BrooklynAppUnitTestSupport {
+public class EnablementIntegrationTest extends Alien4CloudIntegrationTest {
 
     @Test(expectedExceptions = {IllegalStateException.class})
     public void testTransformerRejectsBlueprintWhenFeatureDisabled() throws Exception {
         BrooklynFeatureEnablement.disable(ToscaPlanToSpecTransformer.FEATURE_TOSCA_ENABLED);
         try {
-            Alien4CloudToscaPlatform.grantAdminAuth();
-            Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance();
-            mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
-            platform.loadNormativeTypes();
-            ToscaPlanToSpecTransformer transformer = new ToscaPlanToSpecTransformer();
-            transformer.setManagementContext(mgmt);
-
             // Should throw.
             transformer.createApplicationSpec(
                     new ResourceUtils(mgmt).getResourceAsString("classpath://templates/helloworld-sql.tosca.yaml"));
@@ -43,18 +37,6 @@ public class EnablementTest extends BrooklynAppUnitTestSupport {
     public void testCreateSpecFromPlanFailsWhenFeatureDisabled() throws Exception {
         BrooklynFeatureEnablement.disable(ToscaPlanToSpecTransformer.FEATURE_TOSCA_ENABLED);
         try {
-            Alien4CloudToscaPlatform.grantAdminAuth();
-            Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance();
-            mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
-            platform.loadNormativeTypes();
-            ToscaPlanToSpecTransformer transformer = new ToscaPlanToSpecTransformer();
-            transformer.setManagementContext(mgmt);
-
-            new BrooklynCampPlatformLauncherNoServer()
-                    .useManagementContext(mgmt)
-                    .launch()
-                    .getCampPlatform();
-
             try {
                 mgmt.getTypeRegistry().createSpecFromPlan(CampTypePlanTransformer.FORMAT,
                         new ResourceUtils(mgmt).getResourceAsString("classpath://templates/helloworld-sql.tosca.yaml"),

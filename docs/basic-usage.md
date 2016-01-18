@@ -3,11 +3,11 @@
 First, get the brooklyn-tosca project from github, and build the project
 
     $ git clone git@github.com:cloudsoft/brooklyn-tosca.git
+    $ cd brooklyn-tosca
     $ mvn clean install -DskipTests
 
 Then, so we can refer to it in future, store this location in a variable
 
-    $ cd brooklyn-tosca
     $ export BROOKLYN_TOSCA=$(pwd)
    
 ## Running Alien4Cloud

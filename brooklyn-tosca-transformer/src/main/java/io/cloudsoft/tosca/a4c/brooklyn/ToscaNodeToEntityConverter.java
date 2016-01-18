@@ -200,17 +200,18 @@ public class ToscaNodeToEntityConverter {
             spec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.STOP_COMMAND, "true");
             spec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND, "true");
-        }
 
-        Optional<PaaSNodeTemplate> optionalPaaSNodeTemplate = getPaasNodeTemplate();
-        if(optionalPaaSNodeTemplate.isPresent()) {
-            Map<String, PaaSNodeTemplate> allNodes = treeBuilder.buildPaaSTopology(topology).getAllNodes();
-            for (Map.Entry<String, IValue> attribute : indexedNodeTemplate.getAttributes().entrySet()) {
-                String value = FunctionEvaluator.parseAttribute(attribute.getKey(), attribute.getValue(), topology, ImmutableMap.<String, Map<String, InstanceInformation>>of(), "", optionalPaaSNodeTemplate.get(), allNodes);
-                spec.addInitializer(new StaticSensor<String>(ConfigBag.newInstance()
-                        .configure(StaticSensor.SENSOR_NAME, "tosca.attribute." + attribute.getKey().replaceAll("\\s+", "."))
-                        .configure(StaticSensor.STATIC_VALUE, value)
-                ));
+            // add static sensors for defined attributes
+            Optional<PaaSNodeTemplate> optionalPaaSNodeTemplate = getPaasNodeTemplate();
+            if(optionalPaaSNodeTemplate.isPresent()) {
+                Map<String, PaaSNodeTemplate> allNodes = treeBuilder.buildPaaSTopology(topology).getAllNodes();
+                for (Map.Entry<String, IValue> attribute : indexedNodeTemplate.getAttributes().entrySet()) {
+                    String value = FunctionEvaluator.parseAttribute(attribute.getKey(), attribute.getValue(), topology, ImmutableMap.<String, Map<String, InstanceInformation>>of(), "", optionalPaaSNodeTemplate.get(), allNodes);
+                    spec.addInitializer(new StaticSensor<String>(ConfigBag.newInstance()
+                            .configure(StaticSensor.SENSOR_NAME, "tosca.attribute." + attribute.getKey().replaceAll("\\s+", "."))
+                            .configure(StaticSensor.STATIC_VALUE, value)
+                    ));
+                }
             }
         }
 

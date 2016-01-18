@@ -190,6 +190,21 @@
                     <includes>
                         <include>**/*IntegrationTest.java</include>
                     </includes>
+                    <argLine>-Xms256m -Xmx512m -XX:MaxPermSize=512m</argLine>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>org.apache.brooklyn.test.support.LoggingVerboseReporter</value>
+                        </property>
+                    </properties>
+                    <enableAssertions>true</enableAssertions>
+                    <groups>${includedTestGroups}</groups>
+                    <excludedGroups>${excludedTestGroups}</excludedGroups>
+                    <testFailureIgnore>false</testFailureIgnore>
+                    <systemPropertyVariables>
+                        <verbose>-1</verbose>
+                    </systemPropertyVariables>
+                    <printSummary>true</printSummary>
                 </configuration>
                 <executions>
                     <execution>

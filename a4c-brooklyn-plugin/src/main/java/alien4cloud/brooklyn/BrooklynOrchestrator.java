@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.brooklyn.rest.domain.LocationSummary;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +22,7 @@ import alien4cloud.paas.model.PaaSDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
-@Scope(value = "prototype")
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @Slf4j
 public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestratorPlugin<Configuration>, ILocationAutoConfigurer {
 

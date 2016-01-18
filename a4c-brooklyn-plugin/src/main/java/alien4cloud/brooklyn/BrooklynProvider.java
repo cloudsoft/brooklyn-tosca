@@ -205,6 +205,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         if ((r.getStatus() / 100)==2) return;
         throw new IllegalStateException("Server returned "+r.getStatus());
     }
+
     private void addRootPropertiesAsCamp(PaaSTopologyDeploymentContext deploymentContext, Map<String,Object> result) {
         if (applicationService!=null) {
             try {
@@ -235,38 +236,6 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         // no app or app service - use what limited information we have
         result.put("name", "A4C: "+deploymentContext.getDeployment().getSourceName());
         result.put("description", "Created by Alien4Cloud from application "+deploymentContext.getDeployment().getSourceId());
-    }
-
-    private void addNodeTemplatesAsCampServicesList(List<Object> svcs, Topology topology) {
-        for (Entry<String, NodeTemplate> nodeEntry : topology.getNodeTemplates().entrySet()) {
-            Map<String,Object> svc = Maps.newLinkedHashMap();
-
-            NodeTemplate nt = nodeEntry.getValue();
-            svc.put("name", nodeEntry.getKey());
-
-            // TODO mangle according to the tag brooklyn_blueprint_catalog_id on the type (but how do we get the IndexedNodeType?)
-            // this will give us the type, based on TopologyValidationService
-//            IndexedNodeType relatedIndexedNodeType = csarRepoSearchService.getRequiredElementInDependencies(IndexedNodeType.class, nodeTemp.getType(),
-//                topology.getDependencies());
-
-            svc.put("type", nt.getType());
-
-            for (Entry<String, AbstractPropertyValue> prop: nt.getProperties().entrySet()) {
-                String propName = prop.getKey();
-                // TODO mangle prop name according to the tag  brooklyn_property_map__<propName>
-                AbstractPropertyValue v = prop.getValue();
-                Object propValue = null;
-                if (v instanceof ScalarPropertyValue) {
-                    propValue = ((ScalarPropertyValue)v).getValue();
-                } else {
-                    log.warn("Ignoring non-scalar property value for "+propName+": "+v);
-                }
-                if (propValue!=null) {
-                    svc.put(propName, propValue);
-                }
-            }
-            svcs.add(svc);
-        }
     }
 
     @Override

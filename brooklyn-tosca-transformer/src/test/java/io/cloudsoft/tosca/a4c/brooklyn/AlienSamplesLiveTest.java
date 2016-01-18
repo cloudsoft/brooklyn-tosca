@@ -4,7 +4,7 @@ import static org.apache.brooklyn.test.EntityTestUtils.assertAttributeEqualsEven
 
 import com.google.common.collect.ImmutableList;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaLiveTest;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
@@ -36,7 +36,7 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
         super.setUp();
         this.locationSpec = !Strings.isBlank(locationSpec) ? locationSpec : DEFAULT_LOCATION_SPEC;
         Alien4CloudToscaPlatform.grantAdminAuth();
-        platform = Alien4CloudToscaPlatform.newInstance();
+        platform = Alien4CloudToscaPlatform.newInstance(mgmt);
         mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
         platform.loadNormativeTypes();
         transformer = new ToscaPlanToSpecTransformer();

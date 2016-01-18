@@ -1,7 +1,8 @@
-package io.cloudsoft.tosca.a4c;
+package io.cloudsoft.tosca.a4c.platform;
 
 import java.util.Set;
 
+import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.Assert;
@@ -20,8 +21,9 @@ import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
+import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
 
-public class Alien4CloudToscaPlatformTest {
+public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrationTest {
 
     /**
      * Sample instantiation of Alien4Cloud platform.
@@ -30,7 +32,7 @@ public class Alien4CloudToscaPlatformTest {
      */
     public static void main(String[] args) throws Exception {
         Alien4CloudToscaPlatform.grantAdminAuth();
-        Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance(args);
+        Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance(new LocalManagementContext());
         
         platform.loadNormativeTypes();
         
@@ -68,17 +70,11 @@ public class Alien4CloudToscaPlatformTest {
         return tp;
     }
 
-    // TODO mark integration if we can't make it start fast!
     @Test
-    // older eclipse testng plugins will fail because they drag in an older version of snake yaml
     public void testCanParseSampleTosca() throws Exception {
-        Alien4CloudToscaPlatform platform = null;
         try {
-            platform = Alien4CloudToscaPlatform.newInstance();
-            ParsingResult<ArchiveRoot> tp = new Alien4CloudToscaPlatformTest().sampleParseTosca(platform);
-            
+            ParsingResult<ArchiveRoot> tp = new Alien4CloudToscaPlatformIntegrationTest().sampleParseTosca(platform);
             Assert.assertTrue( tp.getResult().getNodeTypes().containsKey("tosca.nodes.WebApplication.PayPalPizzaStore") );
-            
         } finally {
             if (platform!=null) platform.close();
         }
@@ -86,11 +82,7 @@ public class Alien4CloudToscaPlatformTest {
     
     @Test
     public void testCanLoadArchiveWithPolicy() throws Exception {
-        Alien4CloudToscaPlatform platform = null;
         try {
-            Alien4CloudToscaPlatform.grantAdminAuth();
-            platform = Alien4CloudToscaPlatform.newInstance();
-            platform.loadNormativeTypes();
             String name = "script1.tosca.yaml";
             String url = "classpath://templates/" + name;
             ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
@@ -100,7 +92,6 @@ public class Alien4CloudToscaPlatformTest {
             Assert.assertNotNull(g1.getPolicies());
             Assert.assertEquals(g1.getPolicies().size(), 1);
             Assert.assertNotNull(g1.getPolicies().get(0));
-            
         } finally {
             if (platform!=null) platform.close();
         }

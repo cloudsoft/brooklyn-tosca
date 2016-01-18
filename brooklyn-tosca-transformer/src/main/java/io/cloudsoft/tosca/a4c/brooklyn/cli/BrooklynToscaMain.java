@@ -1,4 +1,4 @@
-package io.cloudsoft.tosca.a4c.brooklyn;
+package io.cloudsoft.tosca.a4c.brooklyn.cli;
 
 import java.util.Arrays;
 

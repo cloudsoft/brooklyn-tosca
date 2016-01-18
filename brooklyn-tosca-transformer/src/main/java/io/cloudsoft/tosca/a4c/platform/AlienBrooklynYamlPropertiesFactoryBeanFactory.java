@@ -1,4 +1,4 @@
-package io.cloudsoft.tosca.a4c;
+package io.cloudsoft.tosca.a4c.platform;
 
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.config.ConfigKey;

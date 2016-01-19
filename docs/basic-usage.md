@@ -1,22 +1,6 @@
-# Getting Set Up
-
-First, get the brooklyn-tosca project from github, and build the project
-
-    $ git clone git@github.com:cloudsoft/brooklyn-tosca.git
-    $ cd brooklyn-tosca
-    $ mvn clean install -DskipTests
-
-Then, so we can refer to it in future, store this location in a variable
-
-    $ export BROOKLYN_TOSCA=$(pwd)
-   
 ## Running Alien4Cloud
 
-Now change to the directory that contains the built artifacts
-
-    $ cd $BROOKLYN_TOSCA/brooklyn-tosca-dist/target/brooklyn-tosca-dist-0.9.0-SNAPSHOT-dist/brooklyn-tosca-dist-0.9.0-SNAPSHOT/
-
-This directory contains a standalone version of Alien4Cloud, which in turn contains a startup script, so run this script
+The dist contains a standalone version of Alien4Cloud, which in turn contains a startup script, so run this script
 
     $ alien4cloud-standalone/alien4cloud.sh
   
@@ -24,15 +8,11 @@ Once started, login with the credentials `admin:admin`.
 
 ## Adding the Brooklyn Plugin
 
-Now go to the plugins page found under Administration.  Notice it is asking for a plugin file to upload.  In your file browser, drag the `$BROOKLYN_TOSCA/a4c-brooklyn-plugin/target/a4c-brooklyn-plugin-0.9.0-SNAPSHOT.zip` file into the section marked "Drop plugin files to upload here".
+Now go to the plugins page found under Administration.  Notice it is asking for a plugin file to upload.  In your file browser, drag the a4c-brooklyn-plugin.X.X.X.zip` file into the section marked "Drop plugin files to upload here".
 
 ## Starting Brooklyn-Tosca
 
 At this point we can start the Brooklyn server: in another terminal change to the directory containing the arfifacts
-
-    $ cd $BROOKLYN_TOSCA/brooklyn-tosca-dist/target/brooklyn-tosca-dist-0.9.0-SNAPSHOT-dist/brooklyn-tosca-dist-0.9.0-SNAPSHOT/
-
-This directory also contains a script to launch Brooklyn and we parameterize it with the location of a config file
 
     $ /brooklyn.sh launch -Dalien4cloud-config.file=conf/alien4cloud-config.client-to-localhost.yml
 

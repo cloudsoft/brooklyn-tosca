@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -104,7 +105,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
 
-        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer
+        EntitySpec<?> tomcatServer = EntitySpecs
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
@@ -186,7 +187,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
 
-        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer
+        EntitySpec<?> tomcatServer = EntitySpecs
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
@@ -204,7 +205,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 
         assertNotNull(app);
-        EntitySpec<?> cluster = ToscaPlanToSpecTransformer
+        EntitySpec<?> cluster = EntitySpecs
                 .findChildEntitySpecByPlanId(app, "cluster");
 
         assertEquals(cluster.getPolicySpecs().size(), 1);
@@ -297,7 +298,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
 
-        EntitySpec<?> tomcatServer = ToscaPlanToSpecTransformer.findChildEntitySpecByPlanId(app, "tomcat_server");
+        EntitySpec<?> tomcatServer = EntitySpecs.findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +

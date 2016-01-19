@@ -5,6 +5,7 @@ import java.util.Set;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
+import org.springframework.context.ApplicationContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -32,7 +33,8 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
      */
     public static void main(String[] args) throws Exception {
         Alien4CloudToscaPlatform.grantAdminAuth();
-        Alien4CloudToscaPlatform platform = Alien4CloudToscaPlatform.newInstance(new LocalManagementContext());
+        ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(new LocalManagementContext());
+        Alien4CloudToscaPlatform platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
         
         platform.loadNormativeTypes();
         

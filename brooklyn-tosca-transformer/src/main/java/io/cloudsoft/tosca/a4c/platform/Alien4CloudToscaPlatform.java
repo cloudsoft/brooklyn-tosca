@@ -26,6 +26,8 @@ import org.elasticsearch.common.collect.Iterables;
 import org.elasticsearch.common.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -51,7 +53,11 @@ import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
 import alien4cloud.utils.AlienYamlPropertiesFactoryBeanFactory;
 import alien4cloud.utils.FileUtil;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+
+@Component
 public class Alien4CloudToscaPlatform implements Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(Alien4CloudToscaPlatform.class);
@@ -59,47 +65,22 @@ public class Alien4CloudToscaPlatform implements Closeable {
     public static final String TOSCA_NORMATIVE_TYPES_LOCAL_URL = "classpath://org/apache/brooklyn/tosca/a4c/tosca-normative-types.zip";
     public static final String TOSCA_NORMATIVE_TYPES_GITHUB_URL = "https://github.com/alien4cloud/tosca-normative-types/archive/master.zip";
 
-    public static Alien4CloudToscaPlatform newInstance(ManagementContext mgmt) throws Exception {
-        log.info("Loading Alien4Cloud platform...");
-        // TODO if ES cannot find a config file, it will hang waiting for peers; should warn if does not complete in 1m
-        try {
-            Stopwatch s = Stopwatch.createStarted();
-
-            AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-
-            // messy, but seems we must manually load the properties before loading the beans; otherwise we get e.g.
-            // Caused by: java.lang.IllegalArgumentException: Could not resolve placeholder 'directories.alien' in string value "${directories.alien}/plugins"
-            final YamlPropertiesFactoryBean yamlPropertiesFactoryBean = AlienBrooklynYamlPropertiesFactoryBeanFactory.get(mgmt, ctx);
-            if (yamlPropertiesFactoryBean == null) {
-                throw new IllegalStateException("Could not load configuration for A4C. Expected either a value for ConfigKey " +
-                        AlienBrooklynYamlPropertiesFactoryBeanFactory.ALIEN_CONFIG_FILE.getName() + " or for a resource named " +
-                        AlienYamlPropertiesFactoryBeanFactory.ALIEN_CONFIGURATION_YAML + " to be available.");
-            }
-            ctx.getEnvironment().getPropertySources().addFirst(new PropertiesPropertySource("user",
-                    yamlPropertiesFactoryBean.getObject()));
-            ctx.getBeanFactory().registerSingleton("brooklynManagementContext", mgmt);
-            ctx.register(Alien4CloudSpringConfig.class);
-            ctx.refresh();
-            ctx.registerShutdownHook();
-
-            log.info("Finished loading Alien4Cloud platform (" + Duration.of(s) + ")");
-            return new Alien4CloudToscaPlatform(ctx);
-
-        } catch (Throwable t) {
-            log.warn("Errors loading Alien4Cloud platform (rethrowing): " + t, t);
-            throw Exceptions.propagate(t);
-        }
-    }
-
-    @VisibleForTesting
-    public static Alien4CloudToscaPlatform newInstance(ApplicationContext context) {
-        return new Alien4CloudToscaPlatform(context);
-    }
+    private BeanFactory beanFactory;
+    private File tmpRoot;
 
     public static void grantAdminAuth() {
         SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken("brooklyn", "java",
                 MutableList.of(new SimpleGrantedAuthority(Role.ADMIN.name()))));
     }
+
+
+    @Inject
+    public Alien4CloudToscaPlatform(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+        tmpRoot = Os.newTempDir("brooklyn-a4c");
+        Os.deleteOnExitRecursively(tmpRoot);
+    }
+
 
     public void loadNormativeTypes() throws Exception {
         if (new ResourceUtils(this).doesUrlExist(TOSCA_NORMATIVE_TYPES_LOCAL_URL)) {
@@ -160,14 +141,6 @@ public class Alien4CloudToscaPlatform implements Closeable {
 
     }
 
-    private ApplicationContext ctx;
-    File tmpRoot;
-
-    private Alien4CloudToscaPlatform(ApplicationContext ctx) {
-        this.ctx = ctx;
-        tmpRoot = Os.newTempDir("brooklyn-a4c");
-        Os.deleteOnExitRecursively(tmpRoot);
-    }
 
     @Override
     public synchronized void close() {
@@ -175,7 +148,7 @@ public class Alien4CloudToscaPlatform implements Closeable {
     }
 
     public <T> T getBean(Class<T> type) {
-        return ctx.getBean(type);
+        return beanFactory.getBean(type);
     }
 
     public ToscaParser getToscaParser() {

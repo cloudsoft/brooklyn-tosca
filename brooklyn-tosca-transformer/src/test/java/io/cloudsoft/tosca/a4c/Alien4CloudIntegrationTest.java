@@ -43,7 +43,8 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
                 .launch()
                 .getCampPlatform();
         Alien4CloudToscaPlatform.grantAdminAuth();
-        this.platform = Alien4CloudToscaPlatform.newInstance(super.applicationContext);
+
+        this.platform = super.applicationContext.getBean(Alien4CloudToscaPlatform.class);
         platform.loadNormativeTypes();
         transformer = new ToscaPlanToSpecTransformer();
         transformer.setManagementContext(mgmt);

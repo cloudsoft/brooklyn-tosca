@@ -4,6 +4,7 @@ import static org.apache.brooklyn.test.EntityTestUtils.assertAttributeEqualsEven
 
 import com.google.common.collect.ImmutableList;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaLiveTest;
+import io.cloudsoft.tosca.a4c.platform.Alien4CloudSpringContext;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -14,6 +15,7 @@ import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Optional;
 import org.testng.annotations.Parameters;
@@ -36,7 +38,8 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
         super.setUp();
         this.locationSpec = !Strings.isBlank(locationSpec) ? locationSpec : DEFAULT_LOCATION_SPEC;
         Alien4CloudToscaPlatform.grantAdminAuth();
-        platform = Alien4CloudToscaPlatform.newInstance(mgmt);
+        ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt);
+        platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
         mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
         platform.loadNormativeTypes();
         transformer = new ToscaPlanToSpecTransformer();

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.annotation.Nullable;
 
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
@@ -14,7 +13,6 @@ import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.api.policy.Policy;
-import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampReservedKeys;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlLocationResolver;
@@ -29,25 +27,15 @@ import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.util.collections.MutableMap;
-import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.exceptions.Exceptions;
-import org.apache.brooklyn.util.exceptions.UserFacingException;
-import org.apache.brooklyn.util.guava.SerializablePredicate;
-import org.apache.brooklyn.util.net.Urls;
-import org.apache.brooklyn.util.stream.Streams;
-import org.apache.brooklyn.util.text.Strings;
-import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.deployment.DeploymentTopologyService;
@@ -57,10 +45,10 @@ import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.Topology;
-import alien4cloud.tosca.ArchiveUploadService;
-import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
+import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
+import io.cloudsoft.tosca.a4c.platform.Alien4CloudSpringContext;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
 public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
@@ -102,21 +90,25 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             throw new IllegalStateException("Cannot switch mgmt context");
         } else if (this.mgmt == null) {
             this.mgmt = managementContext;
+            initialiseAlien();
+        }
+    }
 
-            try {
-                synchronized (ToscaPlanToSpecTransformer.class) {
-                    platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
-                    if (platform == null) {
-                        Alien4CloudToscaPlatform.grantAdminAuth();
-                        platform = Alien4CloudToscaPlatform.newInstance(mgmt);
-                        ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
-                        platform.loadNormativeTypes();
-                    }
+    private void initialiseAlien(){
+        try {
+            synchronized (ToscaPlanToSpecTransformer.class) {
+                platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
+                if (platform == null) {
+                    Alien4CloudToscaPlatform.grantAdminAuth();
+                    ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt);
+                    platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
+                    ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
+                    platform.loadNormativeTypes();
                 }
-                alienInitialised.set(true);
-            } catch (Exception e) {
-                throw Exceptions.propagate(e);
             }
+            alienInitialised.set(true);
+        } catch (Exception e) {
+            throw Exceptions.propagate(e);
         }
     }
 
@@ -130,75 +122,13 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return isEnabled() && alienInitialised.get() && getShortDescription().equals(planType);
     }
 
-    private static class PlanTypeChecker {
-
-        Object obj;
-        boolean isTosca = false;
-        String csarLink;
-        
-        public PlanTypeChecker(String plan) {
-            try {
-                obj = Yamls.parseAll(plan).iterator().next();
-            } catch (Exception e) {
-                Exceptions.propagateIfFatal(e);
-                log.trace("Not YAML", e);
-                return;
-            }
-            if (!(obj instanceof Map)) {
-                log.trace("Not a map");
-                // is it a one-line URL?
-                plan = plan.trim();
-                if (!plan.contains("\n") && Urls.isUrlWithProtocol(plan)) {
-                    csarLink = plan;
-                }
-                return;
-            }
-            
-            if (isTosca((Map<?,?>)obj)) {
-                isTosca = true;
-                return;
-            }
-            
-            if (((Map<?,?>)obj).size()==1) {
-                csarLink = (String) ((Map<?,?>)obj).get("csar_link");
-                return;
-            }
-        }
-
-        private static boolean isTosca(Map<?,?> obj) {
-            if (obj.containsKey("topology_template")) return true;
-            if (obj.containsKey("topology_name")) return true;
-            if (obj.containsKey("node_types")) return true;
-            if (obj.containsKey("tosca_definitions_version")) return true;
-            log.trace("Not TOSCA - no recognized keys");
-            return false;
-        }
-    }
-    
     @Override
     public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
 
         assertAvailable();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
-            ParsingResult<Csar> tp;
-            
-            PlanTypeChecker type = new PlanTypeChecker(plan);
-            if (!type.isTosca) {
-                if (type.csarLink==null) {
-                    throw new PlanNotRecognizedException("Does not look like TOSCA");
-                }
-                tp = platform.uploadArchive(new ResourceUtils(this).getResourceFromUrl(type.csarLink), "submitted-tosca-archive");
-                
-            } else {
-                tp = platform.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
-            }
-
-            if (ArchiveUploadService.hasError(tp, ParsingErrorLevel.ERROR)) {
-                throw new UserFacingException("Could not parse TOSCA plan: "
-                    +Strings.join(tp.getContext().getParsingErrors(), "\n  "));
-            }
-            
+            ParsingResult<Csar> tp = new ToscaParser(platform).parse(plan);
             String name = tp.getResult().getName();
             Topology topo = platform.getTopologyOfCsar(tp.getResult());
             
@@ -275,7 +205,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                                 BrooklynCampReservedKeys.BROOKLYN_CONFIG, getPolicyProperties(policy))));
 
         for (String specId: group.getMembers()){
-            EntitySpec<?> spec = findChildEntitySpecByPlanId(appSpec, specId);
+            EntitySpec<?> spec = EntitySpecs.findChildEntitySpecByPlanId(appSpec, specId);
             if(spec==null){
                 throw new IllegalStateException("Error: NodeTemplate " + specId +
                         " defined by policy " + policy.getName() + " was not found");
@@ -381,44 +311,6 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
             throw new IllegalStateException("Brooklyn TOSCA support is disabled");
         } else if (!alienInitialised.get()) {
             throw new IllegalStateException("A4C platform is uninitialised for " + this);
-        }
-    }
-
-    public static EntitySpec<?> findChildEntitySpecByPlanId(EntitySpec<? extends Application> app, String planId){
-
-        Optional<EntitySpec<?>> result = Iterables.tryFind(app.getChildren(),
-                configSatisfies(BrooklynCampConstants.PLAN_ID, planId));
-
-        if (result.isPresent()) {
-            return result.get();
-        }
-        //TODO: better NoSuchElementException? return null?
-        throw new IllegalStateException("Entity with planId  " + planId + " is not contained on" +
-                " ApplicationSpec "+ app +" children");
-    }
-
-    public static <T> Predicate<EntitySpec> configSatisfies(final ConfigKey<T> configKey, final T val) {
-        return new ConfigKeySatisfies<T>(configKey, Predicates.equalTo(val));
-    }
-
-    protected static class ConfigKeySatisfies<T> implements SerializablePredicate<EntitySpec> {
-        protected final ConfigKey<T> configKey;
-        protected final Predicate<T> condition;
-
-        private ConfigKeySatisfies(ConfigKey<T> configKey, Predicate<T> condition) {
-            this.configKey = configKey;
-            this.condition = condition;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public boolean apply(@Nullable EntitySpec input) {
-            return (input != null) && condition.apply((T)input.getConfig().get(configKey));
-        }
-
-        @Override
-        public String toString() {
-            return "configKeySatisfies("+configKey.getName()+","+condition+")";
         }
     }
 

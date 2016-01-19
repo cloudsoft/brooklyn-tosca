@@ -74,9 +74,4 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
         app = mgmt.getEntityManager().createEntity(appSpec);
     }
 
-    protected String getClasspathUrlForResource(String resourceName) {
-        return "classpath://" + resourceName;
-    }
-
-
 }

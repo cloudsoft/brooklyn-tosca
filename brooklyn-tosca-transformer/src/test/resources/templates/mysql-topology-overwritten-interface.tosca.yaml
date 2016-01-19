@@ -30,4 +30,4 @@ topology_template:
           description: configs
       interfaces:
         Standard:
-           start: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/mock/start.sh
+           start: classpath://scripts/customstart/start.sh

@@ -38,7 +38,7 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
         
         platform.loadNormativeTypes();
         
-        String name = "script1.tosca.yaml";
+        String name = "simple-web-server.yaml";
         String url = "classpath://templates/" + name;
         ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
         
@@ -68,7 +68,7 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {
         ToscaParser parser = platform.getToscaParser();
         ParsingResult<ArchiveRoot> tp = parser.parseFile("<classpath>", "pizza.tosca",
-            new ResourceUtils(this).getResourceFromUrl("classpath://io/cloudsoft/tosca/a4c/sample/pizza.tosca"), null);
+            new ResourceUtils(this).getResourceFromUrl("classpath://templates/pizza.tosca.yaml"), null);
         return tp;
     }
 
@@ -85,7 +85,7 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
     @Test
     public void testCanLoadArchiveWithPolicy() throws Exception {
         try {
-            String name = "script1.tosca.yaml";
+            String name = "simple-web-server.yaml";
             String url = "classpath://templates/" + name;
             ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
             Topology t = platform.getTopologyOfCsar(tp.getResult());

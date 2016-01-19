@@ -1,15 +1,14 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -26,7 +25,6 @@ import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
-import org.apache.brooklyn.entity.webapp.DynamicWebAppCluster;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.location.byon.FixedListMachineProvisioningLocation;
 import org.apache.brooklyn.location.jclouds.JcloudsLocation;
@@ -34,16 +32,13 @@ import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocati
 import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.util.core.ResourceUtils;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
-import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
 public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
@@ -57,7 +52,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testSimpleHostedTopologyParser() {
-        String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "script1.tosca.yaml");
+        String templateUrl = "classpath://templates/simple-web-server.yaml";
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -97,7 +92,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testDslInChatApplication() {
-        String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "helloworld-sql.tosca.yaml");
+        String templateUrl = "classpath://templates/helloworld-sql.tosca.yaml";
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -124,8 +119,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testFullJcloudsLocationDescription() {
-        String templateUrl =
-                getClasspathUrlForResource(TEMPLATES_FOLDER + "full-location.jclouds.tosca.yaml");
+        String templateUrl = "classpath://templates/full-location.jclouds.tosca.yaml";
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -145,7 +139,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testFullByonLocationDescription() {
-        String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "full-location.byon.tosca.yaml");
+        String templateUrl = "classpath://templates/full-location.byon.tosca.yaml";
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -179,7 +173,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testRelation(){
-        String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "relationship.yaml");
+        String templateUrl = "classpath://templates/relationship.yaml";
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -197,9 +191,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testAddingBrooklynPolicyToEntitySpec(){
-        String templateUrl =
-                getClasspathUrlForResource(TEMPLATES_FOLDER + "autoscaling.policies.tosca.yaml");
+    public void testAddingBrooklynPolicyToEntitySpec() {
+        String templateUrl = "classpath://templates/autoscaling.policies.tosca.yaml";
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -220,15 +213,14 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertEquals(autoScalerPolicyFlags.get("metricUpperBound"), "100");
         assertEquals(autoScalerPolicyFlags.get("minPoolSize"), "1");
         assertEquals(autoScalerPolicyFlags.get("maxPoolSize"), "5");
-        assertEquals(autoScalerPolicyFlags.get("metric"),"$brooklyn:sensor(" +
+        assertEquals(autoScalerPolicyFlags.get("metric"), "$brooklyn:sensor(" +
                 "\"org.apache.brooklyn.entity.webapp.DynamicWebAppCluster\"," +
-                " \"webapp.reqs.perSec.windowed.perNode\")" );
+                " \"webapp.reqs.perSec.windowed.perNode\")");
     }
 
     @Test
     public void testAddingBrooklynPolicyToApplicationSpec(){
-        String templateUrl =
-                getClasspathUrlForResource(TEMPLATES_FOLDER + "simple.application-policies.tosca.yaml");
+        String templateUrl = "classpath://templates/simple.application-policies.tosca.yaml";
 
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -256,7 +248,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
             platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
             platform.loadTypesFromUrl(AlienSamplesLiveTest.ALIEN_SAMPLE_TYPES_GITHUB_URL, true);
 
-            String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "mysql-topology.tosca");
+            String templateUrl = "classpath://templates/mysql-topology.tosca.yaml";
 
             EntitySpec<?> spec = transformer.createApplicationSpec(
                     new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -291,7 +283,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testDeploymentArtifacts() {
-        String templateUrl = getClasspathUrlForResource(TEMPLATES_FOLDER + "deployment-artifact.tosca.yaml");
+        String templateUrl = "classpath://templates/deployment-artifact.tosca.yaml";
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 
@@ -305,6 +297,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
     }
 
+    // TODO Do not need to use expensive mysql-topology blueprint to test overwriting interfaces.
     @Test
     public void testOverwriteInterfaceOnMysqlTopology() throws Exception {
         try {
@@ -312,8 +305,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
             platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
             platform.loadTypesFromUrl(AlienSamplesLiveTest.ALIEN_SAMPLE_TYPES_GITHUB_URL, true);
 
-            String templateUrl =
-                    getClasspathUrlForResource(TEMPLATES_FOLDER + "mysql-topology-overwritten-interface.tosca.yaml");
+            String templateUrl = "classpath://templates/mysql-topology-overwritten-interface.tosca.yaml";
 
             EntitySpec<?> spec = transformer.createApplicationSpec(
                     new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -342,7 +334,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test(enabled = false) //failing to parse tosca
     public void testEntitiesOnSameNodeBecomeSameServerEntities() {
-        String templateUrl = getClasspathUrlForResource("templates/tomcat-mysql-on-one-compute.yaml");
+        String templateUrl = "classpath://templates/tomcat-mysql-on-one-compute.yaml";
 
         EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
@@ -363,7 +355,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testConcatFunctionInTopology() {
-        String templateUrl = getClasspathUrlForResource("templates/concat-function.yaml");
+        String templateUrl = "classpath://templates/concat-function.yaml";
         EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 

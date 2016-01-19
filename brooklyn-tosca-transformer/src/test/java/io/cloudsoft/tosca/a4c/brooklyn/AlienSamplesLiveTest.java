@@ -61,7 +61,7 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
     }
 
     public void testMySql(TestApplication app, Location testLocation) throws Exception {
-        Entity entity = createAndManageFrom("mysql.zip", "mysql-topology.tosca", app);
+        Entity entity = createAndManageFrom("mysql.zip", "mysql-topology.tosca.yaml", app);
         app.start(ImmutableList.of(testLocation));
         assertAttributeEqualsEventually(entity, Attributes.SERVICE_UP, true);
     }
@@ -79,7 +79,7 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
     }
 
     public void testPhp(TestApplication app, Location testLocation) throws Exception {
-        Entity entity = createAndManageFrom("php.zip", "php-topology.tosca", app);
+        Entity entity = createAndManageFrom("php.zip", "php-topology.tosca.yaml", app);
         app.start(ImmutableList.of(testLocation));
         assertAttributeEqualsEventually(entity, Attributes.SERVICE_UP, true);
     }
@@ -97,7 +97,7 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
     }
 
     public void testApache(TestApplication app, Location testLocation) throws Exception {
-        Entity entity = createAndManageFrom("apache.zip", "apache-topology.tosca", app);
+        Entity entity = createAndManageFrom("apache.zip", "apache-topology.tosca.yaml", app);
         app.start(ImmutableList.of(testLocation));
         assertAttributeEqualsEventually(entity, Attributes.SERVICE_UP, true);
     }

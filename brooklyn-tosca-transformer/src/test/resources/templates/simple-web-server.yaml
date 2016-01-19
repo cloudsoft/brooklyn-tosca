@@ -19,10 +19,10 @@ topology_template:
       - host: a_server
       interfaces:
         Standard:
-           create: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/create.sh
-           configure: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/configure.sh
-           start: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/start.sh
-           stop: classpath:io/cloudsoft/brooklyn/tosca/test/templates/operations/scripts1/stop.sh
+           create: classpath://scripts/simplewebserver/create.sh
+           configure: classpath://scripts/simplewebserver/configure.sh
+           start: classpath://scripts/simplewebserver/start.sh
+           stop: classpath://scripts/simplewebserver/stop.sh
         
     a_server:
       type: tosca.nodes.Compute

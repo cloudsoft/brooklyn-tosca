@@ -270,9 +270,9 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
             assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
 
             // Check that the inputs have been set as exports on the scripts
-            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export PORT=3306");
-            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_USER=martin");
-            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_NAME=wordpress");
+            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export PORT=\"3306\"");
+            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_USER=\"martin\"");
+            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_NAME=\"wordpress\"");
 
         } finally {
             if (platform!=null) {

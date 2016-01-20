@@ -27,7 +27,6 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
 
     private static final Logger LOG = LoggerFactory.getLogger(Alien4CloudIntegrationTest.class);
     protected ManagementContext mgmt;
-    protected TestApplication app;
     protected Alien4CloudToscaPlatform platform;
     protected ToscaPlanToSpecTransformer transformer;
 
@@ -36,7 +35,6 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
         assertNotNull(super.applicationContext, "No application context for test");
         mgmt = super.applicationContext.getBean(ManagementContext.class);
         assertNotNull(mgmt, "No management context found for test");
-        this.setUpApp();
         ((ManagementContextInternal) mgmt).getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
         new BrooklynCampPlatformLauncherNoServer()
                 .useManagementContext(mgmt)
@@ -61,17 +59,6 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
         } finally {
             this.mgmt = null;
         }
-    }
-
-    protected boolean shouldSkipOnBoxBaseDirResolution() {
-        return true;
-    }
-
-    protected void setUpApp() {
-        EntitySpec<TestApplication> appSpec = EntitySpec.create(TestApplication.class)
-                .configure(BrooklynConfigKeys.SKIP_ON_BOX_BASE_DIR_RESOLUTION, shouldSkipOnBoxBaseDirResolution());
-
-        app = mgmt.getEntityManager().createEntity(appSpec);
     }
 
 }

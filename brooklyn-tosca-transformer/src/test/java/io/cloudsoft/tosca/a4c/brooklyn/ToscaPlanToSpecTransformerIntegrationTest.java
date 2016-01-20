@@ -6,6 +6,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +18,10 @@ import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.entity.Attributes;
 import org.apache.brooklyn.core.entity.Entities;
+import org.apache.brooklyn.core.entity.EntityAsserts;
+import org.apache.brooklyn.core.entity.lifecycle.Lifecycle;
 import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
@@ -42,7 +46,6 @@ import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
 public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
-    public static final String TEMPLATES_FOLDER = "templates/";
     private String DATABASE_DEPENDENCY_INJECTION = "$brooklyn:formatString(\"jdbc:" +
             "%s%s?user=%s\\\\&password=%s\",$brooklyn:entity(\"mysql_server\")" +
             ".attributeWhenReady(\"datastore.url\")," +
@@ -281,20 +284,25 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         }
     }
 
-    @Test
+    // FIXME: Rework along with RuntimeEnvironmentModifier
+    @Test(enabled = false)
     public void testDeploymentArtifacts() {
         String templateUrl = "classpath://templates/deployment-artifact.tosca.yaml";
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 
-        assertNotNull(app);
-        assertEquals(app.getChildren().size(), 1);
+        assertNotNull(spec);
+        assertEquals(spec.getChildren().size(), 1);
 
-        EntitySpec<?> tomcatServer = EntitySpecs.findChildEntitySpecByPlanId(app, "tomcat_server");
+        EntitySpec<?> tomcatServer = EntitySpecs.findChildEntitySpecByPlanId(spec, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
+
+        Application app = this.mgmt.getEntityManager().createEntity(spec);
+        ((BasicApplication) app).start(Collections.<Location>emptyList());
+        EntityAsserts.assertAttributeEqualsEventually(app, Attributes.SERVICE_STATE_ACTUAL, Lifecycle.RUNNING);
     }
 
     // TODO Do not need to use expensive mysql-topology blueprint to test overwriting interfaces.

@@ -5,7 +5,7 @@
     <property name="logging.basename" scope="context" value="brooklyn-tosca" />
 
     <!-- include everything in this project at debug level -->
-    <logger name="org.apache.brooklyn.tosca" level="DEBUG"/>
+    <logger name="io.cloudsoft.tosca" level="DEBUG"/>
 
     <!-- include the alien appender -->
     <include resource="brooklyn/logback-appender-alien.xml"/>

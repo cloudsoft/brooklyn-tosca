@@ -94,6 +94,7 @@ public class ApplicationSpecsBuilder {
         visited.add(node);
 
         EntitySpec<?> spec = createSpec(node, nodeTemplate, topology);
+        LOG.trace("applying spec modifiers {} to spec {}", specModifiers, spec);
         for (EntitySpecModifier builder : specModifiers) {
             builder.apply(spec, nodeTemplate, topology);
         }

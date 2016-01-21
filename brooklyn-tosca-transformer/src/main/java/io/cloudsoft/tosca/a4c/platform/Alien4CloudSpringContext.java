@@ -11,9 +11,11 @@ import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ImportResource;
 import org.springframework.core.env.PropertiesPropertySource;
 
 @ComponentScan
+@ImportResource("classpath:/base-context.xml")
 public class Alien4CloudSpringContext {
 
     private static final Logger log = LoggerFactory.getLogger(Alien4CloudSpringContext.class);
@@ -24,8 +26,8 @@ public class Alien4CloudSpringContext {
         try {
             Stopwatch s = Stopwatch.createStarted();
 
-
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+
             // messy, but seems we must manually load the properties before loading the beans; otherwise we get e.g.
             // Caused by: java.lang.IllegalArgumentException: Could not resolve placeholder 'directories.alien' in string value "${directories.alien}/plugins"
             final YamlPropertiesFactoryBean yamlPropertiesFactoryBean = AlienBrooklynYamlPropertiesFactoryBeanFactory.get(mgmt, ctx);

@@ -21,6 +21,7 @@ import alien4cloud.security.ResourceRoleService;
         "org.elasticsearch.mapping",
         "io.cloudsoft.tosca.a4c.brooklyn"
 }, excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = "io.cloudsoft.tosca.a4c.brooklyn.spec.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "alien4cloud.security.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "alien4cloud.audit.*"),
         @ComponentScan.Filter(type = FilterType.REGEX, pattern = "alien4cloud.ldap.*")})

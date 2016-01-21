@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:util="http://www.springframework.org/schema/util"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:util="http://www.springframework.org/schema/util"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
@@ -22,11 +22,14 @@
         <!-- fails to load because of exclusion of alien4cloud.security. -->
         <context:exclude-filter type="regex"
                 expression="alien4cloud.orchestrators.services.OrchestratorSecurityService"/>
+
+        <context:exclude-filter type="assignable"
+                expression="io.cloudsoft.tosca.a4c.brooklyn.spec.RuntimeEnvironmentModifier"/>
     </context:component-scan>
 
     <bean id="brooklynManagementContext" class="org.apache.brooklyn.core.test.entity.LocalManagementContextForTests"
             factory-method="newInstance"/>
-    <bean id="alienToscaPlatform" class="io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform" />
+    <bean id="alienToscaPlatform" class="io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform"/>
 
     <bean id="alienconfigFactory" class="alien4cloud.utils.AlienConfigFactory"/>
     <bean id="alienconfig" factory-bean="alienconfigFactory" factory-method="get"/>

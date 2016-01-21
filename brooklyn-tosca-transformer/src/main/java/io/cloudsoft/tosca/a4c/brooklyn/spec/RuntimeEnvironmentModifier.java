@@ -20,6 +20,7 @@ import org.apache.brooklyn.util.os.Os;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import com.google.common.base.Joiner;
 
@@ -38,7 +39,7 @@ import alien4cloud.model.topology.Topology;
 // * Should clarify the difference between use of nodeTemplate and indexedNodeTemplate.
 // * Should not set environment variables like "export = ~/brooklyn-tosca-resources".
 // TODO: Rename to highlight that it is handling artifacts.
-//@Component
+@Component
 public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
 
     private static final Logger LOG = LoggerFactory.getLogger(RuntimeEnvironmentModifier.class);

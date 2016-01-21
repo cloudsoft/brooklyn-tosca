@@ -250,7 +250,6 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     public void testMysqlTopology() throws Exception {
         try {
             platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
-            platform.loadTypesFromUrl(AlienSamplesLiveTest.ALIEN_SAMPLE_TYPES_GITHUB_URL, true);
 
             String templateUrl = "classpath://templates/mysql-topology.tosca.yaml";
 
@@ -310,9 +309,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     @Test
     public void testOverwriteInterfaceOnMysqlTopology() throws Exception {
         try {
-
             platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
-            platform.loadTypesFromUrl(AlienSamplesLiveTest.ALIEN_SAMPLE_TYPES_GITHUB_URL, true);
 
             String templateUrl = "classpath://templates/mysql-topology-overwritten-interface.tosca.yaml";
 

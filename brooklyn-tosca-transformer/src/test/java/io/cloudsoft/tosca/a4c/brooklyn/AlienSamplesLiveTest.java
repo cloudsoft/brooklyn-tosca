@@ -26,7 +26,6 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
     private static final Logger LOG = LoggerFactory.getLogger(AlienSamplesLiveTest.class);
     private static final String DEFAULT_LOCATION_SPEC = "aws-ec2:eu-west-1";
     private static String RESOURCE_LOC = "classpath://templates";
-    public static final String ALIEN_SAMPLE_TYPES_GITHUB_URL = "https://github.com/alien4cloud/samples/archive/1.1.0-SM8.zip";
 
     protected ToscaPlanToSpecTransformer transformer;
     private Alien4CloudToscaPlatform platform;
@@ -41,7 +40,6 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
         ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt);
         platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
         mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
-        platform.loadNormativeTypes();
         transformer = new ToscaPlanToSpecTransformer();
         transformer.setManagementContext(mgmt);
         platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
@@ -103,7 +101,6 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
     }
 
     public Entity createAndManageFrom(String zipName, String template, TestApplication app) throws Exception {
-        platform.loadTypesFromUrl(ALIEN_SAMPLE_TYPES_GITHUB_URL, true);
         String templateUrl = RESOURCE_LOC + "/" + template;
         EntitySpec<?> spec = transformer.createApplicationSpec(
                 new ResourceUtils(mgmt).getResourceAsString(templateUrl));

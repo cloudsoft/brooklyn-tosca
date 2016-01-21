@@ -56,7 +56,8 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     private static final Logger log = LoggerFactory.getLogger(ToscaPlanToSpecTransformer.class);
     
     public static final ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
-        .name("tosca.a4c.platform").build();
+            .name("tosca.a4c.platform")
+            .build();
 
     @VisibleForTesting
     static final String FEATURE_TOSCA_ENABLED = BrooklynFeatureEnablement.FEATURE_PROPERTY_PREFIX + ".tosca";
@@ -94,7 +95,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
 
-    private void initialiseAlien(){
+    private void initialiseAlien() {
         try {
             synchronized (ToscaPlanToSpecTransformer.class) {
                 platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
@@ -103,7 +104,6 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
                     ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt);
                     platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
                     ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
-                    platform.loadNormativeTypes();
                 }
             }
             alienInitialised.set(true);

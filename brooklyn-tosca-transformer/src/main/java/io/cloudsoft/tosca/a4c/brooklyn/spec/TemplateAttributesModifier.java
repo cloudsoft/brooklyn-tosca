@@ -40,6 +40,7 @@ public class TemplateAttributesModifier extends AbstractSpecModifier {
     public void apply(EntitySpec<?> entitySpec, NodeTemplate nodeTemplate, Topology topology) {
         if (!entitySpec.getType().isAssignableFrom(VanillaSoftwareProcess.class)) {
             LOG.debug("Not applying attributes to {}: only {} is currently supported", entitySpec, VanillaSoftwareProcess.class.getName());
+            return;
         }
         LOG.info("Generating EntityInitializers for static attributes on " + entitySpec);
         Optional<PaaSNodeTemplate> optionalPaaSNodeTemplate = getPaasNodeTemplate(nodeTemplate, topology);

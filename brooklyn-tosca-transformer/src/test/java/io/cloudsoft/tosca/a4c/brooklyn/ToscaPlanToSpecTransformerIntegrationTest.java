@@ -63,19 +63,18 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
 
-        EntitySpec<?> hostVanilla = app.getChildren().get(0);
-        assertEquals(hostVanilla.getConfig().get(SoftwareProcess.CHILDREN_STARTABLE_MODE),
+        EntitySpec<?> server = app.getChildren().get(0);
+        assertEquals(server.getConfig().get(SoftwareProcess.CHILDREN_STARTABLE_MODE),
                 SoftwareProcess.ChildStartableMode.BACKGROUND_LATE);
 
-        assertEquals(hostVanilla.getChildren().size(), 1);
+        assertEquals(server.getChildren().size(), 1);
 
-        EntitySpec<?> hostedSoftwareComponent = hostVanilla.getChildren().get(0);
+        EntitySpec<?> hostedSoftwareComponent = server.getChildren().get(0);
 
-        assertEquals(hostVanilla.getFlags().get("tosca.node.type"), "tosca.nodes.Compute");
-        assertEquals(hostVanilla.getType().getName(),
-                "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess");
-        assertEquals(hostVanilla.getLocations().size(), 1);
-        assertEquals(hostVanilla.getLocations().get(0).getDisplayName(), "localhost");
+        assertEquals(server.getFlags().get("tosca.node.type"), "tosca.nodes.Compute");
+        assertEquals(server.getType(), BasicApplication.class);
+        assertEquals(server.getLocations().size(), 1);
+        assertEquals(server.getLocations().get(0).getDisplayName(), "localhost");
 
         assertEquals(hostedSoftwareComponent.getFlags().get("tosca.node.type"),
                 "tosca.nodes.SoftwareComponent");
@@ -90,7 +89,6 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
                 "# launch in background (ensuring no streams open), and record PID to file");
         assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.STOP_COMMAND,
                 "kill -9 `cat ${PID_FILE:-pid.txt}`");
-
     }
 
     @Test
@@ -376,7 +374,6 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertEquals(value, "Message: It Works!");
     }
 
-
     private void assertConfigValueContains(EntitySpec<?> entity, ConfigKey<String> key, String needle) {
         String haystack = (String) entity.getConfig().get(key);
         assertConfigValueContains(haystack, needle);
@@ -394,4 +391,17 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
             throw new AssertionError("Expected to find '" + needle + "' in " + haystack);
         }
     }
+
+    @Test
+    public void testTransformationFromComputeWithTwoChildrenToSameServer() {
+        String templateUrl = "classpath://templates/compute-with-two-hosted-children.yaml";
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertNotNull(compute);
+        assertEquals(compute.getType(), SameServerEntity.class);
+    }
+
 }

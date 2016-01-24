@@ -1,0 +1,33 @@
+
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: brooklyn.a4c.sample.script1
+template_version: 1.0.0-SNAPSHOT
+
+description: Sample TOSCA plan referencing scripts to create a web server
+
+topology_template:
+  description: Web Server Sample with Script
+
+  node_templates:
+    script_hello:
+      type: tosca.nodes.SoftwareComponent
+      requirements:
+      - host: a_server
+    script_hello2:
+      type: tosca.nodes.SoftwareComponent
+      requirements:
+      - host: a_server
+    a_server:
+      type: tosca.nodes.Compute
+
+  # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
+  # it can also be done with camp, referencing this topology template.
+  groups:
+    add_brooklyn_location:
+      members: [ a_server ]
+      policies:
+      - brooklyn.location: localhost

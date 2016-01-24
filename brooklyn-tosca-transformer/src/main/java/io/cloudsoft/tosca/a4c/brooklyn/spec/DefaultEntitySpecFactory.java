@@ -68,9 +68,10 @@ public class DefaultEntitySpecFactory implements EntitySpecFactory {
     }
 
     private boolean isComputeType(NodeTemplate nodeTemplate, Topology topology) {
-        return getIndexedNodeTemplate(nodeTemplate, topology)
-                .getDerivedFrom()
-                .contains(NormativeComputeConstants.COMPUTE_TYPE);
+        return nodeTemplate.getType().equals(NormativeComputeConstants.COMPUTE_TYPE) ||
+                getIndexedNodeTemplate(nodeTemplate, topology)
+                        .getDerivedFrom()
+                        .contains(NormativeComputeConstants.COMPUTE_TYPE);
     }
 
     protected IndexedArtifactToscaElement getIndexedNodeTemplate(NodeTemplate nodeTemplate, Topology topology) {

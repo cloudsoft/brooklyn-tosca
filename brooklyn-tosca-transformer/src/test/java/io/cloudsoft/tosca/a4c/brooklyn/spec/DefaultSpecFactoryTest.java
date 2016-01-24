@@ -2,6 +2,7 @@ package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import org.apache.brooklyn.core.test.BrooklynAppUnitTestSupport;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
@@ -52,7 +53,7 @@ public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
     }
 
     @Test
-    public void testMakesVanillaSoftwareProcess() {
+    public void testMakesVanillaSoftwareProcessDerived() {
         ImmutableSet<CSARDependency> dependencies = ImmutableSet.of();
         when(topology.getNodeTemplates()).thenReturn(ImmutableMap.of("node1", nodeTemplate1));
         when(topology.getDependencies()).thenReturn(dependencies);
@@ -66,7 +67,7 @@ public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
     }
 
     @Test
-    public void testMakesBasicApplication() {
+    public void testMakesBasicApplicationForDerivedFromCompute() {
         // model compute node with one child
         ImmutableSet<CSARDependency> dependencies = ImmutableSet.of();
         when(topology.getNodeTemplates()).thenReturn(ImmutableMap.of("node1", nodeTemplate1));
@@ -81,7 +82,19 @@ public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
     }
 
     @Test
-    public void testMakesSameServerEntity() {
+    public void testMakesBasicApplicationForCompute() {
+        // model compute node with one child
+        ImmutableSet<CSARDependency> dependencies = ImmutableSet.of();
+        when(topology.getNodeTemplates()).thenReturn(ImmutableMap.of("node1", nodeTemplate1));
+        when(topology.getDependencies()).thenReturn(dependencies);
+        when(nodeTemplate1.getType()).thenReturn("tosca.nodes.Compute");
+
+        EntitySpecFactory factory = new DefaultEntitySpecFactory(mgmt, repositorySearchService);
+        assertEquals(factory.create(nodeTemplate1, topology, false).getType(), BasicApplication.class);
+    }
+
+    @Test
+    public void testMakesSameServerEntityForDerivedFromCompute() {
         // model compute node with two children
         ImmutableSet<CSARDependency> dependencies = ImmutableSet.of();
         when(topology.getNodeTemplates()).thenReturn(ImmutableMap.of("node1", nodeTemplate1, "node2", nodeTemplate2, "node3", nodeTemplate2));
@@ -99,6 +112,25 @@ public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
         when(repositorySearchService.getRequiredElementInDependencies(IndexedArtifactToscaElement.class, "brooklyn.nodes.Test2", dependencies))
                 .thenReturn(indexedToscaElement2);
         when(indexedToscaElement.getDerivedFrom()).thenReturn(ImmutableList.of("tosca.nodes.Compute"));
+
+        EntitySpecFactory factory = new DefaultEntitySpecFactory(mgmt, repositorySearchService);
+        assertEquals(factory.create(nodeTemplate1, topology, true).getType(), SameServerEntity.class);
+    }
+
+    @Test
+    public void testMakesSameServerEntityForCompute() {
+        // model compute node with two children
+        ImmutableSet<CSARDependency> dependencies = ImmutableSet.of();
+        when(topology.getNodeTemplates()).thenReturn(ImmutableMap.of("node1", nodeTemplate1, "node2", nodeTemplate2, "node3", nodeTemplate2));
+        when(nodeTemplate2.getRequirements()).thenReturn(ImmutableMap.of("host", new Requirement()));
+        RelationshipTemplate relationshipTemplate = new RelationshipTemplate();
+        relationshipTemplate.setRequirementName("host");
+        relationshipTemplate.setTarget("node1");
+        relationshipTemplate.setType("");
+        when(nodeTemplate2.getRelationships()).thenReturn(ImmutableMap.of("test", relationshipTemplate));
+        when(topology.getDependencies()).thenReturn(dependencies);
+        when(nodeTemplate1.getType()).thenReturn("tosca.nodes.Compute");
+        when(nodeTemplate2.getType()).thenReturn("brooklyn.nodes.Test2");
 
         EntitySpecFactory factory = new DefaultEntitySpecFactory(mgmt, repositorySearchService);
         assertEquals(factory.create(nodeTemplate1, topology, true).getType(), SameServerEntity.class);

@@ -38,6 +38,7 @@ import io.cloudsoft.tosca.a4c.brooklyn.spec.EntitySpecModifier;
 public class ApplicationSpecsBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpecsBuilder.class);
+    public static final String TOSCA_TEMPLATE_ID = "tosca.template.id";
 
     // Beans
     private EntitySpecFactory entitySpecFactory;
@@ -162,7 +163,7 @@ public class ApplicationSpecsBuilder {
         }
         // Add TOSCA node type as a property
         spec.configure("tosca.node.type", nodeTemplate.getType());
-        spec.configure("tosca.template.id", nodeId);
+        spec.configure(TOSCA_TEMPLATE_ID, nodeId);
         // Use the nodeId as the camp.template.id to enable DSL lookup
         spec.configure(BrooklynCampConstants.PLAN_ID, nodeId);
 

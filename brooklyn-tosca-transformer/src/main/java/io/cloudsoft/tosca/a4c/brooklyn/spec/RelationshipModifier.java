@@ -19,15 +19,20 @@ import com.google.common.collect.ImmutableMap;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 
 @Component
 public class RelationshipModifier extends ConfigKeyModifier {
 
     private static final Logger LOG = LoggerFactory.getLogger(RelationshipModifier.class);
+    private final TopologyTreeBuilderService treeBuilder;
 
     @Inject
-    public RelationshipModifier(ManagementContext mgmt) {
+    public RelationshipModifier(ManagementContext mgmt, TopologyTreeBuilderService treeBuilder) {
         super(mgmt);
+        this.treeBuilder = treeBuilder;
     }
 
     @Override
@@ -37,7 +42,10 @@ public class RelationshipModifier extends ConfigKeyModifier {
             RelationshipTemplate relationshipTemplate = findRelationshipRequirement(nodeTemplate, requirementId);
             if (relationshipTemplate != null && relationshipTemplate.getType().equals("brooklyn.relationships.Configure")) {
 
-                Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate);
+                Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
+                String computeName = (nodeTemplate.getName() != null) ? nodeTemplate.getName() : (String) entitySpec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID);
+                PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
+                Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate, paasNodeTemplate, builtPaaSNodeTemplates);
 
                 // TODO: Use target properly.
                 String target = relationshipTemplate.getTarget();

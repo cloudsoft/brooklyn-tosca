@@ -289,7 +289,6 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         case ENTITY:
             // unwrap? any other processing?
             return (SpecT) createApplicationSpec(item.getPlanYaml());
-            
         case LOCATION: 
         case POLICY:
             throw new PlanNotRecognizedException("TOSCA does not support: "+item.getCatalogItemType());
@@ -308,9 +307,9 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
      */
     private void assertAvailable() {
         if (!BrooklynFeatureEnablement.isEnabled(FEATURE_TOSCA_ENABLED)) {
-            throw new IllegalStateException("Brooklyn TOSCA support is disabled");
+            throw new PlanNotRecognizedException("Brooklyn TOSCA support is disabled");
         } else if (!alienInitialised.get()) {
-            throw new IllegalStateException("A4C platform is uninitialised for " + this);
+            throw new PlanNotRecognizedException("Alien4Cloud platform is uninitialised for " + this);
         }
     }
 

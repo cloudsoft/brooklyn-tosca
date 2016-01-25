@@ -6,11 +6,11 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.core.resolve.entity.AbstractEntitySpecResolver;
 
-public class Alien4CloudEntitySpecResolver extends AbstractEntitySpecResolver {
+public class TosacEntitySpecResolver extends AbstractEntitySpecResolver {
 
     private static final String RESOLVER_NAME = "alien4cloud_deployment_topology";
 
-    public Alien4CloudEntitySpecResolver() {
+    public TosacEntitySpecResolver() {
         super(RESOLVER_NAME);
     }
 

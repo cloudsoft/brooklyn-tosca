@@ -32,6 +32,7 @@ import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.plan.TopologyTreeBuilderService;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 import io.cloudsoft.tosca.a4c.brooklyn.util.NodeTemplates;
 
 // TODO: Handle interfaces differently.
@@ -123,7 +124,7 @@ public class StandardInterfaceLifecycleModifier extends AbstractSpecModifier {
         String script = getScript(artifact.getArchiveName(), artifact.getArchiveVersion(), ref);
 
         Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
-        String computeName = (nodeTemplate.getName() != null) ? nodeTemplate.getName() : (String) spec.getFlags().get("tosca.template.id");
+        String computeName = (nodeTemplate.getName() != null) ? nodeTemplate.getName() : (String) spec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID);
         PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
         spec.configure(cmdKey, buildExportStatements(op, paasNodeTemplate, builtPaaSNodeTemplates) + "\n" + script);
     }

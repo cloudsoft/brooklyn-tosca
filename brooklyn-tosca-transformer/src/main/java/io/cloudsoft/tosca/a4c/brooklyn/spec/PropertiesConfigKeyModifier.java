@@ -1,5 +1,7 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -9,18 +11,27 @@ import org.springframework.stereotype.Component;
 
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 
 @Component
 public class PropertiesConfigKeyModifier extends ConfigKeyModifier {
 
+    private final TopologyTreeBuilderService treeBuilder;
+
     @Inject
-    public PropertiesConfigKeyModifier(ManagementContext mgmt) {
+    public PropertiesConfigKeyModifier(ManagementContext mgmt, TopologyTreeBuilderService treeBuilder) {
         super(mgmt);
+        this.treeBuilder = treeBuilder;
     }
 
     @Override
     public void apply(EntitySpec<?> entitySpec, NodeTemplate nodeTemplate, Topology topology) {
-        ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate));
+        Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
+        String computeName = (nodeTemplate.getName() != null) ? nodeTemplate.getName() : (String) entitySpec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID);
+        PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
+        ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate, paasNodeTemplate, builtPaaSNodeTemplates));
         // now set configuration for all the items in the bag
         configureConfigKeysSpec(entitySpec, bag);
     }

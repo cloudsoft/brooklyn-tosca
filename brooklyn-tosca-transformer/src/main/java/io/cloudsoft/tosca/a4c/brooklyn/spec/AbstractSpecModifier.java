@@ -24,6 +24,7 @@ import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.function.FunctionEvaluator;
 import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.tosca.normative.ToscaFunctionConstants;
 
 public abstract class AbstractSpecModifier implements EntitySpecModifier {
 
@@ -84,7 +85,17 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
     public static Optional<Object> resolve(Map<String, ? extends IValue> props, String key, PaaSNodeTemplate template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
         Optional<Object> value = resolve(props, key);
         if (!value.isPresent()) {
-            value = Optional.<Object>fromNullable(FunctionEvaluator.evaluateGetPropertyFunction((FunctionPropertyValue) props.get(key), template, builtPaaSNodeTemplates));
+            IValue v = props.get(key);
+            if (v instanceof FunctionPropertyValue) {
+                FunctionPropertyValue functionPropertyValue = (FunctionPropertyValue) v;
+                switch (functionPropertyValue.getFunction()) {
+                    case ToscaFunctionConstants.GET_PROPERTY:
+                        value = Optional.<Object>fromNullable(FunctionEvaluator.evaluateGetPropertyFunction(functionPropertyValue, template, builtPaaSNodeTemplates));
+                        break;
+                    default:
+                        value = Optional.absent();
+                }
+            }
         }
         return value;
     }

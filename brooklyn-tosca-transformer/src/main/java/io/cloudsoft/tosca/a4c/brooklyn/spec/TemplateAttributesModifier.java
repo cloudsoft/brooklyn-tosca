@@ -56,7 +56,7 @@ public class TemplateAttributesModifier extends AbstractSpecModifier {
                         "",
                         optionalPaaSNodeTemplate.get(),
                         allNodes);
-                final String sensorName = "tosca.attribute." + attribute.getKey().replaceAll("\\s+", ".");
+                final String sensorName = attribute.getKey().replaceAll("\\s+", ".");
                 entitySpec.addInitializer(new StaticSensor<String>(ConfigBag.newInstance()
                         .configure(StaticSensor.SENSOR_NAME, sensorName)
                         .configure(StaticSensor.STATIC_VALUE, value)));

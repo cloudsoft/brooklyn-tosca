@@ -1,0 +1,25 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+- tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: get_attribute-function-test
+template_version: 1.0.0-SNAPSHOT
+
+description: Deploys an application with a property set using get_attribute
+
+node_types:
+  brooklyn.nodes.Test:
+    derived_from: tosca.nodes.Root
+    properties:
+      another:
+        type: string
+        required: false
+    attributes:
+      my_message: { concat: ["Message: ", "Hello"] }
+topology_template:
+  node_templates:
+    Test:
+      type: brooklyn.nodes.Test
+      properties:
+        another: { get_attribute: [ Test, my_message ] }

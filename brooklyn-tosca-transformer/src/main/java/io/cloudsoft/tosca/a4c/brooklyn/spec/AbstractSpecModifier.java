@@ -5,6 +5,8 @@ import javax.inject.Inject;
 
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.CampCatalogUtils;
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
+import org.apache.brooklyn.core.sensor.DependentConfiguration;
 import org.apache.brooklyn.util.core.flags.TypeCoercions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +72,11 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
 
     public static Optional<Object> resolve(Map<String, ? extends IValue> props, String key) {
         IValue v = props.get(key);
+        if (v == null) {
+            LOG.warn("No value available for {}", key);
+            return Optional.absent();
+        }
+
         if (v instanceof ScalarPropertyValue) {
             return Optional.<Object>fromNullable(((ScalarPropertyValue) v).getValue());
         }
@@ -92,6 +99,11 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
                     case ToscaFunctionConstants.GET_PROPERTY:
                         value = Optional.<Object>fromNullable(FunctionEvaluator.evaluateGetPropertyFunction(functionPropertyValue, template, builtPaaSNodeTemplates));
                         break;
+                    case ToscaFunctionConstants.GET_ATTRIBUTE:
+                        value = Optional.<Object>fromNullable(BrooklynDslCommon.entity(functionPropertyValue.getTemplateName()).attributeWhenReady(functionPropertyValue.getElementNameToFetch()));
+                        break;
+                    case ToscaFunctionConstants.GET_INPUT:
+                    case ToscaFunctionConstants.GET_OPERATION_OUTPUT:
                     default:
                         value = Optional.absent();
                 }

@@ -77,7 +77,7 @@ public class StandardInterfaceLifecycleModifier extends AbstractSpecModifier {
         final Map<String, Operation> operations = getStandardInterfaceOperations(nodeTemplate, topology);
         for (String opKey : operations.keySet()) {
             if (!lifeCycleMapping.containsKey(opKey)) {
-                LOG.warn("Could not translate an operation for " + nodeTemplate + ": " + opKey);
+                LOG.warn("Could not translate operation, {}, for node template, {}.", opKey, nodeTemplate.getName());
                 continue;
             }
 
@@ -111,13 +111,13 @@ public class StandardInterfaceLifecycleModifier extends AbstractSpecModifier {
 
         ImplementationArtifact artifact = op.getImplementationArtifact();
         if (artifact == null) {
-            LOG.warn("Unsupported operation implementation for " + op + ":  artifact has no impl");
+            LOG.warn("Unsupported operation implementation for " + op.getDescription() + ":  artifact has no impl");
             return;
         }
 
         String ref = artifact.getArtifactRef();
         if (ref == null) {
-            LOG.warn("Unsupported operation implementation for " + op + ": " + artifact + " has no ref");
+            LOG.warn("Unsupported operation implementation for " + op.getDescription() + ": " + artifact + " has no ref");
             return;
         }
 

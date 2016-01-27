@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -38,6 +40,7 @@ import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 
@@ -370,8 +373,28 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
         assertEquals(app.getChildren().size(), 1);
         Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
-        String value = entity.sensors().get(Sensors.newStringSensor("tosca.attribute.my_message"));
+        String value = entity.sensors().get(Sensors.newStringSensor("my_message"));
         assertEquals(value, "Message: It Works!");
+    }
+
+    @Test
+    public void testGetAttributeFunctionInTopology() {
+        String templateUrl = "classpath://templates/get_attribute-function.yaml";
+        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(spec);
+        Application app = this.mgmt.getEntityManager().createEntity(spec);
+        assertEquals(app.getChildren().size(), 1);
+        Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
+        final String expected = "Message: Hello";
+        EntityAsserts.assertAttributeEqualsEventually(entity, Sensors.newStringSensor("my_message"), expected);
+        EntityAsserts.assertPredicateEventuallyTrue(entity, new Predicate<Entity>() {
+            @Override
+            public boolean apply(@Nullable Entity entity) {
+                return entity.config().get(ConfigKeys.newStringConfigKey("another")).equals(expected);
+            }
+        });
     }
 
     private void assertConfigValueContains(EntitySpec<?> entity, ConfigKey<String> key, String needle) {

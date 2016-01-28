@@ -33,6 +33,9 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
         assertNotNull(super.applicationContext, "No application context for test");
+        Alien4CloudToscaPlatform.grantAdminAuth();
+        this.platform = super.applicationContext.getBean(Alien4CloudToscaPlatform.class);
+        platform.loadNormativeTypes();
         mgmt = super.applicationContext.getBean(ManagementContext.class);
         assertNotNull(mgmt, "No management context found for test");
         ((ManagementContextInternal) mgmt).getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
@@ -40,10 +43,7 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
                 .useManagementContext(mgmt)
                 .launch()
                 .getCampPlatform();
-        Alien4CloudToscaPlatform.grantAdminAuth();
 
-        this.platform = super.applicationContext.getBean(Alien4CloudToscaPlatform.class);
-        platform.loadNormativeTypes();
         transformer = new ToscaPlanToSpecTransformer();
         transformer.setManagementContext(mgmt);
     }

@@ -3,10 +3,16 @@ package io.cloudsoft.tosca.a4c.brooklyn.spec;
 import java.util.Map;
 import javax.inject.Inject;
 
+import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynComponentTemplateResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.CampCatalogUtils;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.EntitySpecConfiguration;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
-import org.apache.brooklyn.core.sensor.DependentConfiguration;
+import org.apache.brooklyn.core.mgmt.EntityManagementUtils;
+import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
+import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.flags.TypeCoercions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,9 +71,10 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
         Map<String, Object> resolvedConfigMap = CampCatalogUtils.getCampPlatform(mgmt)
                 .pdp()
                 .applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
+        Object resolvedValue = transformSpecialFlags(resolvedConfigMap.get("dsl"));
         return Optional.of(desiredType.isPresent()
-                           ? TypeCoercions.coerce(resolvedConfigMap.get("dsl"), desiredType.get())
-                           : resolvedConfigMap.get("dsl"));
+                ? TypeCoercions.coerce(resolvedValue, desiredType.get())
+                : resolvedValue);
     }
 
     public static Optional<Object> resolve(Map<String, ? extends IValue> props, String key) {
@@ -111,5 +118,26 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
         }
         return value;
     }
+
+    /**
+     * Makes additional transformations to the given flag with the extra knowledge of the flag's management context.
+     * @return The modified flag, or the flag unchanged.
+     */
+    @SuppressWarnings("unchecked")
+    protected Object transformSpecialFlags(Object flag) {
+        if (flag instanceof EntitySpecConfiguration) {
+            BrooklynClassLoadingContext loader = JavaBrooklynClassLoadingContext.create(mgmt);
+            EntitySpecConfiguration specConfig = (EntitySpecConfiguration) flag;
+            Map<String, Object> resolvedConfig = (Map<String, Object>)transformSpecialFlags(specConfig.getSpecConfiguration());
+            specConfig.setSpecConfiguration(resolvedConfig);
+            EntitySpec<?> entitySpec = BrooklynComponentTemplateResolver.Factory
+                    .newInstance(loader, specConfig.getSpecConfiguration())
+                    .resolveSpec(MutableSet.<String>of());
+
+            return EntityManagementUtils.unwrapEntity(entitySpec);
+        }
+        return flag;
+    }
+
 
 }

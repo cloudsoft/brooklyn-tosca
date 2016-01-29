@@ -31,6 +31,7 @@ import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
+import org.apache.brooklyn.entity.webapp.DynamicWebAppCluster;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.location.byon.FixedListMachineProvisioningLocation;
 import org.apache.brooklyn.location.jclouds.JcloudsLocation;
@@ -442,6 +443,22 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
         assertNotNull(compute);
         assertEquals(compute.getType(), SameServerEntity.class);
+    }
+
+    @Test
+    public void testCreateAClusterWithAMemberSpec() {
+        String templateUrl = "classpath://templates/dynamiccluster-with-memberspec.tosca.yaml";
+        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(spec);
+        assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> cluster = Iterators.getOnlyElement(spec.getChildren().iterator());
+
+        Object memberSpec = cluster.getConfig().get(DynamicWebAppCluster.MEMBER_SPEC);
+        assertTrue(memberSpec instanceof EntitySpec);
+        assertEquals(((EntitySpec<?>) memberSpec).getType().getName(),
+                "org.apache.brooklyn.entity.webapp.jboss.JBoss7Server");
     }
 
 }

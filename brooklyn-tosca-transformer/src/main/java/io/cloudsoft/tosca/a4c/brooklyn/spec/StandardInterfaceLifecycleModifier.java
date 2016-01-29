@@ -126,16 +126,19 @@ public class StandardInterfaceLifecycleModifier extends AbstractSpecModifier {
         Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
         String computeName = (nodeTemplate.getName() != null) ? nodeTemplate.getName() : (String) spec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID);
         PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
-        spec.configure(cmdKey, buildExportStatements(op, paasNodeTemplate, builtPaaSNodeTemplates) + "\n" + script);
+        spec.configure(cmdKey, buildExportStatements(nodeTemplate, op, paasNodeTemplate, builtPaaSNodeTemplates) + "\n" + script);
     }
 
-    private String buildExportStatements(Operation op, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
+    private String buildExportStatements(NodeTemplate nodeTemplate, Operation op, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
         StringBuilder inputBuilder = new StringBuilder();
         Map<String, IValue> inputParameters = op.getInputParameters();
         if (inputParameters != null) {
             for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
-                // case keyword SOURCE used on a NodeType
-                Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates);
+                Map<String, String> keywordMap = MutableMap.of(
+                        "SELF", nodeTemplate.getName()
+                        // TODO: "HOST" ->  root of the “HostedOn” relationship chain
+                );
+                Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates, keywordMap);
                 inputBuilder.append(String.format("export %s=\"%s\"\n", entry.getKey(), value.or("")));
             }
         }

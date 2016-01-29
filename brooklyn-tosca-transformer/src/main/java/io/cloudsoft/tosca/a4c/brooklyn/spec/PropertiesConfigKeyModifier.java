@@ -6,8 +6,11 @@ import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.springframework.stereotype.Component;
+
+import com.google.common.collect.ImmutableMap;
 
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.Topology;
@@ -31,7 +34,11 @@ public class PropertiesConfigKeyModifier extends ConfigKeyModifier {
         Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
         String computeName = (nodeTemplate.getName() != null) ? nodeTemplate.getName() : (String) entitySpec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID);
         PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
-        ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate, paasNodeTemplate, builtPaaSNodeTemplates));
+        Map<String, String> keywordMap = MutableMap.of(
+                "SELF", nodeTemplate.getName()
+                // TODO: "HOST" ->  root of the “HostedOn” relationship chain
+        );
+        ConfigBag bag = ConfigBag.newInstance(getTemplatePropertyObjects(nodeTemplate, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap));
         // now set configuration for all the items in the bag
         configureConfigKeysSpec(entitySpec, bag);
     }

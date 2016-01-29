@@ -397,6 +397,26 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         });
     }
 
+    @Test
+    public void testResolvesKeywordInFunction() {
+        String templateUrl = "classpath://templates/resolve-keyword-function.yaml";
+        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(spec);
+        Application app = this.mgmt.getEntityManager().createEntity(spec);
+        assertEquals(app.getChildren().size(), 1);
+        Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
+        final String expected = "Message: Hello";
+        EntityAsserts.assertAttributeEqualsEventually(entity, Sensors.newStringSensor("my_message"), expected);
+        EntityAsserts.assertPredicateEventuallyTrue(entity, new Predicate<Entity>() {
+            @Override
+            public boolean apply(@Nullable Entity entity) {
+                return entity.config().get(ConfigKeys.newStringConfigKey("another")).equals(expected);
+            }
+        });
+    }
+
     private void assertConfigValueContains(EntitySpec<?> entity, ConfigKey<String> key, String needle) {
         String haystack = (String) entity.getConfig().get(key);
         assertConfigValueContains(haystack, needle);

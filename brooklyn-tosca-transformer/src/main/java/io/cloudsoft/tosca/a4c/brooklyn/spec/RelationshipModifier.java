@@ -7,6 +7,7 @@ import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
@@ -42,10 +43,14 @@ public class RelationshipModifier extends ConfigKeyModifier {
             RelationshipTemplate relationshipTemplate = findRelationshipRequirement(nodeTemplate, requirementId);
             if (relationshipTemplate != null && relationshipTemplate.getType().equals("brooklyn.relationships.Configure")) {
 
+                Map<String, String> keywordMap = MutableMap.of(
+                        "SOURCE", nodeTemplate.getName(),
+                        "TARGET", relationshipTemplate.getTarget()
+                );
                 Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = treeBuilder.buildPaaSTopology(topology).getAllNodes();
                 String computeName = (nodeTemplate.getName() != null) ? nodeTemplate.getName() : (String) entitySpec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID);
                 PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
-                Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate, paasNodeTemplate, builtPaaSNodeTemplates);
+                Map<String, Object> relationProperties = getTemplatePropertyObjects(relationshipTemplate, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap);
 
                 // TODO: Use target properly.
                 String target = relationshipTemplate.getTarget();

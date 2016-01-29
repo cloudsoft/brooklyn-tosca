@@ -73,17 +73,17 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         }
     }
 
-    protected static Map<String, Object> getTemplatePropertyObjects(AbstractTemplate template, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
-        return getPropertyObjects(template.getProperties(), paasNodeTemplate, builtPaaSNodeTemplates);
+    protected static Map<String, Object> getTemplatePropertyObjects(AbstractTemplate template, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+        return getPropertyObjects(template.getProperties(), paasNodeTemplate, builtPaaSNodeTemplates, keywordMap);
     }
 
-    protected static Map<String, Object> getPropertyObjects(Map<String, AbstractPropertyValue> propertyValueMap, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
+    protected static Map<String, Object> getPropertyObjects(Map<String, AbstractPropertyValue> propertyValueMap, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
         Map<String, Object> propertyMap = MutableMap.of();
         ImmutableSet<String> propertyKeys = ImmutableSet.copyOf(propertyValueMap.keySet());
 
         for (String propertyKey : propertyKeys) {
             propertyMap.put(propertyKey,
-                    resolve(propertyValueMap, propertyKey, paasNodeTemplate, builtPaaSNodeTemplates).orNull());
+                    resolve(propertyValueMap, propertyKey, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap).orNull());
         }
         return propertyMap;
     }

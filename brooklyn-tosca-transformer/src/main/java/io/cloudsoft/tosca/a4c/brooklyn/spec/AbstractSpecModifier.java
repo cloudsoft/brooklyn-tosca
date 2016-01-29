@@ -89,18 +89,19 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
         return Optional.absent();
     }
 
-    public static Optional<Object> resolve(Map<String, ? extends IValue> props, String key, PaaSNodeTemplate template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
+    public static Optional<Object> resolve(Map<String, ? extends IValue> props, String key, PaaSNodeTemplate template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
         Optional<Object> value = resolve(props, key);
         if (!value.isPresent()) {
             IValue v = props.get(key);
             if (v instanceof FunctionPropertyValue) {
                 FunctionPropertyValue functionPropertyValue = (FunctionPropertyValue) v;
+                String node = Optional.fromNullable(keywordMap.get(functionPropertyValue.getTemplateName())).or(functionPropertyValue.getTemplateName());
                 switch (functionPropertyValue.getFunction()) {
                     case ToscaFunctionConstants.GET_PROPERTY:
                         value = Optional.<Object>fromNullable(FunctionEvaluator.evaluateGetPropertyFunction(functionPropertyValue, template, builtPaaSNodeTemplates));
                         break;
                     case ToscaFunctionConstants.GET_ATTRIBUTE:
-                        value = Optional.<Object>fromNullable(BrooklynDslCommon.entity(functionPropertyValue.getTemplateName()).attributeWhenReady(functionPropertyValue.getElementNameToFetch()));
+                        value = Optional.<Object>fromNullable(BrooklynDslCommon.entity(node).attributeWhenReady(functionPropertyValue.getElementNameToFetch()));
                         break;
                     case ToscaFunctionConstants.GET_INPUT:
                     case ToscaFunctionConstants.GET_OPERATION_OUTPUT:

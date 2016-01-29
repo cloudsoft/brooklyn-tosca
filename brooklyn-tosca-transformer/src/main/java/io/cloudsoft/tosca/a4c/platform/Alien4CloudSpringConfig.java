@@ -28,7 +28,7 @@ import alien4cloud.security.ResourceRoleService;
 public class Alien4CloudSpringConfig {
 
     @Bean
-    public ResourceRoleService getDummyRRS() {
+    public ResourceRoleService getDummyRoleResourceService() {
         return new ResourceRoleService();
     }
 

@@ -36,8 +36,6 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
         ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(new LocalManagementContext());
         Alien4CloudToscaPlatform platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
         
-        platform.loadNormativeTypes();
-        
         String name = "simple-web-server.yaml";
         String url = "classpath://templates/" + name;
         ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
@@ -66,7 +64,7 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
     }
 
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {
-        ToscaParser parser = platform.getToscaParser();
+        ToscaParser parser = platform.getBean(ToscaParser.class);
         ParsingResult<ArchiveRoot> tp = parser.parseFile("<classpath>", "pizza.tosca",
             new ResourceUtils(this).getResourceFromUrl("classpath://templates/pizza.tosca.yaml"), null);
         return tp;
@@ -75,7 +73,7 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
     @Test
     public void testCanParseSampleTosca() throws Exception {
         try {
-            ParsingResult<ArchiveRoot> tp = new Alien4CloudToscaPlatformIntegrationTest().sampleParseTosca(platform);
+            ParsingResult<ArchiveRoot> tp = sampleParseTosca(platform);
             Assert.assertTrue( tp.getResult().getNodeTypes().containsKey("tosca.nodes.WebApplication.PayPalPizzaStore") );
         } finally {
             if (platform!=null) platform.close();

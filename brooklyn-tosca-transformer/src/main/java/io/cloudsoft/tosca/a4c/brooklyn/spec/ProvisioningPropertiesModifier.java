@@ -1,7 +1,5 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import java.util.Map;
-
 import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -13,9 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.Topology;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 @Component
 public class ProvisioningPropertiesModifier extends AbstractSpecModifier {
@@ -23,23 +20,23 @@ public class ProvisioningPropertiesModifier extends AbstractSpecModifier {
     private static final Logger LOG = LoggerFactory.getLogger(ProvisioningPropertiesModifier.class);
 
     @Inject
-    public ProvisioningPropertiesModifier(ManagementContext mgmt) {
-        super(mgmt);
+    public ProvisioningPropertiesModifier(ManagementContext mgmt, ToscaFacade<? extends ToscaApplication> alien4CloudFacade) {
+        super(mgmt, alien4CloudFacade);
     }
 
-    public void apply(EntitySpec<?> entitySpec, NodeTemplate nodeTemplate, Topology topology) {
+    @Override
+    public void apply(EntitySpec<?> entitySpec, String nodeId, ToscaApplication toscaApplication) {
         LOG.info("Applying provisioning properties to " + entitySpec);
-        Map<String, AbstractPropertyValue> properties = nodeTemplate.getProperties();
-        setSubKey(entitySpec, JcloudsLocationConfig.MIN_RAM, resolveProperty(properties, "mem_size"));
-        setSubKey(entitySpec, JcloudsLocationConfig.MIN_DISK, resolveProperty(properties, "disk_size"));
-        setSubKey(entitySpec, JcloudsLocationConfig.MIN_CORES, resolveProperty(properties, "num_cpus"));
-        setSubKey(entitySpec, JcloudsLocationConfig.OS_FAMILY, resolveProperty(properties, "os_distribution"));
-        setSubKey(entitySpec, JcloudsLocationConfig.OS_VERSION_REGEX, resolveProperty(properties, "os_version"));
+        setSubKey(entitySpec, JcloudsLocationConfig.MIN_RAM, resolveProperty(nodeId, toscaApplication, "mem_size"));
+        setSubKey(entitySpec, JcloudsLocationConfig.MIN_DISK, resolveProperty(nodeId, toscaApplication, "disk_size"));
+        setSubKey(entitySpec, JcloudsLocationConfig.MIN_CORES, resolveProperty(nodeId, toscaApplication, "num_cpus"));
+        setSubKey(entitySpec, JcloudsLocationConfig.OS_FAMILY, resolveProperty(nodeId, toscaApplication, "os_distribution"));
+        setSubKey(entitySpec, JcloudsLocationConfig.OS_VERSION_REGEX, resolveProperty(nodeId, toscaApplication, "os_version"));
         // TODO: Mapping for "os_arch" and "os_type" are missing
     }
 
-    private Object resolveProperty(Map<String, AbstractPropertyValue> properties, String key) {
-        return resolve(properties, key).orNull();
+    private Object resolveProperty(String nodeId, ToscaApplication toscaApplication, String key) {
+        return getToscaFacade().resolveProperty(nodeId, toscaApplication, key);
     }
 
     private void setSubKey(EntitySpec<?> spec, ConfigKey<?> configKey, Object value) {
@@ -48,5 +45,4 @@ public class ProvisioningPropertiesModifier extends AbstractSpecModifier {
             spec.configure(key, value);
         }
     }
-
 }

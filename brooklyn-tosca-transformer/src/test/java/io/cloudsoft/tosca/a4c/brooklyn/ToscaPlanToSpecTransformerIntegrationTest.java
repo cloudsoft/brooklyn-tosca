@@ -282,6 +282,39 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         }
     }
 
+    @Test
+    public void testMongoTopology() throws Exception {
+        try {
+            uploader.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
+
+            String templateUrl = "classpath://templates/mongo-topology.tosca.yaml";
+
+            EntitySpec<?> spec = transformer.createApplicationSpec(
+                    new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+            // Check the basic structure
+            assertNotNull(spec, "spec");
+            assertEquals(spec.getType(), BasicApplication.class);
+
+            assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
+            EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
+            assertEquals(compute.getType(), BasicApplication.class);
+
+            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
+            EntitySpec<?> mongo = Iterators.getOnlyElement(compute.getChildren().iterator());
+            assertEquals(mongo.getType(), VanillaSoftwareProcess.class);
+
+            // Check that the inputs have been set as exports on the scripts
+            String customize = mongo.getConfig().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND).toString();
+            assertConfigValueContains(customize, "DB_IP");
+            assertConfigValueContains(customize, "$brooklyn:entity(\"Compute\").attributeWhenReady(\"ip_address\")");
+        } finally {
+            if (platform!=null) {
+                platform.close();
+            }
+        }
+    }
+
     // FIXME: Rework along with RuntimeEnvironmentModifier
     @Test(enabled = false)
     public void testDeploymentArtifacts() {

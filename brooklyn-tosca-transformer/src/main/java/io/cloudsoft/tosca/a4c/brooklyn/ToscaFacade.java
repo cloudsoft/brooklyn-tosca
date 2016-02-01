@@ -7,7 +7,6 @@ import org.apache.brooklyn.config.ConfigKey;
 
 import com.google.common.base.Optional;
 
-
 /**
  * A facade to the tosca model
  * @param <A> The type of ToscaApplication used
@@ -73,7 +72,7 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @param expandedFolder the name of the expanded folder
      * @return The script associated with the operation
      */
-    Optional<String> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder);
+    Optional<Object> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder);
 
     /**
      * @param nodeId the node id

@@ -74,10 +74,14 @@ public class Alien4CloudToscaPlatform implements ToscaPlatform {
         } catch (Exception e) {
             throw Exceptions.propagate("Error loading default types " + Iterables.toString(defaultTypes), e);
         }
+        final String brooklynTypes = "classpath://brooklyn/types/brooklyn-types.yaml";
+        LOG.info("Loading types from " + brooklynTypes);
+        uploader.uploadSingleYaml(new ResourceUtils(this).getResourceFromUrl(brooklynTypes), "brooklyn-types");
     }
 
     @Override
     public void loadTypesFromUrl(String url) throws Exception {
+        LOG.info("Loading types from " + url);
         Path artifactsDirectory = Paths.get(tmpRoot.toString(), "url-types");
         Path zipName = artifactsDirectory.resolve(Paths.get("url-types." + Identifiers.makeRandomId(6)));
         Path zipNameAndExtension = Paths.get(zipName.toString() + ".orig.zip");

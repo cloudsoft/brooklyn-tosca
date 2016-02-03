@@ -27,11 +27,10 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(AlienSamplesLiveTest.class);
     private static final String DEFAULT_LOCATION_SPEC = "aws-ec2:eu-west-1";
-    private static String RESOURCE_LOC = "classpath://templates";
+    private static final String RESOURCE_LOC = "classpath://templates";
 
     protected ToscaPlanToSpecTransformer transformer;
     private Alien4CloudToscaPlatform platform;
-    private Uploader uploader;
     private String locationSpec;
 
     @Parameters({"locationSpec"})
@@ -42,11 +41,9 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
         Alien4CloudToscaPlatform.grantAdminAuth();
         ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt);
         platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
-        uploader = applicationContext.getBean(Uploader.class);
         mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
         transformer = new ToscaPlanToSpecTransformer();
         transformer.setManagementContext(mgmt);
-        uploader.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
     }
 
 

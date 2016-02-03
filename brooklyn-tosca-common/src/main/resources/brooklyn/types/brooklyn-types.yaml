@@ -43,16 +43,18 @@ node_types:
     derived_from: brooklyn.nodes.SoftwareProcess
     properties:
       port:
-        type: tosca.datatypes.network.PortDef
+        type: integer
         description: The port that the service should listen on
         default: 80
+        constraint:
+          greater_than: 0
+          less_or_equal: 65535
     requirements:
       load_balancer_target:
         type: tosca.capabilities.Endpoint
         relationship: brooklyn.relationships.Configure
         lower_bound: 0
         upper_bound: UNBOUNDED
-
 
 relationship_types:
   brooklyn.relationships.Configure:

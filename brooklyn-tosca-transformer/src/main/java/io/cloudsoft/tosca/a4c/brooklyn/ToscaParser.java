@@ -23,7 +23,7 @@ public class ToscaParser {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaParser.class);
 
-    private Alien4CloudToscaPlatform platform;
+    private Uploader uploader;
 
     private static class PlanTypeChecker {
 
@@ -70,8 +70,8 @@ public class ToscaParser {
         }
     }
 
-    public ToscaParser(Alien4CloudToscaPlatform platform) {
-        this.platform = platform;
+    public ToscaParser(Uploader uploader) {
+        this.uploader = uploader;
     }
 
     public ParsingResult<Csar> parse(String plan) {
@@ -81,10 +81,10 @@ public class ToscaParser {
             if (type.csarLink == null) {
                 throw new PlanNotRecognizedException("Does not look like TOSCA");
             }
-            tp = platform.uploadArchive(new ResourceUtils(this).getResourceFromUrl(type.csarLink), "submitted-tosca-archive");
+            tp = uploader.uploadArchive(new ResourceUtils(this).getResourceFromUrl(type.csarLink), "submitted-tosca-archive");
 
         } else {
-            tp = platform.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
+            tp = uploader.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
         }
 
         if (ArchiveUploadService.hasError(tp, ParsingErrorLevel.ERROR)) {

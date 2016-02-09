@@ -1,50 +1,46 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
-import java.util.Map;
-
 import org.apache.brooklyn.core.test.entity.TestEntity;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.FunctionPropertyValue;
-import alien4cloud.model.components.ScalarPropertyValue;
-import alien4cloud.paas.model.PaaSNodeTemplate;
-import alien4cloud.paas.model.PaaSTopology;
-import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import alien4cloud.model.topology.NodeTemplate;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 public class PropertiesConfigKeyModifierTest extends Alien4CloudToscaTest {
 
     @Mock
-    TopologyTreeBuilderService treeBuilder;
+    private ToscaFacade alien4CloudFacade;
     @Mock
-    PaaSTopology paaSTopology;
+    private ToscaApplication toscaApplication;
+    @Mock
+    private NodeTemplate nodeTemplate;
 
     @BeforeClass
-    public void initMocks(){
+    public void initMocks() {
         MockitoAnnotations.initMocks(this);
     }
 
     @Test
     public void testSetsScalarProperties() {
-        when(treeBuilder.buildPaaSTopology(topology)).thenReturn(paaSTopology);
-        when(paaSTopology.getAllNodes()).thenReturn(ImmutableMap.<String, PaaSNodeTemplate>of());
-
-        PropertiesConfigKeyModifier builder = new PropertiesConfigKeyModifier(mgmt, treeBuilder);
-        Map<String, AbstractPropertyValue> properties = ImmutableMap.<String, AbstractPropertyValue>of(
-                TestEntity.CONF_NAME.getName(), new ScalarPropertyValue("bar"));
-        nodeTemplate.setProperties(properties);
-
-        builder.apply(testSpec, nodeTemplate, topology);
+        when(toscaApplication.getNodeName(anyString())).thenReturn(Optional.of("Test"));
+        when(alien4CloudFacade.getTemplatePropertyObjects(Mockito.anyString(), Mockito.any(ToscaApplication.class),
+                Mockito.anyString()))
+                .thenReturn(ImmutableMap.<String, Object>of(TestEntity.CONF_NAME.getName(), "bar"));
+        PropertiesConfigKeyModifier builder = new PropertiesConfigKeyModifier(mgmt, alien4CloudFacade);
+        builder.apply(testSpec, "test", toscaApplication);
         assertEquals(testSpec.getConfig().get(TestEntity.CONF_NAME), "bar");
     }
 

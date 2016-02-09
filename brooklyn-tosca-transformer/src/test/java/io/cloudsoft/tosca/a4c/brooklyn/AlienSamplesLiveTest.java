@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableList;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaLiveTest;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudSpringContext;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
+import io.cloudsoft.tosca.a4c.platform.ToscaPlatform;
+
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
@@ -29,6 +31,7 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
 
     protected ToscaPlanToSpecTransformer transformer;
     private Alien4CloudToscaPlatform platform;
+    private Uploader uploader;
     private String locationSpec;
 
     @Parameters({"locationSpec"})
@@ -39,10 +42,11 @@ public class AlienSamplesLiveTest extends Alien4CloudToscaLiveTest {
         Alien4CloudToscaPlatform.grantAdminAuth();
         ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt);
         platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
+        uploader = applicationContext.getBean(Uploader.class);
         mgmt.getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
         transformer = new ToscaPlanToSpecTransformer();
         transformer.setManagementContext(mgmt);
-        platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
+        uploader.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
     }
 
 

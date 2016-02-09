@@ -2,8 +2,7 @@ package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.Topology;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 
 /**
  * A SpecModifier applies a set of changes to an entity spec with reference to a node
@@ -11,6 +10,6 @@ import alien4cloud.model.topology.Topology;
  */
 public interface EntitySpecModifier {
 
-    void apply(EntitySpec<?> entitySpec, NodeTemplate nodeTemplate, Topology topology);
+    void apply(EntitySpec<?> entitySpec, String nodeId, ToscaApplication toscaApplication);
 
 }

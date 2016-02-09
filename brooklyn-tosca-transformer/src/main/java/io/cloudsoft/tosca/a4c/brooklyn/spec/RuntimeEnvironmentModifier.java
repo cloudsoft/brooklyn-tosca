@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -17,18 +17,16 @@ import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.os.Os;
-import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.Iterables;
 
-import alien4cloud.component.repository.ICsarRepositry;
-import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
-import alien4cloud.model.components.DeploymentArtifact;
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.Topology;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 // FIXME [2016-01-20 SJC]: Implementation must be revisited.
 // * Should use Brooklyn's install directory.
@@ -44,59 +42,42 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
 
     private static final Logger LOG = LoggerFactory.getLogger(RuntimeEnvironmentModifier.class);
 
-    private final ICsarRepositry csarFileRepository;
-
     @Inject
-    public RuntimeEnvironmentModifier(ManagementContext mgmt, ICsarRepositry fileRepository) {
-        super(mgmt);
-        this.csarFileRepository = fileRepository;
+    public RuntimeEnvironmentModifier(ManagementContext mgmt, ToscaFacade<? extends ToscaApplication> alien4CloudFacade) {
+        super(mgmt, alien4CloudFacade);
     }
 
     @Override
-    public void apply(EntitySpec<?> entitySpec, NodeTemplate nodeTemplate, Topology topology) {
+    public void apply(EntitySpec<?> entitySpec, String nodeId, ToscaApplication toscaApplication) {
         // TODO: Difference between artifacts on indexed node template and nodeTemplate?
-        final Map<String, DeploymentArtifact> artifacts = getIndexedNodeTemplate(nodeTemplate, topology).get().getArtifacts();
-
-        if (artifacts == null || artifacts.isEmpty()) {
+        final Iterable<String> artifacts = getToscaFacade().getArtifacts(nodeId, toscaApplication);
+        if (Iterables.isEmpty(artifacts)) {
             return;
         }
 
         final Map<String, String> filesToCopy = MutableMap.of();
         final List<String> preInstallCommands = MutableList.of();
 
-        for (final Map.Entry<String, DeploymentArtifact> artifactEntry : artifacts.entrySet()) {
-            final DeploymentArtifact artifact = artifactEntry.getValue();
-            if (artifact == null) {
-                continue;
-            } else if (!"tosca.artifacts.File".equals(artifact.getArtifactType())) {
-                LOG.info("Skipping unsupported artifact type: " + artifact.getArtifactType());
-                continue;
-            }
+        for (String artifactId : artifacts) {
 
-            // In SM8 observe artifactName being the full URL of an artifact.
-            final String artifactName = artifact.getArtifactName();
-            // Sanity check
-            if (Strings.isBlank(artifactName)) {
-                LOG.warn("Skipping artifact " + artifact + ": " + " no name known for location on destination");
+            Optional<Path> optionalResourcesRootPath = getToscaFacade().getArtifactPath(nodeId, toscaApplication, artifactId);
+            if(!optionalResourcesRootPath.isPresent()) {
                 continue;
             }
 
             // TODO: Use standard brooklyn directory rather than homedir.
-            final String destRoot = Os.mergePaths("~", "brooklyn-tosca-resources", artifactName);
-            final String tempRoot = Os.mergePaths("/tmp", artifactName);
-
+            final String destRoot = Os.mergePaths("~", "brooklyn-tosca-resources", artifactId);
             preInstallCommands.add("mkdir -p " + destRoot);
+            // Artifact names may be referred to as environment variables in blueprint scripts.
+            entitySpec.configure(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactId), destRoot);
+
+            final String tempRoot = Os.mergePaths("/tmp", artifactId);
             preInstallCommands.add("mkdir -p " + tempRoot);
 
-            // Artifact names may be referred to as environment variables in blueprint scripts.
-            entitySpec.configure(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactName), destRoot);
 
             // Copy all files in resource.
             try {
-                Path csarPath = csarFileRepository.getCSAR(artifact.getArchiveName(), artifact.getArchiveVersion());
-
-                Path resourcesRootPath = Paths.get(csarPath.getParent().toAbsolutePath().toString(), "expanded", artifactEntry.getKey());
-                Files.walkFileTree(resourcesRootPath, new SimpleFileVisitor<Path>() {
+                Files.walkFileTree(optionalResourcesRootPath.get(), new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         String tempDest = Os.mergePaths(tempRoot, file.getFileName().toString());
@@ -106,9 +87,7 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
                         return FileVisitResult.CONTINUE;
                     }
                 });
-            } catch (CSARVersionNotFoundException e) {
-                LOG.warn("CSAR " + artifactName + ":" + artifact.getArchiveVersion() + " does not exist", e);
-            } catch (IOException e) {
+            }  catch (IOException e) {
                 LOG.warn("Cannot parse CSAR resources", e);
             }
         }

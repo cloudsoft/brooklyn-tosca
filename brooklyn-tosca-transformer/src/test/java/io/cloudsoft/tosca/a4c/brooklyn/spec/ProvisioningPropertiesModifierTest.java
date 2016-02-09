@@ -6,16 +6,32 @@ import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.test.entity.TestEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.location.jclouds.JcloudsLocationConfig;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import com.google.common.collect.ImmutableMap;
-
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.ScalarPropertyValue;
+import alien4cloud.model.topology.NodeTemplate;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 public class ProvisioningPropertiesModifierTest extends Alien4CloudToscaTest {
+
+    @Mock
+    private ToscaFacade alien4CloudFacade;
+    @Mock
+    private Alien4CloudApplication toscaApplication;
+    @Mock
+    private NodeTemplate nodeTemplate;
+
+    @BeforeClass
+    public void initMocks(){
+        MockitoAnnotations.initMocks(this);
+    }
 
     @DataProvider(name = "mapping")
     public Object[][] mappings() {
@@ -30,10 +46,11 @@ public class ProvisioningPropertiesModifierTest extends Alien4CloudToscaTest {
 
     @Test(dataProvider = "mapping")
     public void testSetsProperty(String templateProperty, ConfigKey<?> configKey, String value) {
-        nodeTemplate.setProperties(ImmutableMap.<String, AbstractPropertyValue>of(
-                templateProperty, new ScalarPropertyValue(value)));
-        ProvisioningPropertiesModifier builder = new ProvisioningPropertiesModifier(mgmt);
-        builder.apply(testSpec, nodeTemplate, topology);
+        Mockito.when(alien4CloudFacade.resolveProperty(
+                Mockito.anyString(), Mockito.any(ToscaApplication.class), Mockito.anyString())).thenReturn(value);
+        Mockito.when(toscaApplication.getNodeTemplate(Mockito.anyString())).thenReturn(nodeTemplate);
+        ProvisioningPropertiesModifier builder = new ProvisioningPropertiesModifier(mgmt, alien4CloudFacade);
+        builder.apply(testSpec, "Test", toscaApplication);
 
         TestEntity entity = app.createAndManageChild(testSpec);
         assertEquals(entity.config().get(SoftwareProcess.PROVISIONING_PROPERTIES)

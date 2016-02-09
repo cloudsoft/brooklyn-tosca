@@ -1,48 +1,56 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
-import java.nio.file.Paths;
 import java.util.Map;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.core.test.entity.TestEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
-import org.mockito.Mockito;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 
-import alien4cloud.component.CSARRepositorySearchService;
-import alien4cloud.component.repository.ICsarRepositry;
+import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
 import alien4cloud.model.components.DeploymentArtifact;
-import alien4cloud.model.components.IndexedArtifactToscaElement;
+import alien4cloud.model.topology.NodeTemplate;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 // FIXME: Reenable along with RuntimeEnvironmentModifier
 public class RuntimeEnvironmentModifierSpecTest extends Alien4CloudToscaTest {
 
-    ICsarRepositry csarRepository;
-    CSARRepositorySearchService repositorySearchService;
+    @Mock
+    private ToscaFacade alien4CloudFacade;
+    @Mock
+    private NodeTemplate nodeTemplate;
+    @Mock
+    private ToscaApplication toscaApplication;
 
     @BeforeMethod(alwaysRun = true)
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        csarRepository = Mockito.mock(ICsarRepositry.class);
-        when(csarRepository.getCSAR(anyString(), anyString())).thenReturn(Paths.get("/path/to/csar"));
-        repositorySearchService = Mockito.mock(CSARRepositorySearchService.class);
+    }
+
+    @BeforeClass
+    public void initMocks(){
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test(enabled = false)
-    public void testArtifactLocationsAreConfiguredAsShellVariables() {
+    public void testArtifactLocationsAreConfiguredAsShellVariables() throws CSARVersionNotFoundException {
         final String artifactName = "artifactName";
         final String artifactKey  = "artifactKey";
 
@@ -53,16 +61,11 @@ public class RuntimeEnvironmentModifierSpecTest extends Alien4CloudToscaTest {
         artifact.setArtifactType("tosca.artifacts.File");
         Map<String, DeploymentArtifact> artifacts = ImmutableMap.of(artifactKey, artifact);
 
-        IndexedArtifactToscaElement indexedArtifactToscaElement = new IndexedArtifactToscaElement();
-        indexedArtifactToscaElement.setArtifacts(artifacts);
-        when(repositorySearchService.getRequiredElementInDependencies(
-                eq(IndexedArtifactToscaElement.class), eq(nodeTemplate.getType()), eq(topology.getDependencies())))
-                .thenReturn(indexedArtifactToscaElement);
+        when(alien4CloudFacade.getArtifacts(anyString(), any(ToscaApplication.class))).thenReturn(artifacts.keySet());
 
         EntitySpec<TestEntity> spec = EntitySpec.create(TestEntity.class);
-        RuntimeEnvironmentModifier modifier = new RuntimeEnvironmentModifier(mgmt, csarRepository);
-        modifier.setRepositorySearchService(repositorySearchService);
-        modifier.apply(spec, nodeTemplate, topology);
+        RuntimeEnvironmentModifier modifier = new RuntimeEnvironmentModifier(mgmt, alien4CloudFacade);
+        modifier.apply(spec, "", toscaApplication);
 
         TestEntity entity = app.createAndManageChild(spec);
         Map<String, Object> shellEnv = entity.config().get(SoftwareProcess.SHELL_ENVIRONMENT);

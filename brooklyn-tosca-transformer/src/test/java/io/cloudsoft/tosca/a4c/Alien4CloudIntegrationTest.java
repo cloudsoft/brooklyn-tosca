@@ -17,6 +17,7 @@ import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaPlanToSpecTransformer;
+import io.cloudsoft.tosca.a4c.brooklyn.Uploader;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
 /**
@@ -29,12 +30,14 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
     protected ManagementContext mgmt;
     protected Alien4CloudToscaPlatform platform;
     protected ToscaPlanToSpecTransformer transformer;
+    protected Uploader uploader;
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
         assertNotNull(super.applicationContext, "No application context for test");
         Alien4CloudToscaPlatform.grantAdminAuth();
         this.platform = super.applicationContext.getBean(Alien4CloudToscaPlatform.class);
+        this.uploader = super.applicationContext.getBean(Uploader.class);
         mgmt = super.applicationContext.getBean(ManagementContext.class);
         assertNotNull(mgmt, "No management context found for test");
         ((ManagementContextInternal) mgmt).getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);

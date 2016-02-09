@@ -23,6 +23,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
+import io.cloudsoft.tosca.a4c.brooklyn.Uploader;
 
 public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrationTest {
 
@@ -35,11 +36,11 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
         Alien4CloudToscaPlatform.grantAdminAuth();
         ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(new LocalManagementContext());
         Alien4CloudToscaPlatform platform = applicationContext.getBean(Alien4CloudToscaPlatform.class);
-        
+        Uploader uploader = applicationContext.getBean(Uploader.class);
         String name = "simple-web-server.yaml";
         String url = "classpath://templates/" + name;
-        ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
-        
+        ParsingResult<Csar> tp = uploader.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
+
         explore(platform, tp);
         
         platform.close();
@@ -53,14 +54,6 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
         Set<CSARDependency> deps = MutableSet.<CSARDependency>builder().addAll(cs.getDependencies()).add(new CSARDependency(cs.getName(), cs.getVersion())).build();
         IndexedNodeType hello = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "my.Hello", deps);
         IndexedNodeType dbms = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "tosca.nodes.DBMS", deps);
-
-        Topology topo = platform.getTopologyOfCsar(cs);
-        
-        PaaSTopology paasTopo = platform.getBean(TopologyTreeBuilderService.class).buildPaaSTopology(topo);
-        NodeTemplate nt = topo.getNodeTemplates().get("script_hello");
-        PaaSNodeTemplate pnt = paasTopo.getAllNodes().get("script_hello");
-        
-        System.out.println(topo);
     }
 
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {
@@ -79,22 +72,4 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
             if (platform!=null) platform.close();
         }
     }
-    
-    @Test
-    public void testCanLoadArchiveWithPolicy() throws Exception {
-        try {
-            String name = "simple-web-server.yaml";
-            String url = "classpath://templates/" + name;
-            ParsingResult<Csar> tp = platform.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl(url), name);
-            Topology t = platform.getTopologyOfCsar(tp.getResult());
-            NodeGroup g1 = t.getGroups().values().iterator().next();
-            Assert.assertNotNull(g1);
-            Assert.assertNotNull(g1.getPolicies());
-            Assert.assertEquals(g1.getPolicies().size(), 1);
-            Assert.assertNotNull(g1.getPolicies().get(0));
-        } finally {
-            if (platform!=null) platform.close();
-        }
-    }
-    
 }

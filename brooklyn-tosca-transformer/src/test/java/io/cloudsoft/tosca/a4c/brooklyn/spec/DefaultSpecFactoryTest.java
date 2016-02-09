@@ -39,15 +39,7 @@ public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
         when(alien4CloudFacade.isDerivedFrom("Test", toscaApplication, "tosca.nodes.Compute")).thenReturn(false);
         when(nodeTemplate1.getType()).thenReturn("test");
         EntitySpecFactory factory = new Alien4CloudEntitySpecFactory(mgmt, alien4CloudFacade);
-        assertEquals(factory.create("Test", toscaApplication, false).getType(), VanillaSoftwareProcess.class);
-    }
-
-    @Test
-    public void testMakesBasicApplicationForDerivedFromCompute() {
-        when(toscaApplication.getNodeTemplate(Mockito.anyString())).thenReturn(nodeTemplate1);
-        when(alien4CloudFacade.isDerivedFrom("Test", toscaApplication, "tosca.nodes.Compute")).thenReturn(true);
-        EntitySpecFactory factory = new Alien4CloudEntitySpecFactory(mgmt, alien4CloudFacade);
-        assertEquals(factory.create("Test", toscaApplication, false).getType(), BasicApplication.class);
+        assertEquals(factory.create("Test", toscaApplication).getType(), VanillaSoftwareProcess.class);
     }
 
     @Test
@@ -55,7 +47,6 @@ public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
         when(toscaApplication.getNodeTemplate(Mockito.anyString())).thenReturn(nodeTemplate1);
         when(alien4CloudFacade.isDerivedFrom("Test", toscaApplication, "tosca.nodes.Compute")).thenReturn(true);
         EntitySpecFactory factory = new Alien4CloudEntitySpecFactory(mgmt, alien4CloudFacade);
-        boolean hasMultipleChildren = true;
-        assertEquals(factory.create("Test", toscaApplication, hasMultipleChildren).getType(), SameServerEntity.class);
+        assertEquals(factory.create("Test", toscaApplication).getType(), SameServerEntity.class);
     }
 }

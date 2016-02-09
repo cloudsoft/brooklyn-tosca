@@ -32,7 +32,7 @@ public class ApplicationSpecModifierTest extends Alien4CloudToscaTest {
 
     private static class TestEntitySpecFactory implements EntitySpecFactory {
         @Override
-        public EntitySpec<?> create(String nodeId, ToscaApplication toscaApplication, boolean hasMultipleChildren) {
+        public EntitySpec<?> create(String nodeId, ToscaApplication toscaApplication) {
             return EntitySpec.create(TestEntity.class);
         }
     }

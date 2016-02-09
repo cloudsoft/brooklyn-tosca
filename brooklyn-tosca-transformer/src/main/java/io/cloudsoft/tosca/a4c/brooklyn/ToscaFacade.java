@@ -3,6 +3,7 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import java.nio.file.Path;
 import java.util.Map;
 
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 
 import com.google.common.base.Optional;
@@ -70,7 +71,9 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @param toscaApplication the tosca application
      * @param computeName the name of the compute node
      * @param expandedFolder the name of the expanded folder
-     * @return The script associated with the operation
+     * @return The script associated with the operation.  This optional script may be in the form
+     * of a String if all input values have been resolved, otherwise a  {@link
+     * BrooklynDslDeferredSupplier}
      */
     Optional<Object> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder);
 

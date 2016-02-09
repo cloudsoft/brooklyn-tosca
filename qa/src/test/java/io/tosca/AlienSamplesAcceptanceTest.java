@@ -46,6 +46,7 @@ public class AlienSamplesAcceptanceTest {
         }
         return new Object[][]{
                 new Object[]{"classpath://projects/apache-topology.tosca.yaml"},
+                new Object[]{"classpath://projects/mongo-topology.tosca.yaml"},
                 // FIXME: Relies on artifact environment variables. Renable when RuntimeEnvironmentModifier is fixed.
                 // new Object[]{"classpath://projects/mysql-topology.tosca.yaml"},
                 new Object[]{"classpath://projects/php-topology.tosca.yaml"},

@@ -75,7 +75,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         EntitySpec<?> hostedSoftwareComponent = server.getChildren().get(0);
 
         assertEquals(server.getFlags().get("tosca.node.type"), "tosca.nodes.Compute");
-        assertEquals(server.getType(), BasicApplication.class);
+        assertEquals(server.getType(), SameServerEntity.class);
         assertEquals(server.getLocations().size(), 1);
         assertEquals(server.getLocations().get(0).getDisplayName(), "localhost");
 
@@ -84,13 +84,13 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertEquals(hostedSoftwareComponent.getType().getName(),
                 "org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess");
 
-        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.INSTALL_COMMAND,
+        assertFlagValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.INSTALL_COMMAND.getName(),
                 "# install python if not present");
-        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.CUSTOMIZE_COMMAND,
+        assertFlagValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(),
                 "# create the web page to serve");
-        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.LAUNCH_COMMAND,
+        assertFlagValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(),
                 "# launch in background (ensuring no streams open), and record PID to file");
-        assertConfigValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.STOP_COMMAND,
+        assertFlagValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.STOP_COMMAND.getName(),
                 "kill -9 `cat ${PID_FILE:-pid.txt}`");
     }
 
@@ -260,7 +260,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
             assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
             EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
-            assertEquals(compute.getType(), BasicApplication.class);
+            assertEquals(compute.getType(), SameServerEntity.class);
 
             assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
             EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
@@ -271,9 +271,9 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
             assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
 
             // Check that the inputs have been set as exports on the scripts
-            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export PORT=\"3306\"");
-            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_USER=\"martin\"");
-            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "export DB_NAME=\"wordpress\"");
+            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export PORT=\"3306\"");
+            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export DB_USER=\"martin\"");
+            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export DB_NAME=\"wordpress\"");
 
         } finally {
             if (platform!=null) {
@@ -285,10 +285,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     @Test
     public void testMongoTopology() throws Exception {
         try {
-            uploader.uploadSingleYaml(new ResourceUtils(platform).getResourceFromUrl("brooklyn-resources.yaml"), "brooklyn-resources");
-
             String templateUrl = "classpath://templates/mongo-topology.tosca.yaml";
-
             EntitySpec<?> spec = transformer.createApplicationSpec(
                     new ResourceUtils(mgmt).getResourceAsString(templateUrl));
 
@@ -298,14 +295,14 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
             assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
             EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
-            assertEquals(compute.getType(), BasicApplication.class);
+            assertEquals(compute.getType(), SameServerEntity.class);
 
-            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
+            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of compute entity");
             EntitySpec<?> mongo = Iterators.getOnlyElement(compute.getChildren().iterator());
             assertEquals(mongo.getType(), VanillaSoftwareProcess.class);
 
             // Check that the inputs have been set as exports on the scripts
-            String customize = mongo.getConfig().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND).toString();
+            String customize = mongo.getFlags().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName()).toString();
             assertConfigValueContains(customize, "DB_IP");
             assertConfigValueContains(customize, "$brooklyn:entity(\"Compute\").attributeWhenReady(\"ip_address\")");
         } finally {
@@ -351,14 +348,14 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
             assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
             EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
-            assertEquals(compute.getType(), BasicApplication.class);
+            assertEquals(compute.getType(), SameServerEntity.class);
 
             assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
             EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
             assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
 
             // Check that the inputs have been set as exports on the scripts
-            assertConfigValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND, "#OVERWRITTEN VALUE");
+            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "#OVERWRITTEN VALUE");
 
         } finally {
             if (platform!=null) {
@@ -441,6 +438,11 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
                 return entity.config().get(ConfigKeys.newStringConfigKey("another")).equals(expected);
             }
         });
+    }
+
+    private void assertFlagValueContains(EntitySpec<?> entity, String key, String needle) {
+        String haystack = String.valueOf(entity.getFlags().get(key));
+        assertConfigValueContains(haystack, needle);
     }
 
     private void assertConfigValueContains(EntitySpec<?> entity, ConfigKey<String> key, String needle) {

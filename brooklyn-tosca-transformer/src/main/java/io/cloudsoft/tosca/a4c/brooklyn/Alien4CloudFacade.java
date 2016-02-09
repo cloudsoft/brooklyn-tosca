@@ -9,6 +9,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.DslUtils;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
@@ -320,7 +321,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
     }
 
     private String resolveAttribute(Map.Entry<String, IValue> attribute, Alien4CloudApplication toscaApplication, PaaSNodeTemplate paaSNodeTemplate, Map<String, PaaSNodeTemplate> allNodes) {
-        return FunctionEvaluator.parseAttribute(
+        String returnValue = FunctionEvaluator.parseAttribute(
                 attribute.getKey(),
                 attribute.getValue(),
                 toscaApplication.getTopology(),
@@ -328,6 +329,12 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
                 "",
                 paaSNodeTemplate,
                 allNodes);
+        // Alien4Cloud returns the attribute key surrounded by <> if it does not evaluate to anything
+        // We turn this to the empty String to avoid populating sensors.
+        if (returnValue.equals("<" + attribute.getKey() + ">")) {
+            return "";
+        }
+        return returnValue;
     }
 
     @Override
@@ -363,7 +370,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
         List<Object> dsls = Lists.newArrayList();
         for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
             Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
-            if (value.isPresent()) {
+            if (value.isPresent() && !Strings.isBlank(entry.toString())) {
                 dsls.add(BrooklynDslCommon.formatString("export %s=\"%s\"", entry.getKey(), value.get()));
             }
         }

@@ -81,25 +81,22 @@ public class BrooklynCatalogMapper {
     }
 
     private ArchiveIndexer archiveIndexer;
-    private ArchiveImageLoader imageLoader;
-    private ICsarRepositry archiveRepository;
     private CsarService csarService;
     private ManagedPlugin selfContext;
     private ArchiveParser archiveParser;
 
 
     @Autowired
-    public BrooklynCatalogMapper(ArchiveIndexer archiveIndexer, ArchiveImageLoader imageLoader, ICsarRepositry archiveRepository, CsarService csarService, ManagedPlugin selfContext, ArchiveParser archiveParser) {
+    public BrooklynCatalogMapper(ArchiveIndexer archiveIndexer, CsarService csarService, ManagedPlugin selfContext,
+            ArchiveParser archiveParser) {
         this.archiveIndexer = archiveIndexer;
-        this.imageLoader = imageLoader;
-        this.archiveRepository = archiveRepository;
         this.csarService = csarService;
         this.selfContext = selfContext;
         this.archiveParser = archiveParser;
     }
 
     public void addBaseTypes(){
-        Path archivePath = selfContext.getPluginPath().resolve("brooklyn/brooklyn-resources");
+        Path archivePath = selfContext.getPluginPath().resolve("brooklyn/types");
         // Parse the archives
         try {
             ParsingResult<ArchiveRoot> result = archiveParser.parseDir(archivePath);

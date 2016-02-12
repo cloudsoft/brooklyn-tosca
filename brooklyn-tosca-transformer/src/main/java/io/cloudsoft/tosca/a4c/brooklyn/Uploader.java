@@ -77,7 +77,7 @@ public class Uploader {
             return result;
 
         } catch (Exception e) {
-            throw Exceptions.propagate(e);
+            throw Exceptions.propagate("Error uploading archive " + callerReferenceName, e);
         }
     }
 

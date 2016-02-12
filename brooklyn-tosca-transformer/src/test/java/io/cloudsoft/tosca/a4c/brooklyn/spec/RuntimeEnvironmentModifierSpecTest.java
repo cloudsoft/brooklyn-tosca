@@ -67,8 +67,7 @@ public class RuntimeEnvironmentModifierSpecTest extends Alien4CloudToscaTest {
         EntitySpec<TestEntity> spec = EntitySpec.create(TestEntity.class);
         RuntimeEnvironmentModifier modifier = new RuntimeEnvironmentModifier(mgmt, alien4CloudFacade);
         modifier.apply(spec, "", toscaApplication);
-        // TODO: This should not be using toString(), and instead DslComonent and AttributeWhenReady etc should implement .equals()
-        assertEquals(spec.getConfig().get(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactKey)).toString(), BrooklynDslCommon.attributeWhenReady("run.dir").toString());
+        assertEquals(spec.getConfig().get(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactKey)), BrooklynDslCommon.attributeWhenReady("run.dir"));
     }
 
 }

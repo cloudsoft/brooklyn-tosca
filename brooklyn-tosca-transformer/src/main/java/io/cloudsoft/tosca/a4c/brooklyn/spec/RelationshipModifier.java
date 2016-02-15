@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
 
 import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
@@ -30,10 +31,10 @@ public class RelationshipModifier extends ConfigKeyModifier {
 
     @Override
     public void apply(EntitySpec<?> entitySpec, String nodeId, ToscaApplication toscaApplication) {
-        Map<String, Object> propertiesAndTypedValues = Collections.emptyMap();
+        Map<String, Object> propertiesAndTypedValues = Maps.newHashMap();
         for (String requirementId : toscaApplication.getRequirements(nodeId)) {
             String computeName = toscaApplication.getNodeName(nodeId).or(getToscaTemplateId(entitySpec));
-            propertiesAndTypedValues = getToscaFacade().getPropertiesAndTypeValues(nodeId, toscaApplication, requirementId, computeName);
+            propertiesAndTypedValues.putAll(getToscaFacade().getPropertiesAndTypeValues(nodeId, toscaApplication, requirementId, computeName));
         }
         configureConfigKeysSpec(entitySpec, ConfigBag.newInstance(propertiesAndTypedValues));
     }

@@ -9,7 +9,7 @@ template_version: 1.0.0-SNAPSHOT
 description: Brooklyn HelloWorld application. (ChatApplication)
 
 relationship_types:
-  tosca.relationships.Configure:
+  brooklyn.relationships.Configure:
     derived_from: tosca.relationships.DependsOn
     valid_targets: [ tosca.capabilities.Endpoint ]
     properties:
@@ -45,7 +45,7 @@ node_types:
           type: string
     requirements:
       - dbConnection: tosca.nodes.Root
-        type: tosca.relationships.Configure
+        type: brooklyn.relationships.Configure
 
   org.apache.brooklyn.entity.database.mysql.MySqlNode:
     derived_from: tosca.nodes.Root
@@ -67,12 +67,10 @@ topology_template:
       properties:
         wars.root: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
         http.port: "8080+"
-        java.sysprops:
-          brooklyn.example.db.url: $brooklyn:formatString("jdbc:%s%s?user=%s\\&password=%s", component("mysql_server").attributeWhenReady("datastore.url"), "visitors", "brooklyn", "br00k11n")
       requirements:
         - dbConnection:
             node: mysql_server
-            relationship: tosca.relationships.Configure
+            relationship: brooklyn.relationships.Configure
             properties:
               prop.collection: java.sysprops
               prop.name: brooklyn.example.db.url

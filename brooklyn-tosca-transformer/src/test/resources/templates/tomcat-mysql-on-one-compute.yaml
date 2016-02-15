@@ -9,7 +9,7 @@ template_version: 1.0.0-SNAPSHOT
 description: Deploys Tomcat and MySQL on the same compute node.
 
 relationship_types:
-  tosca.relationships.Configure:
+  brooklyn.relationships.Configure:
     derived_from: tosca.relationships.DependsOn
     valid_targets: [ tosca.capabilities.Endpoint ]
     properties:
@@ -43,7 +43,7 @@ node_types:
           type: string
     requirements:
       - database_endpoint: tosca.nodes.Root
-        type: tosca.relationships.Configure
+        type: brooklyn.relationships.Configure
       - host: tosca.capabilities.Container
 
   org.apache.brooklyn.entity.database.mysql.MySqlNode:
@@ -87,7 +87,7 @@ topology_template:
         - database_endpoint:
             node: MySqlNode
             capability: tosca.capabilities.Endpoint.Database
-            relationship: tosca.relationships.Configure
+            relationship: brooklyn.relationships.Configure
             properties:
               prop.collection: java.sysprops
               prop.name: brooklyn.example.db.url

@@ -69,6 +69,12 @@
                 <groupId>org.apache.brooklyn</groupId>
                 <artifactId>brooklyn-all</artifactId>
                 <version>${brooklyn.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.brooklyn</groupId>
+                        <artifactId>brooklyn-rest-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>

@@ -58,7 +58,7 @@ public class BrooklynLocationConfigurer implements ILocationConfiguratorPlugin {
 
     private List<PluginArchive> parseArchives() {
         List<PluginArchive> archives = Lists.newArrayList();
-        addToAchive(archives, "brooklyn/brooklyn-resources");
+        addToAchive(archives, "brooklyn/types");
         return archives;
     }
 

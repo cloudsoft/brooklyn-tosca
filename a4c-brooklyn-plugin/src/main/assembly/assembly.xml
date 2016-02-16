@@ -15,6 +15,14 @@
             </includes>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <!-- Path relative to module. -->
+            <source>../brooklyn-tosca-transformer/src/main/resources/brooklyn/types/brooklyn-types.yaml</source>
+            <outputDirectory>brooklyn/types</outputDirectory>
+            <lineEnding>keep</lineEnding>
+        </file>
+    </files>
     <dependencySets>
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

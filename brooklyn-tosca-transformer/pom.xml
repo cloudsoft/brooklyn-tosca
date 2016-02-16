@@ -70,13 +70,6 @@
         </dependency>
 
         <dependency>
-            <!-- Included for brooklyn-types yaml. -->
-            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
-            <artifactId>brooklyn-tosca-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>alien4cloud</groupId>
             <artifactId>alien4cloud-core</artifactId>
             <exclusions>

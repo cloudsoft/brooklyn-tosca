@@ -13,9 +13,6 @@
 
     <name>Brooklyn TOSCA Common</name>
 
-    <properties>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -36,6 +33,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <!--
+            TODO: Move the class that depends on this to a4c-brooklyn-plugin so that the transformer module
+            can depend on this module too. (Currently fails because resteasy conflicts with Brooklyn's normal Jersey.)
+            -->
             <groupId>org.apache.brooklyn</groupId>
             <artifactId>brooklyn-rest-client</artifactId>
             <version>${brooklyn.version}</version>

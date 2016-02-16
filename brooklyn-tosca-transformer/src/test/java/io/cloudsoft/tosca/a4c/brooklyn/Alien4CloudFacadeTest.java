@@ -30,7 +30,6 @@ import alien4cloud.model.components.FunctionPropertyValue;
 import alien4cloud.model.components.IndexedArtifactToscaElement;
 import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.model.components.ScalarPropertyValue;
-import alien4cloud.model.topology.AbstractTemplate;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Requirement;

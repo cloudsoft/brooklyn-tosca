@@ -23,6 +23,7 @@ import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Topology;
+import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 
 public class Alien4CloudApplication implements ToscaApplication{
 
@@ -88,8 +89,30 @@ public class Alien4CloudApplication implements ToscaApplication{
         if (nodeTemplateName != null) {
             builder.put("SELF", nodeTemplateName);
         }
-        // TODO: "HOST" ->  root of the “HostedOn” relationship chain
+        String hostedOnRoot = hostedOnRoot(nodeTemplate);
+        if (hostedOnRoot != null) {
+            builder.put("HOST", hostedOnRoot);
+        }
         return builder.build();
+    }
+
+    private String hostedOnRoot(NodeTemplate nodeTemplate) {
+        Optional<RelationshipTemplate> relationship = findHostedOn(nodeTemplate);
+        if (!relationship.isPresent()) {
+            return nodeTemplate.getName();
+        }
+        return hostedOnRoot(getNodeTemplate(relationship.get().getTarget()));
+    }
+
+    private Optional<RelationshipTemplate> findHostedOn(NodeTemplate nodeTemplate) {
+        if (nodeTemplate.getRelationships() == null) return Optional.absent();
+        return Iterables.tryFind(nodeTemplate.getRelationships().values(), new Predicate<RelationshipTemplate>() {
+            @Override
+            public boolean apply(RelationshipTemplate relationshipTemplate) {
+                // TODO derives from
+                return relationshipTemplate.getType().equals(NormativeRelationshipConstants.HOSTED_ON);
+            }
+        });
     }
 
     public Map<String, String> getKeywordMap(NodeTemplate nodeTemplate, RelationshipTemplate relationshipTemplate) {

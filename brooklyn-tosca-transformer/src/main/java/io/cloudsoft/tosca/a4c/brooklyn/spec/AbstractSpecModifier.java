@@ -43,4 +43,5 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
                            ? TypeCoercions.coerce(resolvedConfigMap.get("dsl"), desiredType.get())
                            : resolvedConfigMap.get("dsl"));
     }
+
 }

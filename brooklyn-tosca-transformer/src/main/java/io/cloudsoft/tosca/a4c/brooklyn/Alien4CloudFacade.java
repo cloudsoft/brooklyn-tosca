@@ -4,10 +4,12 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.DslUtils;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
@@ -23,6 +25,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.component.ICSARRepositorySearchService;
@@ -318,7 +321,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
     }
 
     private String resolveAttribute(Map.Entry<String, IValue> attribute, Alien4CloudApplication toscaApplication, PaaSNodeTemplate paaSNodeTemplate, Map<String, PaaSNodeTemplate> allNodes) {
-        return FunctionEvaluator.parseAttribute(
+        String returnValue = FunctionEvaluator.parseAttribute(
                 attribute.getKey(),
                 attribute.getValue(),
                 toscaApplication.getTopology(),
@@ -326,6 +329,12 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
                 "",
                 paaSNodeTemplate,
                 allNodes);
+        // Alien4Cloud returns the attribute key surrounded by <> if it does not evaluate to anything
+        // We turn this to the empty String to avoid populating sensors.
+        if (returnValue.equals("<" + attribute.getKey() + ">")) {
+            return "";
+        }
+        return returnValue;
     }
 
     @Override
@@ -346,27 +355,31 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
         return new ResourceUtils(this).getResourceAsString(csarPath.get().getParent().toString() + expandedFolder + artifactRef);
     }
 
-    private String getScript(String nodeId, Alien4CloudApplication toscaApplication, Operation op, String computeName, ImplementationArtifact artifact, String expandedFolder) {
+    private Object getScript(String nodeId, Alien4CloudApplication toscaApplication, Operation op, String computeName, ImplementationArtifact artifact, String expandedFolder) {
         String script = getScript(artifact, expandedFolder);
-        return buildExportStatements(nodeId, toscaApplication, op, computeName) + "\n" + script;
+        return buildExportStatements(nodeId, toscaApplication, op, computeName, script).or(script);
     }
 
-    private String buildExportStatements(String nodeId, Alien4CloudApplication toscaApplication, Operation op, String computeName) {
+    private Optional<Object> buildExportStatements(String nodeId, Alien4CloudApplication toscaApplication, Operation op, String computeName, String script) {
         Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = getAllNodes(toscaApplication);
         PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
-        StringBuilder inputBuilder = new StringBuilder();
         Map<String, IValue> inputParameters = op.getInputParameters();
-        if (inputParameters != null) {
-            for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
-                Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
-                inputBuilder.append(String.format("export %s=\"%s\"\n", entry.getKey(), value.or("")));
+        if (inputParameters == null) {
+            return Optional.absent();
+        }
+        List<Object> dsls = Lists.newArrayList();
+        for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
+            Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
+            if (value.isPresent() && !Strings.isBlank(entry.toString())) {
+                dsls.add(BrooklynDslCommon.formatString("export %s=\"%s\"", entry.getKey(), value.get()));
             }
         }
-        return inputBuilder.toString();
+        dsls.add(script);
+        return Optional.of(BrooklynDslCommon.formatString(Strings.repeat("%s\n", dsls.size()), dsls.toArray()));
     }
 
     @Override
-    public Optional<String> getScript(String opKey, String nodeId, Alien4CloudApplication toscaApplication, String computeName, String expandedFolder) {
+    public Optional<Object> getScript(String opKey, String nodeId, Alien4CloudApplication toscaApplication, String computeName, String expandedFolder) {
         if (!lifeCycleMapping.containsKey(opKey)) {
             LOG.warn("Could not translate operation, {}, for node template, {}.", opKey, toscaApplication.getNodeName(nodeId).orNull());
             return Optional.absent();

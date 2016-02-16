@@ -1,15 +1,24 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
+import java.util.concurrent.Callable;
+
 import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.api.sensor.EnricherSpec;
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.DslUtils;
+import org.apache.brooklyn.enricher.stock.Enrichers;
+import org.apache.brooklyn.enricher.stock.Propagator;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
+import org.apache.brooklyn.util.core.task.Tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 
 import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
@@ -34,17 +43,22 @@ public class StandardInterfaceLifecycleModifier extends AbstractSpecModifier {
         }
         // If the entity spec is of type VanillaSoftwareProcess, we assume that it's running. The operations should
         // then take care of setting up the correct scripts.
-        entitySpec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND, "true");
-        entitySpec.configure(VanillaSoftwareProcess.STOP_COMMAND, "true");
-        entitySpec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND, "true");
+
+        // We add .getName to these ConfigKeys to use them as Flags because later we will potentially
+        // override the configured value with a BrooklynDslDeferredSupplier object. This overridden
+        // value would not have been used since it would be treated as a Flag while the ConfigKey would
+        // take precedence.
+        entitySpec.configure(VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "true");
+        entitySpec.configure(VanillaSoftwareProcess.STOP_COMMAND.getName(), "true");
+        entitySpec.configure(VanillaSoftwareProcess.CHECK_RUNNING_COMMAND.getName(), "true");
 
         // Applying operations
         final Iterable<String> operations = getToscaFacade().getInterfaceOperations(nodeId, toscaApplication);
         for (String opKey : operations) {
             String computeName = toscaApplication.getNodeName(nodeId).or(String.valueOf(entitySpec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID)));
-            Optional<String> script = getToscaFacade().getScript(opKey, nodeId, toscaApplication, computeName, EXPANDED_FOLDER);
-            if(script.isPresent()) {
-                entitySpec.configure(getToscaFacade().getLifeCycle(opKey), script.get());
+            final Optional<Object> script = getToscaFacade().getScript(opKey, nodeId, toscaApplication, computeName, EXPANDED_FOLDER);
+            if (script.isPresent()) {
+                entitySpec.configure(getToscaFacade().getLifeCycle(opKey).getName(), script.get());
             }
         }
     }

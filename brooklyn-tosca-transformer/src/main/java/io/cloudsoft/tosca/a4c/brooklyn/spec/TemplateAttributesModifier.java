@@ -12,6 +12,7 @@ import org.apache.brooklyn.core.sensor.StaticSensor;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.util.core.config.ConfigBag;
+import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -34,9 +35,11 @@ public class TemplateAttributesModifier extends AbstractSpecModifier {
         LOG.info("Generating EntityInitializers for static attributes on " + entitySpec);
         Map<String, String> resolvedAttributes = getToscaFacade().getResolvedAttributes(nodeId, toscaApplication);
         for (Map.Entry<String, String> attribute : resolvedAttributes.entrySet()) {
-            entitySpec.addInitializer(new StaticSensor<String>(ConfigBag.newInstance()
-                    .configure(StaticSensor.SENSOR_NAME, attribute.getKey())
-                    .configure(StaticSensor.STATIC_VALUE, attribute.getValue())));
+            if(!Strings.isBlank(attribute.getValue())) {
+                entitySpec.addInitializer(new StaticSensor<String>(ConfigBag.newInstance()
+                        .configure(StaticSensor.SENSOR_NAME, attribute.getKey())
+                        .configure(StaticSensor.STATIC_VALUE, attribute.getValue())));
+            }
         }
     }
 }

@@ -77,12 +77,36 @@ public interface ToscaFacade<A extends ToscaApplication> {
      */
     Optional<Object> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder);
 
+
+    /**
+     *
+     * @param opKey the name of the operation
+     * @param nodeId the node id
+     * @param toscaApplication the tosca application
+     * @param requirementId the id of the requirement
+     * @param computeName the name of the compute node
+     * @param expandedFolder the name of the expanded folder
+     * @return The script associated with the operation on the relationship.  This optional script may be in the form
+     * of a String if all the input values have been resolved otherwise a {@link
+     * BrooklynDslDeferredSupplier}
+     */
+    Optional<Object> getRelationshipScript(String opKey, String nodeId, A toscaApplication, String requirementId, String computeName, String expandedFolder);
+
     /**
      * @param nodeId the node id
      * @param toscaApplication the tosca application
      * @return The interface operations
      */
     Iterable<String> getInterfaceOperations(String nodeId, A toscaApplication);
+
+    /**
+     *
+     * @param nodeId the node id
+     * @param toscaApplication the tosca application
+     * @param requirementId the requirement id
+     * @return The interface operations accociated with this requirement
+     */
+    Iterable<String> getInterfaceOperations(String nodeId, A toscaApplication, String requirementId);
 
     /**
      * @param nodeId the node id
@@ -112,6 +136,14 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @return a new ToscaApplication
      */
     A parsePlan(String plan, Uploader uploader);
+
+    /**
+     *
+     * @param path the path to a CSAR archive
+     * @param uploader the Uploader object to use
+     * @return a new ToscaApplication
+     */
+    A parsePlan(Path path, Uploader uploader);
 
     /**
      * @param nodeId the node id

@@ -34,6 +34,13 @@ public class RelationshipModifier extends ConfigKeyModifier {
         Map<String, Object> propertiesAndTypedValues = Maps.newHashMap();
         for (String requirementId : toscaApplication.getRequirements(nodeId)) {
             String computeName = toscaApplication.getNodeName(nodeId).or(getToscaTemplateId(entitySpec));
+            final Iterable<String> operations = getToscaFacade().getInterfaceOperations(nodeId, toscaApplication, requirementId);
+            for (String opKey : operations) {
+                Optional<Object> script = getToscaFacade().getRelationshipScript(opKey, nodeId, toscaApplication, requirementId, computeName, StandardInterfaceLifecycleModifier.EXPANDED_FOLDER);
+                if (script.isPresent()) {
+                    entitySpec.configure(getToscaFacade().getLifeCycle(opKey).getName(), script.get());
+                }
+            }
             propertiesAndTypedValues.putAll(getToscaFacade().getPropertiesAndTypeValues(nodeId, toscaApplication, requirementId, computeName));
         }
         configureConfigKeysSpec(entitySpec, ConfigBag.newInstance(propertiesAndTypedValues));

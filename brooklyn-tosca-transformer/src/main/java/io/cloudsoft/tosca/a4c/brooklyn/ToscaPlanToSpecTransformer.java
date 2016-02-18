@@ -1,5 +1,6 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -97,6 +98,24 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     @Override
     public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
+        assertAvailable();
+        try {
+            Alien4CloudToscaPlatform.grantAdminAuth();
+            return createApplicationSpec(platform.parse(plan));
+        } catch (Exception e) {
+            if (e instanceof PlanNotRecognizedException) {
+                if (log.isTraceEnabled())
+                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
+            } else {
+                if (log.isDebugEnabled())
+                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
+            }
+            throw Exceptions.propagate(e);
+        }
+    }
+
+
+    public EntitySpec<? extends Application> createApplicationSpec(Path plan) throws PlanNotRecognizedException {
         assertAvailable();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();

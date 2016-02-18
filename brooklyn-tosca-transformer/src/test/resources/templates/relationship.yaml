@@ -22,6 +22,12 @@ relationship_types:
       prop.collection:
         type: string
         required: false
+    interfaces:
+      Configure:
+        pre_configure_source:
+          inputs:
+            DB_IP: { get_attribute: [TARGET, ip_address] }
+          implementation: scripts/test.sh
 
 
 node_types:

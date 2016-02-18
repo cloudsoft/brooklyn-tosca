@@ -5,6 +5,12 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -38,12 +44,17 @@ import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocati
 import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.util.core.ResourceUtils;
+import org.apache.brooklyn.util.stream.Streams;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
+import com.google.common.io.Files;
 
+import alien4cloud.component.repository.exception.CSARVersionAlreadyExistsException;
+import alien4cloud.tosca.parser.ParsingException;
+import alien4cloud.utils.FileUtil;
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
 import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
@@ -176,11 +187,9 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testRelation(){
-        String templateUrl = "classpath://templates/relationship.yaml";
+    public void testRelation() throws ParsingException, CSARVersionAlreadyExistsException, IOException {
 
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(makeOutputPath("relationship.yaml", "relation", "test.sh"));
 
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
@@ -192,6 +201,26 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
         assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+
+        assertFlagValueContains(tomcatServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
+                "echo It works!");
+
+    }
+
+    private Path makeOutputPath(String yamlFile, String scriptsFolder, String script) throws IOException {
+        File tempDir = Files.createTempDir();
+        tempDir.deleteOnExit();
+        File subfolder = new File(tempDir.getAbsolutePath() + "/scripts");
+        subfolder.mkdir();
+
+        Streams.copy(new ResourceUtils(this).getResourceFromUrl("classpath://templates/" + yamlFile),
+                new FileOutputStream(tempDir.toString() + "/" + yamlFile));
+        Streams.copy(new ResourceUtils(this).getResourceFromUrl("classpath://scripts/" + scriptsFolder + "/" + script),
+                new FileOutputStream(subfolder.toString() + "/" + script));
+
+        Path outputPath = java.nio.file.Files.createTempFile("temp", ".zip");
+        FileUtil.zip(tempDir.toPath(), outputPath);
+        return outputPath;
     }
 
     @Test

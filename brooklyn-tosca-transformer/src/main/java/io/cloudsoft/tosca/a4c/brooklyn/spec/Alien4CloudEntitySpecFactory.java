@@ -53,10 +53,6 @@ public class Alien4CloudEntitySpecFactory implements EntitySpecFactory<Alien4Clo
 
         } else if (isComputeType(nodeId, toscaApplication)) {
             spec = EntitySpec.create(SameServerEntity.class);
-            spec.enricher(Enrichers.builder().transforming(Attributes.ADDRESS)
-                    .computing(Functions.identity())
-                    .publishing(Sensors.newStringSensor("ip_address")).build());
-            spec.configure(SoftwareProcess.INBOUND_PORTS_CONFIG_REGEX, ".*[\\._]port$");
         } else {
             try {
                 LOG.info("Found Brooklyn entity that match node type: " + type);

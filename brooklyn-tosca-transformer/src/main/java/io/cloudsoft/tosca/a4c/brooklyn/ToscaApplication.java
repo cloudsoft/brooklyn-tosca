@@ -87,4 +87,6 @@ public interface ToscaApplication {
      * @param mgmt the Brooklyn ManagementContext
      */
     void addBrooklynPolicies(String groupId, BrooklynToscaPolicyDecorator brooklynPolicyDecorator, ManagementContext mgmt);
+
+    Iterable<String> getCapabilityTypes(String nodeId);
 }

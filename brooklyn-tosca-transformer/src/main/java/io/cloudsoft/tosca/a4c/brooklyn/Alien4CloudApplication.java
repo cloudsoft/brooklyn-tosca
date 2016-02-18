@@ -14,10 +14,13 @@ import org.apache.brooklyn.util.text.Strings;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
 import alien4cloud.model.topology.AbstractPolicy;
+import alien4cloud.model.topology.Capability;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.NodeTemplate;
@@ -237,5 +240,15 @@ public class Alien4CloudApplication implements ToscaApplication{
     @Override
     public void addBrooklynPolicies(String groupId, BrooklynToscaPolicyDecorator brooklynPolicyDecorator, ManagementContext mgmt) {
         addPolicies(groupId, brooklynPolicyDecorator, getBrooklynPolicies(groupId, mgmt));
+    }
+
+    @Override
+    public Iterable<String> getCapabilityTypes(String nodeId) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        for (Capability capability : getNodeTemplate(nodeId).getCapabilities().values()) {
+            builder.add(capability.getType());
+        }
+
+        return builder.build();
     }
 }

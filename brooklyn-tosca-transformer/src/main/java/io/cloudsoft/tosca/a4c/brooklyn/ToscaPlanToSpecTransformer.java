@@ -105,7 +105,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         } catch (Exception e) {
             if (e instanceof PlanNotRecognizedException) {
                 if (log.isTraceEnabled())
-                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
+                    log.trace("Failed to create entity from TOSCA spec:\n" + plan, e);
             } else {
                 if (log.isDebugEnabled())
                     log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
@@ -123,7 +123,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         } catch (Exception e) {
             if (e instanceof PlanNotRecognizedException) {
                 if (log.isTraceEnabled())
-                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
+                    log.trace("Failed to create entity from TOSCA spec:\n" + plan, e);
             } else {
                 if (log.isDebugEnabled())
                     log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);

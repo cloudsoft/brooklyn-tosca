@@ -34,3 +34,9 @@ topology_template:
             node: Compute
             capability: tosca.capabilities.Container
             relationship: tosca.relationships.HostedOn
+
+  groups:
+    add_brooklyn_location:
+      members: [ Compute ]
+      policies:
+      - brooklyn.location: ${locationSpec}

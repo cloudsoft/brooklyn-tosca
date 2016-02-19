@@ -29,7 +29,7 @@ import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 public class StandardInterfaceLifecycleModifier extends AbstractSpecModifier {
 
     private static final Logger LOG = LoggerFactory.getLogger(StandardInterfaceLifecycleModifier.class);
-    private static final String EXPANDED_FOLDER = "/expanded/";
+    public static final String EXPANDED_FOLDER = "/expanded/";
 
     @Inject
     public StandardInterfaceLifecycleModifier(ManagementContext mgmt, ToscaFacade<? extends ToscaApplication> alien4CloudFacade) {

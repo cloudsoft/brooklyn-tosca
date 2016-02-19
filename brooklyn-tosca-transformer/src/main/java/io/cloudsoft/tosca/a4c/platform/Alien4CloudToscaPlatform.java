@@ -142,6 +142,11 @@ public class Alien4CloudToscaPlatform implements ToscaPlatform {
     }
 
     @Override
+    public ToscaApplication parse(Path path) {
+        return alien4CloudFacade.parsePlan(path, uploader);
+    }
+
+    @Override
     public ToscaApplication getToscaApplication(String id) {
         return alien4CloudFacade.newToscaApplication(id);
     }

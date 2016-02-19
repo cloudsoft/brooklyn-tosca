@@ -181,7 +181,7 @@ public class BrooklynCatalogMapper {
     @SuppressWarnings("deprecation")
     private CatalogEntitySummary loadEntity(BrooklynApi brooklynApi, String entityName) throws Exception {
         // deprecated method doesn't require version to be set
-        return brooklynApi.getCatalogApi().getEntity(entityName);
+        return brooklynApi.getCatalogApi().getEntity_0_7_0(entityName);
     }
 
     private void addPropertyDefinitions(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {

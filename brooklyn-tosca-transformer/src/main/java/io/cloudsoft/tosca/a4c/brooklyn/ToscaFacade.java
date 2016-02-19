@@ -104,7 +104,7 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @param nodeId the node id
      * @param toscaApplication the tosca application
      * @param requirementId the requirement id
-     * @return The interface operations accociated with this requirement
+     * @return The interface operations associated with this requirement
      */
     Iterable<String> getInterfaceOperations(String nodeId, A toscaApplication, String requirementId);
 

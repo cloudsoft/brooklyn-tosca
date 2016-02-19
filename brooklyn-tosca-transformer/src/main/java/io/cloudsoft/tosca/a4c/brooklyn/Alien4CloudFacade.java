@@ -76,8 +76,6 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
 
     private static final Logger LOG = LoggerFactory.getLogger(Alien4CloudFacade.class);
     public static final String COMPUTE_TYPE = NormativeComputeConstants.COMPUTE_TYPE;
-    private static final ImmutableList<String> VALID_INTERFACE_NAMES =
-            ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
 
     private static final Map<String, ConfigKey<String>> lifeCycleMapping = ImmutableMap.<String, ConfigKey<String>>builder()
             .put(ToscaRelationshipLifecycleConstants.PRE_CONFIGURE_SOURCE, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND)
@@ -290,11 +288,11 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
         Map<String, Operation> operations = MutableMap.of();
         NodeTemplate nodeTemplate = toscaApplication.getNodeTemplate(nodeId);
         IndexedArtifactToscaElement indexedNodeTemplate = getIndexedNodeTemplate(nodeId, toscaApplication);
-
-        operations.putAll(getInterfaceOperationsMap(indexedNodeTemplate, VALID_INTERFACE_NAMES));
+        List<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
+        operations.putAll(getInterfaceOperationsMap(indexedNodeTemplate, validInterfaceNames));
 
         Optional<Interface> optionalNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
-                nodeTemplate.getInterfaces(), VALID_INTERFACE_NAMES);
+                nodeTemplate.getInterfaces(), validInterfaceNames);
 
         if (optionalNodeTemplateInterface.isPresent()) {
             operations.putAll(optionalNodeTemplateInterface.get().getOperations());
@@ -308,8 +306,8 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
         if(!indexedRelationshipTemplate.isPresent()){
             return operations;
         }
-
-        return getInterfaceOperationsMap(indexedRelationshipTemplate.get(), ImmutableList.of("tosca.interfaces.relationship.Configure", "Configure", "configure"));
+        List<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.relationship.Configure", "Configure", "configure");
+        return getInterfaceOperationsMap(indexedRelationshipTemplate.get(), validInterfaceNames);
     }
 
     private Map<String, Operation> getInterfaceOperationsMap(IndexedArtifactToscaElement indexedRelationshipTemplate, List<String> validInterfaceNames) {
@@ -318,10 +316,10 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
                 indexedRelationshipTemplate.getInterfaces(),
                 validInterfaceNames
         );
-        if (optionalIndexedNodeTemplateInterface.isPresent()) {
-            operations = MutableMap.copyOf(optionalIndexedNodeTemplateInterface.get().getOperations());
+        if (!optionalIndexedNodeTemplateInterface.isPresent()) {
+            return operations;
         }
-        return operations;
+        return MutableMap.copyOf(optionalIndexedNodeTemplateInterface.get().getOperations());
     }
 
     @Override
@@ -485,7 +483,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
 
     @Override
     public Alien4CloudApplication parsePlan(Path path, Uploader uploader) {
-        ParsingResult<Csar> tp = uploader.uploadArchive(path.toFile(), "don't know");
+        ParsingResult<Csar> tp = uploader.uploadArchive(path.toFile(), "submitted-tosca-archive");
         Csar csar = tp.getResult();
         return newToscaApplication(csar);
     }
@@ -552,7 +550,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
             List<Object> dsls = Lists.newArrayList();
             for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
                 Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates);
-                if (value.isPresent() && !Strings.isBlank(entry.toString())) {
+                if (value.isPresent() && !Strings.isBlank(entry.getKey())) {
                     dsls.add(BrooklynDslCommon.formatString("export %s=\"%s\"", entry.getKey(), value.get()));
                 }
             }

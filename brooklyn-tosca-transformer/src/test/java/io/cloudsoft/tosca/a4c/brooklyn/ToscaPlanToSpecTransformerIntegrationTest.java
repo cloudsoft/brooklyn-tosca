@@ -224,6 +224,28 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
+    public void testSomeRelationsForARequirement(){
+        String templateUrl = "classpath://templates/some-relationships-for-a-requirement.yaml";
+
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
+                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 3);
+
+        EntitySpec<?> tomcatServer = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
+
+        assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
+        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+                .get("dbConnection1").toString(), "connection1");
+        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+                .get("dbConnection2").toString(), "connection2");
+    }
+
+
+    @Test
     public void testAddingBrooklynPolicyToEntitySpec() {
         String templateUrl = "classpath://templates/autoscaling.policies.tosca.yaml";
 

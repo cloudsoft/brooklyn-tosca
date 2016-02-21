@@ -1,0 +1,97 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.chatApplication
+template_version: 1.0.0-SNAPSHOT
+
+description: TomcatServer is connected to two different MySqlNodes using the same requirement
+
+relationship_types:
+  brooklyn.relationships.Configure:
+    derived_from: tosca.relationships.DependsOn
+    valid_targets: [ tosca.capabilities.Endpoint ]
+    properties:
+      prop.name:
+        type: string
+        required: false
+      prop.value:
+        type: string
+        required: true
+      prop.collection:
+        type: string
+        required: false
+
+
+node_types:
+  org.apache.brooklyn.entity.webapp.tomcat.TomcatServer:
+    derived_from: tosca.nodes.Root
+    description: >
+      A simple Tomcat server
+    properties:
+      wars.root:
+        type: string
+        required: false
+      http.port:
+        type: list
+        required: false
+        entry_schema:
+          type: string
+      java.sysprops:
+        type: map
+        required: false
+        entry_schema:
+          type: string
+    requirements:
+      - dbConnection: tosca.nodes.Root
+        type: brooklyn.relationships.Configure
+        lower_bound: 0
+        upper_bound: unbounded
+
+  org.apache.brooklyn.entity.database.mysql.MySqlNode:
+    derived_from: tosca.nodes.Root
+    description: >
+      A MySQL server
+    properties:
+      "datastore.creation.script.url":
+        type: string
+        required: false
+    capabilities:
+      dbConnection: tosca.capabilities.Endpoint.Database
+
+
+topology_template:
+  description: Web Server Sample with Script
+  node_templates:
+    tomcat_server:
+      type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
+      requirements:
+        - dbConnection:
+            node: mysql_server
+            relationship: brooklyn.relationships.Configure
+            capability: tosca.capabilities.Endpoint.Database
+            properties:
+              prop.collection: java.sysprops
+              prop.name: dbConnection1
+              prop.value: connection1
+        - dbConnection:
+            node: mysql_serverBC
+            relationship: brooklyn.relationships.Configure
+            capability: tosca.capabilities.Endpoint.Database
+            properties:
+              prop.collection: java.sysprops
+              prop.name: dbConnection2
+              prop.value: connection2
+
+    mysql_server:
+      type: org.apache.brooklyn.entity.database.mysql.MySqlNode
+
+    mysql_serverBC:
+      type: org.apache.brooklyn.entity.database.mysql.MySqlNode
+
+  groups:
+    add_brooklyn_location:
+      members: [ mysql_server, tomcat_server, mysql_serverBC ]
+      policies:
+      - brooklyn.location: localhost

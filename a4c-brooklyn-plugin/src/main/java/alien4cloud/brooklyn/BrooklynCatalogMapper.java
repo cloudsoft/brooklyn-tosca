@@ -22,6 +22,7 @@ import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.brooklyn.api.catalog.BrooklynCatalog;
 import org.apache.brooklyn.rest.client.BrooklynApi;
 import org.apache.brooklyn.rest.domain.CatalogEntitySummary;
 import org.apache.brooklyn.rest.domain.EffectorSummary;
@@ -180,8 +181,7 @@ public class BrooklynCatalogMapper {
 
     @SuppressWarnings("deprecation")
     private CatalogEntitySummary loadEntity(BrooklynApi brooklynApi, String entityName) throws Exception {
-        // deprecated method doesn't require version to be set
-        return brooklynApi.getCatalogApi().getEntity(entityName);
+        return brooklynApi.getCatalogApi().getEntity(entityName, BrooklynCatalog.DEFAULT_VERSION);
     }
 
     private void addPropertyDefinitions(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {

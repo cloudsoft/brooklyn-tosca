@@ -359,13 +359,14 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return Optional.absent();
     }
 
-    private Set<Optional<RelationshipTemplate>> findRelationshipsRequirement(String nodeId, Alien4CloudApplication toscaApplication, String requirementId) {
-        Set<Optional<RelationshipTemplate>> result = MutableSet.of();
+    private Set<RelationshipTemplate> findRelationshipsRequirement(String nodeId, Alien4CloudApplication toscaApplication, String requirementId) {
+        Set<RelationshipTemplate> result = MutableSet.of();
         NodeTemplate node = toscaApplication.getNodeTemplate(nodeId);
         if (node.getRelationships() != null) {
             for (Map.Entry<String, RelationshipTemplate> entry : node.getRelationships().entrySet()) {
-                if (entry.getValue().getRequirementName().equals(requirementId)) {
-                    result.add(Optional.of(entry.getValue()));
+                if (entry.getValue().getRequirementName().equals(requirementId)
+                        && (entry.getValue() != null)) {
+                    result.add(entry.getValue());
                 }
             }
         }
@@ -438,17 +439,14 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     public Map<String, Object> getPropertiesAndTypeValues(String nodeId, Alien4CloudApplication toscaApplication, String requirementId, String computeName) {
 
         Map<String, Object> result = MutableMap.of();
-        Set<Optional<RelationshipTemplate>> optionalRelationshipTemplates =
+        Set<RelationshipTemplate> relationshipTemplates =
                 findRelationshipsRequirement(nodeId, toscaApplication, requirementId);
 
-        for (Optional<RelationshipTemplate> optionalRelationshipTemplate : optionalRelationshipTemplates) {
-            if (optionalRelationshipTemplate.isPresent()) {
-                RelationshipTemplate relationshipTemplate = optionalRelationshipTemplate.get();
-                if (relationshipTemplate.getType().equals("brooklyn.relationships.Configure")) {
-                    Map<String, Object> relationProperties = getRelationProperties(nodeId, computeName, toscaApplication, relationshipTemplate);
-                    result = joinPropertiesAndValueTypes(result,
-                            getPropertiesAndTypedValues(relationshipTemplate, relationProperties, computeName));
-                }
+        for (RelationshipTemplate relationshipTemplate : relationshipTemplates) {
+            if (relationshipTemplate.getType().equals("brooklyn.relationships.Configure")) {
+                Map<String, Object> relationProperties = getRelationProperties(nodeId, computeName, toscaApplication, relationshipTemplate);
+                result = joinPropertiesAndValueTypes(result,
+                        getPropertiesAndTypedValues(relationshipTemplate, relationProperties, computeName));
             }
         }
         return result;

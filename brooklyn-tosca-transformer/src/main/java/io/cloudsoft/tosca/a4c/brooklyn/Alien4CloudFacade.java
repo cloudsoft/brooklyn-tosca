@@ -502,7 +502,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             LOG.warn("CSAR " + artifactId + ":" + artifact.getArchiveVersion() + " does not exist");
             return Optional.absent();
         } else {
-            return Optional.of(Paths.get(csarPath.get().getParent().toAbsolutePath().toString(), "expanded", artifactId));
+            return Optional.of(Paths.get(csarPath.get().getParent().toAbsolutePath().toString(), "expanded", artifact.getArtifactName()));
         }
     }
 

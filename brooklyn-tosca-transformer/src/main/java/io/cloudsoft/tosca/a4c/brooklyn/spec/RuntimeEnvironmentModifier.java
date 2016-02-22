@@ -26,12 +26,6 @@ import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 
-// FIXME [2016-01-20 SJC]: Implementation must be revisited.
-// * Should use artifact key as environment variable, not name (which is often the resource URL).
-// * Should clarify with A4C difference between 'implementation' and 'file'. The former is
-//   supported but is not in the spec.
-// * Should support more than just tosca.artifacts.File.
-// * Should not set environment variables like "export = ~/brooklyn-tosca-resources".
 // TODO: Rename to highlight that it is handling artifacts.
 @Component
 public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
@@ -52,13 +46,14 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
 
         final Map<String, String> filesToCopy = MutableMap.of();
 
-        for (String artifactId : artifacts) {
+        for (final String artifactId : artifacts) {
             Optional<Path> optionalResourcesRootPath = getToscaFacade().getArtifactPath(nodeId, toscaApplication, artifactId);
             if(!optionalResourcesRootPath.isPresent()) {
                 continue;
             }
 
-            BrooklynDslDeferredSupplier deferredRunDir = BrooklynDslCommon.attributeWhenReady("run.dir");
+            // We know that formatString will return a BrooklynDslDeferredSupplier as the 2nd argument is not yet resolved
+            BrooklynDslDeferredSupplier deferredRunDir = (BrooklynDslDeferredSupplier) BrooklynDslCommon.formatString("%s/%s", BrooklynDslCommon.attributeWhenReady("run.dir"), artifactId);
             entitySpec.configure(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactId), deferredRunDir);
 
             // Copy all files in resource.
@@ -66,7 +61,7 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
                 Files.walkFileTree(optionalResourcesRootPath.get(), new SimpleFileVisitor<Path>() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        filesToCopy.put(file.toAbsolutePath().toString(), file.getFileName().toString());
+                        filesToCopy.put(file.toAbsolutePath().toString(), artifactId + "/" + file.getFileName().toString());
                         return FileVisitResult.CONTINUE;
                     }
                 });

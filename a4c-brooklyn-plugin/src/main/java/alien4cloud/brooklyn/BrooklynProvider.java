@@ -5,10 +5,6 @@ import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.exception.NotFoundException;
 import alien4cloud.model.application.Application;
 import alien4cloud.model.common.Tag;
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.ScalarPropertyValue;
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.Topology;
 import alien4cloud.orchestrators.locations.services.LocationService;
 import alien4cloud.paas.IConfigurablePaaSProvider;
 import alien4cloud.paas.IPaaSCallback;
@@ -36,6 +32,8 @@ import io.cloudsoft.tosca.metadata.RequiresBrooklynApi;
 import io.cloudsoft.tosca.metadata.ToscaMetadataProvider;
 import io.cloudsoft.tosca.metadata.ToscaTypeProvider;
 import lombok.SneakyThrows;
+
+import org.apache.brooklyn.core.entity.lifecycle.Lifecycle;
 import org.apache.brooklyn.rest.client.BrooklynApi;
 import org.apache.brooklyn.rest.domain.ApplicationSummary;
 import org.apache.brooklyn.rest.domain.EntitySummary;
@@ -48,8 +46,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
@@ -70,15 +66,14 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     protected Map<String, Optional<DeploymentStatus>> deploymentStatuses = Maps.newConcurrentMap();
 
     // TODO: Sanity check correct InstanceStatuses are being used
-    private static final Map<Status, InstanceStatus> SERVICE_STATE_TO_INSTANCE_STATUS = ImmutableMap.<Status, InstanceStatus>builder()
-            .put(Status.ACCEPTED, InstanceStatus.PROCESSING)
-            .put(Status.STARTING, InstanceStatus.PROCESSING)
-            .put(Status.RUNNING, InstanceStatus.SUCCESS)
-            .put(Status.STOPPING, InstanceStatus.MAINTENANCE)
-            .put(Status.STOPPED, InstanceStatus.MAINTENANCE)
-            .put(Status.DESTROYED, InstanceStatus.MAINTENANCE)
-            .put(Status.ERROR, InstanceStatus.FAILURE)
-            .put(Status.UNKNOWN, InstanceStatus.PROCESSING)
+    private static final Map<Lifecycle, InstanceStatus> LIFECYCLE_TO_INSTANCE_STATUS = ImmutableMap.<Lifecycle, InstanceStatus>builder()
+            .put(Lifecycle.CREATED, InstanceStatus.PROCESSING)
+            .put(Lifecycle.DESTROYED, InstanceStatus.MAINTENANCE)
+            .put(Lifecycle.ON_FIRE, InstanceStatus.FAILURE)
+            .put(Lifecycle.RUNNING, InstanceStatus.SUCCESS)
+            .put(Lifecycle.STARTING, InstanceStatus.PROCESSING)
+            .put(Lifecycle.STOPPED, InstanceStatus.MAINTENANCE)
+            .put(Lifecycle.STOPPING, InstanceStatus.MAINTENANCE)
             .build();
 
     private static final Map<Status, DeploymentStatus> SERVICE_STATE_TO_DEPLOYMENT_STATUS = ImmutableMap.<Status, DeploymentStatus>builder()
@@ -297,7 +292,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
             instanceInformation.setAttributes(attributeValuesStringBuilder.build());
             String serviceState = String.valueOf(sensorValues.get("service.state"));
             instanceInformation.setState(serviceState);
-            instanceInformation.setInstanceStatus(SERVICE_STATE_TO_INSTANCE_STATUS.get(Status.valueOf(serviceState)));
+            instanceInformation.setInstanceStatus(LIFECYCLE_TO_INSTANCE_STATUS.get(Lifecycle.valueOf(serviceState)));
             topology.put(templateId, ImmutableMap.of(entityId, instanceInformation));
         }
 

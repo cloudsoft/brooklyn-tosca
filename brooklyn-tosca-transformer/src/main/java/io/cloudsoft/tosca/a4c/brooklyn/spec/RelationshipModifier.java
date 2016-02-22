@@ -1,10 +1,11 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.google.common.base.Optional;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.util.core.config.ConfigBag;
@@ -12,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 
 import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;

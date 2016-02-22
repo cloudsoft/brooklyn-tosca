@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -13,7 +14,9 @@ import javax.inject.Inject;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
+import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
+import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.os.Os;
 import org.apache.brooklyn.util.text.Strings;
@@ -72,7 +75,7 @@ import alien4cloud.tosca.parser.ParsingResult;
 import io.cloudsoft.tosca.a4c.brooklyn.util.NodeTemplates;
 
 @Component
-public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
+public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Alien4CloudFacade.class);
     public static final String COMPUTE_TYPE = NormativeComputeConstants.COMPUTE_TYPE;
@@ -274,7 +277,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
     @Override
     public Iterable<String> getArtifacts(String nodeId, Alien4CloudApplication toscaApplication) {
         Optional<Map<String, DeploymentArtifact>> optionalArtifacts = getArtifactsMap(nodeId, toscaApplication);
-        if(!optionalArtifacts.isPresent()) {
+        if (!optionalArtifacts.isPresent()) {
             return Collections.emptyList();
         }
         return optionalArtifacts.get().keySet();
@@ -356,6 +359,21 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
         return Optional.absent();
     }
 
+    private Set<RelationshipTemplate> findRelationshipsRequirement(String nodeId, Alien4CloudApplication toscaApplication, String requirementId) {
+        Set<RelationshipTemplate> result = MutableSet.of();
+        NodeTemplate node = toscaApplication.getNodeTemplate(nodeId);
+        if (node.getRelationships() != null) {
+            for (Map.Entry<String, RelationshipTemplate> entry : node.getRelationships().entrySet()) {
+                if (entry.getValue().getRequirementName().equals(requirementId)
+                        && (entry.getValue() != null)) {
+                    result.add(entry.getValue());
+                }
+            }
+        }
+        LOG.warn("Requirement {} is not described by any relationship ", requirementId);
+        return result;
+    }
+
     private Map<String, Object> getRelationProperties(String nodeId, String computeName, Alien4CloudApplication toscaApplication, RelationshipTemplate relationshipTemplate) {
         Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = getAllNodes(toscaApplication);
         PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
@@ -419,15 +437,40 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
 
     @Override
     public Map<String, Object> getPropertiesAndTypeValues(String nodeId, Alien4CloudApplication toscaApplication, String requirementId, String computeName) {
-        Optional<RelationshipTemplate> optionalRelationshipTemplate = findRelationshipRequirement(nodeId, toscaApplication, requirementId);
-        if (optionalRelationshipTemplate.isPresent()) {
-            RelationshipTemplate relationshipTemplate = optionalRelationshipTemplate.get();
+
+        Map<String, Object> result = MutableMap.of();
+        Set<RelationshipTemplate> relationshipTemplates =
+                findRelationshipsRequirement(nodeId, toscaApplication, requirementId);
+
+        for (RelationshipTemplate relationshipTemplate : relationshipTemplates) {
             if (relationshipTemplate.getType().equals("brooklyn.relationships.Configure")) {
                 Map<String, Object> relationProperties = getRelationProperties(nodeId, computeName, toscaApplication, relationshipTemplate);
-                return getPropertiesAndTypedValues(relationshipTemplate, relationProperties, computeName);
+                result = joinPropertiesAndValueTypes(result,
+                        getPropertiesAndTypedValues(relationshipTemplate, relationProperties, computeName));
             }
         }
-        return Collections.emptyMap();
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> joinPropertiesAndValueTypes(Map<String, Object> properties,
+                                                            Map<String, Object> newProperties) {
+        for (String newPropertyId : newProperties.keySet()) {
+            Object newPropertyValue = newProperties.get(newPropertyId);
+            if (!properties.containsKey(newPropertyId)) {
+                properties.put(newPropertyId, newPropertyValue);
+            } else {
+                Object oldPropertyValue = properties.get(newPropertyId);
+                if ((oldPropertyValue instanceof Map)
+                        && (newPropertyValue instanceof Map)) {
+                    ((Map) oldPropertyValue).putAll((Map) newPropertyValue);
+                } else if ((oldPropertyValue instanceof List)
+                        && (newPropertyValue instanceof List)) {
+                    ((List) oldPropertyValue).addAll((List) newPropertyValue);
+                }
+            }
+        }
+        return properties;
     }
 
     private Map<String, Object> getPropertiesAndTypedValues(RelationshipTemplate relationshipTemplate, Map<String, Object> relationProperties, String nodeName) {
@@ -444,18 +487,18 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication>{
                     " be defined for RelationsType " + relationshipTemplate.getType());
         }
 
-        return (Strings.isBlank(propName)) ? ImmutableMap.<String, Object>of(propCollection, ImmutableList.of(propValue))
-                : ImmutableMap.<String, Object>of(propCollection, ImmutableMap.of(propName, propValue));
+        return (Strings.isBlank(propName)) ? MutableMap.<String, Object>of(propCollection, MutableList.of(propValue))
+                : MutableMap.<String, Object>of(propCollection, MutableMap.of(propName, propValue));
     }
 
     @Override
     public Optional<Path> getArtifactPath(String nodeId, Alien4CloudApplication toscaApplication, String artifactId) {
         Optional<DeploymentArtifact> optionalArtifact = getArtifact(nodeId, toscaApplication, artifactId);
-        if(!optionalArtifact.isPresent()) return Optional.absent();
+        if (!optionalArtifact.isPresent()) return Optional.absent();
 
         DeploymentArtifact artifact = optionalArtifact.get();
         Optional<Path> csarPath = getCsarPath(artifact);
-        if(!csarPath.isPresent()) {
+        if (!csarPath.isPresent()) {
             LOG.warn("CSAR " + artifactId + ":" + artifact.getArchiveVersion() + " does not exist");
             return Optional.absent();
         } else {

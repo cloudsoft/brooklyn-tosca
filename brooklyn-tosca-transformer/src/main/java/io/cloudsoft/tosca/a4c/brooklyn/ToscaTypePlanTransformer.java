@@ -42,6 +42,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
     @VisibleForTesting
     static final String FEATURE_TOSCA_ENABLED = BrooklynFeatureEnablement.FEATURE_PROPERTY_PREFIX + ".tosca";
+    private static final AtomicBoolean hasLoggedDisabled = new AtomicBoolean(false);
 
     private static final ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");
     private static final ConfigKey<String> TOSCA_DELEGATE_ID = ConfigKeys.newStringConfigKey("tosca.delegate.id");
@@ -50,7 +51,6 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     private ManagementContext mgmt;
     private ToscaPlatform platform;
     private final AtomicBoolean alienInitialised = new AtomicBoolean();
-    private boolean hasLoggedDisabled = false;
 
     static {
         BrooklynFeatureEnablement.setDefault(FEATURE_TOSCA_ENABLED, true);
@@ -65,9 +65,8 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     @Override
     public void setManagementContext(ManagementContext managementContext) {
         if (!isEnabled()) {
-            if (!hasLoggedDisabled) {
+            if (!hasLoggedDisabled.compareAndSet(false, true)) {
                 log.info("Not loading brooklyn-tosca platform: feature disabled");
-                hasLoggedDisabled = true;
             }
             return;
         }

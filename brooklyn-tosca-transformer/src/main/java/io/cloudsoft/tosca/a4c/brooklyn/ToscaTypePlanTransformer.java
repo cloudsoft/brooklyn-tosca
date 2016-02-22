@@ -1,23 +1,27 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
-import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.api.typereg.RegisteredType;
+import org.apache.brooklyn.api.typereg.RegisteredTypeLoadingContext;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.BrooklynFeatureEnablement;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
-import org.apache.brooklyn.core.plan.PlanToSpecTransformer;
+import org.apache.brooklyn.core.typereg.AbstractFormatSpecificTypeImplementationPlan;
+import org.apache.brooklyn.core.typereg.AbstractTypePlanTransformer;
+import org.apache.brooklyn.core.typereg.BasicTypeImplementationPlan;
+import org.apache.brooklyn.core.typereg.RegisteredTypes;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.util.exceptions.Exceptions;
+import org.apache.brooklyn.util.guava.Maybe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -28,9 +32,9 @@ import io.cloudsoft.tosca.a4c.platform.Alien4CloudSpringContext;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import io.cloudsoft.tosca.a4c.platform.ToscaPlatform;
 
-public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
+public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
-    private static final Logger log = LoggerFactory.getLogger(ToscaPlanToSpecTransformer.class);
+    private static final Logger log = LoggerFactory.getLogger(ToscaTypePlanTransformer.class);
     
     public static final ConfigKey<Alien4CloudToscaPlatform> TOSCA_ALIEN_PLATFORM = ConfigKeys.builder(Alien4CloudToscaPlatform.class)
             .name("tosca.a4c.platform")
@@ -52,6 +56,12 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         BrooklynFeatureEnablement.setDefault(FEATURE_TOSCA_ENABLED, true);
     }
 
+    public static final String FORMAT = "brooklyn-tosca";
+
+    public ToscaTypePlanTransformer() {
+        super(FORMAT, "OASIS TOSCA / Brooklyn", "The Apache Brooklyn implementation of the OASIS TOSCA blueprint plan format and extensions");
+    }
+
     @Override
     public void setManagementContext(ManagementContext managementContext) {
         if (!isEnabled()) {
@@ -71,7 +81,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
 
     private void initialiseAlien() {
         try {
-            synchronized (ToscaPlanToSpecTransformer.class) {
+            synchronized (ToscaTypePlanTransformer.class) {
                 platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
                 if (platform == null) {
                     Alien4CloudToscaPlatform.grantAdminAuth();
@@ -86,58 +96,12 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
 
-    @Override
-    public String getShortDescription() {
-        return "tosca";
-    }
-
-    @Override
-    public boolean accepts(String planType) {
-        return isEnabled() && alienInitialised.get() && getShortDescription().equals(planType);
-    }
-
-    @Override
-    public EntitySpec<? extends Application> createApplicationSpec(String plan) throws PlanNotRecognizedException {
-        assertAvailable();
-        try {
-            Alien4CloudToscaPlatform.grantAdminAuth();
-            return createApplicationSpec(platform.parse(plan));
-        } catch (Exception e) {
-            if (e instanceof PlanNotRecognizedException) {
-                if (log.isTraceEnabled())
-                    log.trace("Failed to create entity from TOSCA spec:\n" + plan, e);
-            } else {
-                if (log.isDebugEnabled())
-                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
-            }
-            throw Exceptions.propagate(e);
-        }
-    }
-
-
-    public EntitySpec<? extends Application> createApplicationSpec(Path plan) throws PlanNotRecognizedException {
-        assertAvailable();
-        try {
-            Alien4CloudToscaPlatform.grantAdminAuth();
-            return createApplicationSpec(platform.parse(plan));
-        } catch (Exception e) {
-            if (e instanceof PlanNotRecognizedException) {
-                if (log.isTraceEnabled())
-                    log.trace("Failed to create entity from TOSCA spec:\n" + plan, e);
-            } else {
-                if (log.isDebugEnabled())
-                    log.debug("Failed to create entity from TOSCA spec:\n" + plan, e);
-            }
-            throw Exceptions.propagate(e);
-        }
-    }
 
     public EntitySpec<? extends Application> createApplicationSpecFromTopologyId(String id) {
         return createApplicationSpec(platform.getToscaApplication(id));
     }
 
     protected EntitySpec<? extends Application> createApplicationSpec(ToscaApplication toscaApplication) {
-        // TODO we should support Relationships and have an OtherEntityMachineLocation ?
         EntitySpec<BasicApplication> rootSpec = EntitySpec.create(BasicApplication.class)
                 .displayName(toscaApplication.getName())
                 .configure(TOSCA_ID, toscaApplication.getId())
@@ -153,20 +117,22 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         return rootSpec;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public <T, SpecT extends AbstractBrooklynObjectSpec<? extends T, SpecT>> SpecT createCatalogSpec(CatalogItem<T, SpecT> item, Set<String> encounteredTypes) throws PlanNotRecognizedException {
+    public AbstractBrooklynObjectSpec<?, ?> createSpec(RegisteredType type, RegisteredTypeLoadingContext context) throws Exception {
+        String planYaml = String.valueOf(type.getPlan().getPlanData());
         assertAvailable();
-        switch (item.getCatalogItemType()) {
-        case TEMPLATE:
-        case ENTITY:
-            // unwrap? any other processing?
-            return (SpecT) createApplicationSpec(item.getPlanYaml());
-        case LOCATION: 
-        case POLICY:
-            throw new PlanNotRecognizedException("TOSCA does not support: "+item.getCatalogItemType());
-        default:
-            throw new IllegalStateException("Unknown CI Type "+item.getCatalogItemType());
+        try {
+            Alien4CloudToscaPlatform.grantAdminAuth();
+            return createApplicationSpec(platform.parse(planYaml));
+        } catch (Exception e) {
+            if (e instanceof PlanNotRecognizedException) {
+                if (log.isTraceEnabled())
+                    log.trace("Failed to create entity from TOSCA spec:\n" + planYaml, e);
+            } else {
+                if (log.isDebugEnabled())
+                    log.debug("Failed to create entity from TOSCA spec:\n" + planYaml, e);
+            }
+            throw Exceptions.propagate(e);
         }
     }
 
@@ -186,4 +152,41 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
         }
     }
 
+    @Override
+    public double scoreForTypeDefinition(String formatCode, Object catalogData) {
+        return 0; // TODO: Not yet implemented
+    }
+
+    @Override
+    public List<RegisteredType> createFromTypeDefinition(String formatCode, Object catalogData) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected double scoreForNullFormat(Object planData, RegisteredType type, RegisteredTypeLoadingContext context) {
+        Maybe<Map<?, ?>> yamlMap = RegisteredTypes.getAsYamlMap(planData);
+        if (yamlMap.isAbsent() || !yamlMap.get().containsKey("tosca_definitions_version")) {
+            return 0;
+        }
+        return 1;
+    }
+
+    @Override
+    protected double scoreForNonmatchingNonnullFormat(String planFormat, Object planData, RegisteredType type, RegisteredTypeLoadingContext context) {
+        return planFormat.equals(FORMAT) ? 0.9 : 0;
+    }
+
+    @Override
+    protected Object createBean(RegisteredType type, RegisteredTypeLoadingContext context) throws Exception {
+        return null;
+    }
+
+    public static class ToscaTypeImplementationPlan extends AbstractFormatSpecificTypeImplementationPlan<String> {
+        public ToscaTypeImplementationPlan(RegisteredType.TypeImplementationPlan otherPlan) {
+            super(FORMAT, String.class, otherPlan);
+        }
+        public ToscaTypeImplementationPlan(String planData) {
+            this(new BasicTypeImplementationPlan(FORMAT, planData));
+        }
+    }
 }

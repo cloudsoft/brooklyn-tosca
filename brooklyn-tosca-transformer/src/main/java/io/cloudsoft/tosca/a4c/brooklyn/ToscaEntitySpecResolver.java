@@ -16,7 +16,7 @@ public class ToscaEntitySpecResolver extends AbstractEntitySpecResolver {
 
     @Override
     public EntitySpec<?> resolve(String type, BrooklynClassLoadingContext loader, Set<String> encounteredTypes) {
-        ToscaPlanToSpecTransformer transformer = new ToscaPlanToSpecTransformer();
+        ToscaTypePlanTransformer transformer = new ToscaTypePlanTransformer();
         transformer.setManagementContext(mgmt);
 
         return transformer.createApplicationSpecFromTopologyId(getLocalType(type));

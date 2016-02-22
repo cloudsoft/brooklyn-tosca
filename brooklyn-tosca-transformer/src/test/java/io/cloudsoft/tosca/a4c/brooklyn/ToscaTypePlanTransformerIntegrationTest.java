@@ -23,6 +23,8 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.policy.PolicySpec;
+import org.apache.brooklyn.api.typereg.BrooklynTypeRegistry;
+import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
@@ -32,6 +34,9 @@ import org.apache.brooklyn.core.entity.EntityAsserts;
 import org.apache.brooklyn.core.entity.lifecycle.Lifecycle;
 import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
+import org.apache.brooklyn.core.typereg.BasicRegisteredType;
+import org.apache.brooklyn.core.typereg.BasicTypeImplementationPlan;
+import org.apache.brooklyn.core.typereg.RegisteredTypes;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
@@ -58,7 +63,7 @@ import alien4cloud.utils.FileUtil;
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
 import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
-public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegrationTest {
+public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
     private String DATABASE_DEPENDENCY_INJECTION = "$brooklyn:formatString(\"jdbc:" +
             "%s%s?user=%s\\\\&password=%s\",$brooklyn:entity(\"mysql_server\")" +
@@ -68,12 +73,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
             "br00k11n)";
 
     @Test
-    public void testSimpleHostedTopologyParser() {
-        String templateUrl = "classpath://templates/simple-web-server.yaml";
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testSimpleHostedTopologyParser() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/simple-web-server.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
 
@@ -106,12 +107,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testDslInChatApplication() {
-        String templateUrl = "classpath://templates/helloworld-sql.tosca.yaml";
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testDslInChatApplication() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/helloworld-sql.tosca.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
 
@@ -119,8 +116,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
-                "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
-                "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
+                        "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
+                        "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
 
         Map javaSysProps = (Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS);
@@ -133,16 +130,12 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testFullJcloudsLocationDescription() {
-        String templateUrl = "classpath://templates/full-location.jclouds.tosca.yaml";
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testFullJcloudsLocationDescription() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/full-location.jclouds.tosca.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
-        EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
 
+        EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
         assertEquals(vanillaEntity.getLocations().size(), 1);
         Location location = Iterables.getOnlyElement(vanillaEntity.getLocations());
         assertTrue(location instanceof JcloudsLocation);
@@ -153,16 +146,12 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testFullByonLocationDescription() {
-        String templateUrl = "classpath://templates/full-location.byon.tosca.yaml";
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testFullByonLocationDescription() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/full-location.byon.tosca.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
-        EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
 
+        EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
         assertEquals(vanillaEntity.getLocations().size(), 1);
         assertTrue(Iterables.getOnlyElement(vanillaEntity.getLocations())
                 instanceof FixedListMachineProvisioningLocation);
@@ -174,7 +163,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
         assertEquals(configByon.get("user"), "brooklyn");
         assertEquals(configByon.get("provider"), "byon");
         assertTrue(configByon.get("machines") instanceof Collection);
-        assertEquals(((Collection)configByon.get("machines")).size(), 1);
+        assertEquals(((Collection) configByon.get("machines")).size(), 1);
 
         Object machinesObj = configByon.get("machines");
         assertNotNull(machinesObj, "machines");
@@ -188,8 +177,9 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testRelation() throws ParsingException, CSARVersionAlreadyExistsException, IOException {
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(makeOutputPath("relationship.yaml", "relation", "test.sh"));
+        Path outputPath = makeOutputPath("relationship.yaml", "relation", "test.sh");
+        ToscaApplication toscaApplication = platform.parse(outputPath);
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(toscaApplication);
 
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 2);
@@ -199,7 +189,7 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
         assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
-        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
 
         assertFlagValueContains(tomcatServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
@@ -224,12 +214,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testSomeRelationsForARequirement(){
-        String templateUrl = "classpath://templates/some-relationships-for-a-requirement.yaml";
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testSomeRelationsForARequirement() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/some-relationships-for-a-requirement.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 3);
 
@@ -244,14 +230,9 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
                 .get("dbConnection2").toString(), "connection2");
     }
 
-
     @Test
-    public void testAddingBrooklynPolicyToEntitySpec() {
-        String templateUrl = "classpath://templates/autoscaling.policies.tosca.yaml";
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testAddingBrooklynPolicyToEntitySpec() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/autoscaling.policies.tosca.yaml");
         assertNotNull(app);
         EntitySpec<?> cluster = EntitySpecs
                 .findChildEntitySpecByPlanId(app, "cluster");
@@ -274,12 +255,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testAddingBrooklynPolicyToApplicationSpec(){
-        String templateUrl = "classpath://templates/simple.application-policies.tosca.yaml";
-
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testAddingBrooklynPolicyToApplicationSpec() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/simple.application-policies.tosca.yaml");
         assertNotNull(app);
 
         assertEquals(app.getPolicySpecs().size(), 1);
@@ -299,128 +276,90 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
 
     @Test
     public void testMysqlTopology() throws Exception {
-        try {
-            String templateUrl = "classpath://templates/mysql-topology.tosca.yaml";
+        EntitySpec<? extends Application> app = create("classpath://templates/mysql-topology.tosca.yaml");
 
-            EntitySpec<?> spec = transformer.createApplicationSpec(
-                    new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+        // Check the basic structure
+        assertNotNull(app, "spec");
+        assertEquals(app.getType(), BasicApplication.class);
 
-            // Check the basic structure
-            assertNotNull(spec, "spec");
-            assertEquals(spec.getType(), BasicApplication.class);
+        assertEquals(app.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(compute.getType(), SameServerEntity.class);
 
-            assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
-            EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
-            assertEquals(compute.getType(), SameServerEntity.class);
+        assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
+        assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
 
-            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
-            EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
-            assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
+        // Check the config has been set
+        assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("port")), "3306");
+        assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
 
-            // Check the config has been set
-            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("port")), "3306");
-            assertEquals(mysql.getConfig().get(ConfigKeys.newStringConfigKey("db_user")), "martin");
-
-            // Check that the inputs have been set as exports on the scripts
-            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export PORT=\"3306\"");
-            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export DB_USER=\"martin\"");
-            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export DB_NAME=\"wordpress\"");
-
-        } finally {
-            if (platform!=null) {
-                platform.close();
-            }
-        }
+        // Check that the inputs have been set as exports on the scripts
+        assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export PORT=\"3306\"");
+        assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export DB_USER=\"martin\"");
+        assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "export DB_NAME=\"wordpress\"");
     }
 
     @Test
     public void testMongoTopology() throws Exception {
-        try {
-            String templateUrl = "classpath://templates/mongo-topology.tosca.yaml";
-            EntitySpec<?> spec = transformer.createApplicationSpec(
-                    new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+        EntitySpec<? extends Application> app = create("classpath://templates/mongo-topology.tosca.yaml");
 
-            // Check the basic structure
-            assertNotNull(spec, "spec");
-            assertEquals(spec.getType(), BasicApplication.class);
+        // Check the basic structure
+        assertNotNull(app, "spec");
+        assertEquals(app.getType(), BasicApplication.class);
 
-            assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
-            EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
-            assertEquals(compute.getType(), SameServerEntity.class);
+        assertEquals(app.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(compute.getType(), SameServerEntity.class);
 
-            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of compute entity");
-            EntitySpec<?> mongo = Iterators.getOnlyElement(compute.getChildren().iterator());
-            assertEquals(mongo.getType(), VanillaSoftwareProcess.class);
+        assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of compute entity");
+        EntitySpec<?> mongo = Iterators.getOnlyElement(compute.getChildren().iterator());
+        assertEquals(mongo.getType(), VanillaSoftwareProcess.class);
 
-            // Check that the inputs have been set as exports on the scripts
-            String customize = mongo.getFlags().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName()).toString();
-            assertConfigValueContains(customize, "DB_IP");
-            assertConfigValueContains(customize, "$brooklyn:entity(\"Compute\").attributeWhenReady(\"ip_address\")");
-        } finally {
-            if (platform!=null) {
-                platform.close();
-            }
-        }
+        // Check that the inputs have been set as exports on the scripts
+        String customize = mongo.getFlags().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName()).toString();
+        assertConfigValueContains(customize, "DB_IP");
+        assertConfigValueContains(customize, "$brooklyn:entity(\"Compute\").attributeWhenReady(\"ip_address\")");
     }
 
     // FIXME: Rework along with RuntimeEnvironmentModifier
     @Test(enabled = false)
-    public void testDeploymentArtifacts() {
-        String templateUrl = "classpath://templates/deployment-artifact.tosca.yaml";
-        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+    public void testDeploymentArtifacts() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/deployment-artifact.tosca.yaml");
 
-        assertNotNull(spec);
-        assertEquals(spec.getChildren().size(), 1);
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
 
-        EntitySpec<?> tomcatServer = EntitySpecs.findChildEntitySpecByPlanId(spec, "tomcat_server");
+        EntitySpec<?> tomcatServer = EntitySpecs.findChildEntitySpecByPlanId(app, "tomcat_server");
         assertEquals(tomcatServer.getConfig().get(TomcatServer.ROOT_WAR),
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
-
-        Application app = this.mgmt.getEntityManager().createEntity(spec);
-        ((BasicApplication) app).start(Collections.<Location>emptyList());
-        EntityAsserts.assertAttributeEqualsEventually(app, Attributes.SERVICE_STATE_ACTUAL, Lifecycle.RUNNING);
     }
 
     // TODO Do not need to use expensive mysql-topology blueprint to test overwriting interfaces.
     @Test
     public void testOverwriteInterfaceOnMysqlTopology() throws Exception {
-        try {
-            String templateUrl = "classpath://templates/mysql-topology-overwritten-interface.tosca.yaml";
+        EntitySpec<? extends Application> app = create("classpath://templates/mysql-topology-overwritten-interface.tosca.yaml");
+        // Check the basic structure
+        assertNotNull(app, "spec");
+        assertEquals(app.getType(), BasicApplication.class);
 
-            EntitySpec<?> spec = transformer.createApplicationSpec(
-                    new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+        assertEquals(app.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(compute.getType(), SameServerEntity.class);
 
-            // Check the basic structure
-            assertNotNull(spec, "spec");
-            assertEquals(spec.getType(), BasicApplication.class);
+        assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
+        assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
 
-            assertEquals(spec.getChildren().size(), 1, "Expected exactly one child of root application");
-            EntitySpec<?> compute = Iterators.getOnlyElement(spec.getChildren().iterator());
-            assertEquals(compute.getType(), SameServerEntity.class);
-
-            assertEquals(compute.getChildren().size(), 1, "Expected exactly one child of root application");
-            EntitySpec<?> mysql = Iterators.getOnlyElement(compute.getChildren().iterator());
-            assertEquals(mysql.getType(), VanillaSoftwareProcess.class);
-
-            // Check that the inputs have been set as exports on the scripts
-            assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "#OVERWRITTEN VALUE");
-
-        } finally {
-            if (platform!=null) {
-                platform.close();
-            }
-        }
+        // Check that the inputs have been set as exports on the scripts
+        assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "#OVERWRITTEN VALUE");
     }
 
     @Test(enabled = false) //failing to parse tosca
-    public void testEntitiesOnSameNodeBecomeSameServerEntities() {
-        String templateUrl = "classpath://templates/tomcat-mysql-on-one-compute.yaml";
-
-        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+    public void testEntitiesOnSameNodeBecomeSameServerEntities() throws Exception {
+        EntitySpec<? extends Application> spec = create("classpath://templates/tomcat-mysql-on-one-compute.yaml");
 
         assertNotNull(spec);
         Application app = this.mgmt.getEntityManager().createEntity(spec);
@@ -437,10 +376,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testConcatFunctionInTopology() {
-        String templateUrl = "classpath://templates/concat-function.yaml";
-        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+    public void testConcatFunctionInTopology() throws Exception {
+        EntitySpec<? extends Application> spec = create("classpath://templates/concat-function.yaml");
 
         assertNotNull(spec);
         Application app = this.mgmt.getEntityManager().createEntity(spec);
@@ -452,12 +389,10 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testGetAttributeFunctionInTopology() {
-        String templateUrl = "classpath://templates/get_attribute-function.yaml";
-        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testGetAttributeFunctionInTopology() throws Exception {
+        EntitySpec<? extends Application> spec = create("classpath://templates/get_attribute-function.yaml");
         assertNotNull(spec);
+
         Application app = this.mgmt.getEntityManager().createEntity(spec);
         assertEquals(app.getChildren().size(), 1);
         Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
@@ -472,12 +407,10 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testResolvesKeywordInFunction() {
-        String templateUrl = "classpath://templates/resolve-keyword-function.yaml";
-        EntitySpec<? extends Application> spec = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
-
+    public void testResolvesKeywordInFunction() throws Exception {
+        EntitySpec<? extends Application> spec = create("classpath://templates/resolve-keyword-function.yaml");
         assertNotNull(spec);
+
         Application app = this.mgmt.getEntityManager().createEntity(spec);
         assertEquals(app.getChildren().size(), 1);
         Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
@@ -515,10 +448,8 @@ public class ToscaPlanToSpecTransformerIntegrationTest extends Alien4CloudIntegr
     }
 
     @Test
-    public void testTransformationFromComputeWithTwoChildrenToSameServer() {
-        String templateUrl = "classpath://templates/compute-with-two-hosted-children.yaml";
-        EntitySpec<? extends Application> app = transformer.createApplicationSpec(
-                new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+    public void testTransformationFromComputeWithTwoChildrenToSameServer() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/compute-with-two-hosted-children.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
         EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());

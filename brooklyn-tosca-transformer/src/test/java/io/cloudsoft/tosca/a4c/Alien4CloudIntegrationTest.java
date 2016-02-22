@@ -2,13 +2,15 @@ package io.cloudsoft.tosca.a4c;
 
 import static org.testng.Assert.assertNotNull;
 
+import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampPlatformLauncherNoServer;
-import org.apache.brooklyn.core.entity.BrooklynConfigKeys;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.mgmt.internal.ManagementContextInternal;
-import org.apache.brooklyn.core.test.entity.TestApplication;
+import org.apache.brooklyn.core.typereg.RegisteredTypes;
+import org.apache.brooklyn.util.core.ResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
@@ -16,7 +18,7 @@ import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaPlanToSpecTransformer;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaTypePlanTransformer;
 import io.cloudsoft.tosca.a4c.brooklyn.Uploader;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
@@ -29,7 +31,7 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
     private static final Logger LOG = LoggerFactory.getLogger(Alien4CloudIntegrationTest.class);
     protected ManagementContext mgmt;
     protected Alien4CloudToscaPlatform platform;
-    protected ToscaPlanToSpecTransformer transformer;
+    protected ToscaTypePlanTransformer transformer;
     protected Uploader uploader;
 
     @BeforeMethod(alwaysRun = true)
@@ -40,13 +42,13 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
         this.uploader = super.applicationContext.getBean(Uploader.class);
         mgmt = super.applicationContext.getBean(ManagementContext.class);
         assertNotNull(mgmt, "No management context found for test");
-        ((ManagementContextInternal) mgmt).getBrooklynProperties().put(ToscaPlanToSpecTransformer.TOSCA_ALIEN_PLATFORM, platform);
+        ((ManagementContextInternal) mgmt).getBrooklynProperties().put(ToscaTypePlanTransformer.TOSCA_ALIEN_PLATFORM, platform);
         new BrooklynCampPlatformLauncherNoServer()
                 .useManagementContext(mgmt)
                 .launch()
                 .getCampPlatform();
 
-        transformer = new ToscaPlanToSpecTransformer();
+        transformer = new ToscaTypePlanTransformer();
         transformer.setManagementContext(mgmt);
     }
 
@@ -63,4 +65,10 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
         }
     }
 
+    protected EntitySpec<? extends Application> create(String templateUrl) throws Exception {
+        ToscaTypePlanTransformer.ToscaTypeImplementationPlan toscaTypeImplementationPlan =
+                new ToscaTypePlanTransformer.ToscaTypeImplementationPlan(new ResourceUtils(mgmt).getResourceAsString(templateUrl));
+        RegisteredType registeredType = RegisteredTypes.spec("test", "1.0", toscaTypeImplementationPlan, null);
+        return (EntitySpec<? extends Application>) transformer.createSpec(registeredType, null);
+    }
 }

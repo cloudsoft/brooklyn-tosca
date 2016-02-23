@@ -6,11 +6,9 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -386,6 +384,19 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
         String value = entity.sensors().get(Sensors.newStringSensor("my_message"));
         assertEquals(value, "Message: It Works!");
+    }
+
+    @Test
+    public void testConcatFunctionWithGetAttributeInTopology() throws Exception {
+        EntitySpec<? extends Application> spec = create("classpath://templates/concat-with-get-attribute.tosca.yaml");
+
+        assertNotNull(spec);
+        Application app = this.mgmt.getEntityManager().createEntity(spec);
+        assertEquals(app.getChildren().size(), 1);
+        Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(entity.getChildren().size(), 1);
+        Entity test = Iterators.getOnlyElement(entity.getChildren().iterator());
+        EntityAsserts.assertAttributeEqualsEventually(test, Sensors.newStringSensor("my_message"), "Message: my attribute");
     }
 
     @Test

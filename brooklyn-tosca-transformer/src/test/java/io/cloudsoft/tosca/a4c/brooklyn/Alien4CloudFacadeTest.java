@@ -6,6 +6,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 import static org.testng.Assert.assertTrue;
 
 import java.util.List;
@@ -206,6 +207,7 @@ public class Alien4CloudFacadeTest {
                         .put("prop.value", new ScalarPropertyValue("value1"))
                         .put("prop.collection", new ScalarPropertyValue("collection1"))
                         .build());
+        when(relationshipTemplate1.getType()).thenReturn("brooklyn.relationships.Configure");
 
         when(relationshipTemplate2.getProperties()).thenReturn(
                 ImmutableMap.<String, AbstractPropertyValue>builder()
@@ -213,16 +215,17 @@ public class Alien4CloudFacadeTest {
                         .put("prop.value", new ScalarPropertyValue("value2"))
                         .put("prop.collection", new ScalarPropertyValue("collection1"))
                         .build());
+        when(relationshipTemplate2.getType()).thenReturn("brooklyn.relationships.Configure");
 
         when(relationshipTemplate3.getProperties()).thenReturn(
                 ImmutableMap.<String, AbstractPropertyValue>builder()
                         .put("prop.value", new ScalarPropertyValue("value3"))
                         .put("prop.collection", new ScalarPropertyValue("collection1"))
                         .build());
+        when(relationshipTemplate3.getType()).thenReturn("brooklyn.relationships.Configure");
 
         Map<String, Object> propertiesRequirementTest = alien4CloudFacade
-                .getPropertiesAndTypeValues("nodeTest", toscaApplication, "requirementTest", "nodeTest");
-
+                .getPropertiesAndTypeValuesByRelationshipId("nodeTest", toscaApplication, "relationTest1", "nodeTest");
         propertiesRequirementTest.entrySet();
         assertEquals(propertiesRequirementTest.size(), 1);
         assertTrue(propertiesRequirementTest.containsKey("collection1"));
@@ -230,11 +233,9 @@ public class Alien4CloudFacadeTest {
         Map<String, Object> collectionPropertiesValues =
                 (Map<String, Object>) propertiesRequirementTest.get("collection1");
 
-        assertEquals(collectionPropertiesValues.size(), 2);
+        assertEquals(collectionPropertiesValues.size(), 1);
         assertTrue(collectionPropertiesValues.containsKey("prop1"));
         assertEquals(collectionPropertiesValues.get("prop1"), "value1");
-        assertTrue(collectionPropertiesValues.containsKey("prop2"));
-        assertEquals(collectionPropertiesValues.get("prop2"), "value2");
     }
 
     @Test
@@ -291,21 +292,23 @@ public class Alien4CloudFacadeTest {
                         .build());
 
         Map<String, Object> propertiesRequirementTest = alien4CloudFacade
-                .getPropertiesAndTypeValues("nodeTest", toscaApplication, "requirementTest", "nodeTest");
+                .getPropertiesAndTypeValuesByRelationshipId("nodeTest", toscaApplication, "relationTest1", "nodeTest");
 
-        propertiesRequirementTest.entrySet();
         assertEquals(propertiesRequirementTest.size(), 1);
         assertTrue(propertiesRequirementTest.containsKey("collection1"));
         assertTrue(propertiesRequirementTest.get("collection1") instanceof List);
         List<String> collectionPropertiesValues =
                 (List<String>) propertiesRequirementTest.get("collection1");
 
-        assertEquals(collectionPropertiesValues.size(), 2);
+        assertEquals(collectionPropertiesValues.size(), 1);
         assertTrue(collectionPropertiesValues.contains("value1"));
-        assertTrue(collectionPropertiesValues.contains("value2"));
+
+        try {
+            alien4CloudFacade.getPropertiesAndTypeValuesByRelationshipId("nodeTest", toscaApplication, "unrelated", "nodeTest");
+            fail("Expected NPE when retrieving invalid relationship");
+        } catch (NullPointerException npe) {
+            return;
+        }
     }
-
-
-
 
 }

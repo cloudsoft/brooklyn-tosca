@@ -17,7 +17,6 @@ import alien4cloud.model.components.Csar;
 import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
-import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
 public class ToscaParser {
 

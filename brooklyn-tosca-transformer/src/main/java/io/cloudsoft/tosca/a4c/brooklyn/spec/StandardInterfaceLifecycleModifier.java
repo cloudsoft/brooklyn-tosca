@@ -1,24 +1,15 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import java.util.concurrent.Callable;
-
 import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.api.sensor.EnricherSpec;
-import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
-import org.apache.brooklyn.camp.brooklyn.spi.dsl.DslUtils;
-import org.apache.brooklyn.enricher.stock.Enrichers;
-import org.apache.brooklyn.enricher.stock.Propagator;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
-import org.apache.brooklyn.util.core.task.Tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
 
 import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;

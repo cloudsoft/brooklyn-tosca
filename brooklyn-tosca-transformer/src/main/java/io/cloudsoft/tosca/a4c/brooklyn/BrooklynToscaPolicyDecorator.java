@@ -12,14 +12,13 @@ import org.apache.brooklyn.camp.brooklyn.BrooklynCampReservedKeys;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlTypeInstantiator;
 import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
-import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.config.ConfigBag;
+
+import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
 public class BrooklynToscaPolicyDecorator extends AbstractToscaPolicyDecorator{
 

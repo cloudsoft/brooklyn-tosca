@@ -1,12 +1,11 @@
 package alien4cloud.brooklyn;
 
-import io.cloudsoft.tosca.metadata.BrooklynToscaTypeProvider;
-import io.cloudsoft.tosca.metadata.DefaultToscaTypeProvider;
-import io.cloudsoft.tosca.metadata.ToscaTypeProvider;
-import org.apache.brooklyn.rest.client.BrooklynApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+
+import io.cloudsoft.tosca.metadata.BrooklynToscaTypeProvider;
+import io.cloudsoft.tosca.metadata.DefaultToscaTypeProvider;
 
 /**
  * Plugin spring configuration entry point.

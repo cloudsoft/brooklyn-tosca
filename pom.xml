@@ -248,6 +248,10 @@
                                 <module name="IllegalImport">
                                     <property name="illegalPkgs" value="com.google.api.client,org.python.google"/>
                                 </module>
+                                <module name="UnusedImports">
+                                    <!-- according to the documentation at http://checkstyle.sourceforge.net/config_imports.html#UnusedImports this defaults to true. It does not -->
+                                    <property name="processJavadoc" value="true"/>
+                                </module>
                             </module>
                         </module>
                     </checkstyleRules>

@@ -6,7 +6,6 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -15,19 +14,12 @@ import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
-import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.os.Os;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.component.ICSARRepositorySearchService;
@@ -70,6 +62,12 @@ import alien4cloud.tosca.normative.NormativeComputeConstants;
 import alien4cloud.tosca.normative.ToscaFunctionConstants;
 import alien4cloud.tosca.parser.ParsingResult;
 import io.cloudsoft.tosca.a4c.brooklyn.util.NodeTemplates;
+
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 @Component
 public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {

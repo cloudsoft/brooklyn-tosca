@@ -4,20 +4,15 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.brooklyn.api.entity.EntityInitializer;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.api.sensor.Sensor;
 import org.apache.brooklyn.core.sensor.StaticSensor;
-import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
-import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudFacade;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 

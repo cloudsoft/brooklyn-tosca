@@ -65,8 +65,7 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @param computeName the name of the compute node
      * @param expandedFolder the name of the expanded folder
      * @return The script associated with the operation.  This optional script may be in the form
-     * of a String if all input values have been resolved, otherwise a  {@link
-     * BrooklynDslDeferredSupplier}
+     * of a String if all input values have been resolved, otherwise a {@link BrooklynDslDeferredSupplier}
      */
     Optional<Object> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder);
 

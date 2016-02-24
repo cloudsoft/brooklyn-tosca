@@ -7,22 +7,14 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
-import org.apache.brooklyn.core.entity.Attributes;
-import org.apache.brooklyn.core.sensor.Sensors;
-import org.apache.brooklyn.enricher.stock.Enrichers;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
-import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
-import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Functions;
-
 import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudFacade;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 @Component

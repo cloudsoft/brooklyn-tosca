@@ -53,7 +53,7 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
             }
 
             // We know that formatString will return a BrooklynDslDeferredSupplier as the 2nd argument is not yet resolved
-            BrooklynDslDeferredSupplier deferredRunDir = (BrooklynDslDeferredSupplier) BrooklynDslCommon.formatString("%s/%s", BrooklynDslCommon.attributeWhenReady("run.dir"), artifactId);
+            BrooklynDslDeferredSupplier deferredRunDir = (BrooklynDslDeferredSupplier) BrooklynDslCommon.formatString("%s/%s", BrooklynDslCommon.attributeWhenReady("install.dir"), artifactId);
             entitySpec.configure(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactId), deferredRunDir);
 
             // Copy all files in resource.
@@ -70,6 +70,8 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
             }
         }
 
-        entitySpec.configure(SoftwareProcess.RUNTIME_FILES, filesToCopy);
+        // It's not possible to infer from the artifact at what point these files will be used, so
+        // they need to be copied at the earliers point possible
+        entitySpec.configure(SoftwareProcess.PRE_INSTALL_FILES, filesToCopy);
     }
 }

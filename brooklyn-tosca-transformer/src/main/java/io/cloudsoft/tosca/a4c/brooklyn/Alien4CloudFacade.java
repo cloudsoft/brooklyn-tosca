@@ -364,8 +364,8 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         NodeTemplate node = toscaApplication.getNodeTemplate(nodeId);
         if (node.getRelationships() != null) {
             for (Map.Entry<String, RelationshipTemplate> entry : node.getRelationships().entrySet()) {
-                if (entry.getValue().getRequirementName().equals(requirementId)
-                        && (entry.getValue() != null)) {
+                if ((entry.getValue() != null)
+                        && entry.getValue().getRequirementName().equals(requirementId)) {
                     result.add(entry.getValue());
                 }
             }
@@ -455,18 +455,23 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     @SuppressWarnings("unchecked")
     private Map<String, Object> joinPropertiesAndValueTypes(Map<String, Object> properties,
                                                             Map<String, Object> newProperties) {
-        for (String newPropertyId : newProperties.keySet()) {
-            Object newPropertyValue = newProperties.get(newPropertyId);
-            if (!properties.containsKey(newPropertyId)) {
-                properties.put(newPropertyId, newPropertyValue);
+        for(Map.Entry<String, Object> newPropertyEntry: newProperties.entrySet()) {
+            String newProeprtyKey = newPropertyEntry.getKey();
+            Object newPropertyValue = newPropertyEntry.getValue();
+            if (!properties.containsKey(newProeprtyKey)) {
+                properties.put(newProeprtyKey, newPropertyValue);
             } else {
-                Object oldPropertyValue = properties.get(newPropertyId);
+                Object oldPropertyValue = properties.get(newProeprtyKey);
                 if ((oldPropertyValue instanceof Map)
                         && (newPropertyValue instanceof Map)) {
                     ((Map) oldPropertyValue).putAll((Map) newPropertyValue);
                 } else if ((oldPropertyValue instanceof List)
                         && (newPropertyValue instanceof List)) {
                     ((List) oldPropertyValue).addAll((List) newPropertyValue);
+                } else {
+                    LOG.debug("New Property type {} can not be classified in {}, " +
+                                    "it should be a Map or a List",
+                            newPropertyValue.getClass(), this);
                 }
             }
         }
@@ -476,9 +481,9 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private Map<String, Object> getPropertiesAndTypedValues(RelationshipTemplate relationshipTemplate, Map<String, Object> relationProperties, String nodeName) {
         // TODO: Use target properly.
         String target = relationshipTemplate.getTarget();
-        String propName = relationProperties.get("prop.name").toString();
-        String propCollection = relationProperties.get("prop.collection").toString();
-        String propValue = relationProperties.get("prop.value").toString();
+        String propName = (relationProperties.get("prop.name") != null) ? relationProperties.get("prop.name").toString() : Strings.EMPTY;
+        String propCollection  = (relationProperties.get("prop.collection") != null) ? relationProperties.get("prop.collection").toString() : Strings.EMPTY;
+        String propValue  = (relationProperties.get("prop.value") != null) ? relationProperties.get("prop.value").toString() : Strings.EMPTY;
 
         if (Strings.isBlank(propCollection) && (Strings.isBlank(propName))) {
             throw new IllegalStateException("Relationship for Requirement "

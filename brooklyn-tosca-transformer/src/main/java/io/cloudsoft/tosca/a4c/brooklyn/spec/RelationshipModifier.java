@@ -7,7 +7,9 @@ import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.util.core.config.ConfigBag;
+import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -48,12 +50,18 @@ public class RelationshipModifier extends ConfigKeyModifier {
             for (String opKey : operations) {
                 Optional<Object> script = getToscaFacade().getRelationshipScript(opKey, toscaApplication, relationship, computeName, StandardInterfaceLifecycleModifier.EXPANDED_FOLDER);
                 if (script.isPresent()) {
+                    String lifecycle = getToscaFacade().getLifeCycle(opKey).getName();
+                    Object existingScript = entitySpec.getFlags().get(lifecycle);
+                    Object newScript = script.get();
+                    if (existingScript != null && !Strings.isBlank(String.valueOf(existingScript))) {
+                        newScript = BrooklynDslCommon.formatString("%s\n%s", existingScript, newScript);
+                    }
                     if (isSourceOperation(opKey) && nodeId.equals(relationship.getSourceNodeId())) {
                         // configure source
-                        entitySpec.configure(getToscaFacade().getLifeCycle(opKey).getName(), script.get());
+                        entitySpec.configure(lifecycle, newScript);
                     } else if (!isSourceOperation(opKey) && nodeId.equals(relationship.getTargetNodeId())) {
                         // configure target
-                        entitySpec.configure(getToscaFacade().getLifeCycle(opKey).getName(), script.get());
+                        entitySpec.configure(lifecycle, newScript);
                     }
                 }
             }

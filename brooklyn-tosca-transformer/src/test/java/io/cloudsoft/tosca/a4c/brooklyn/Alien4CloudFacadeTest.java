@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 
 import org.mockito.Mock;
@@ -164,4 +165,147 @@ public class Alien4CloudFacadeTest {
                 "property2", "testValue"
         ));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGetMapPropertiesOfRelation() {
+        Alien4CloudApplication toscaApplication = mock(Alien4CloudApplication.class);
+        NodeTemplate nodeTemplate = mock(NodeTemplate.class);
+        PaaSTopology paaSTopology = mock(PaaSTopology.class);
+
+        PaaSNodeTemplate paaSNodeTemplate = mock(PaaSNodeTemplate.class);
+        when(topologyTreeBuilderService.buildPaaSTopology(toscaApplication.getTopology())).thenReturn(paaSTopology);
+        when(toscaApplication.getNodeTemplate(anyString())).thenReturn(nodeTemplate);
+
+        Requirement requirement = mock(Requirement.class);
+        when(nodeTemplate.getRequirements()).thenReturn(ImmutableMap.of("requirementTest", requirement));
+
+        RelationshipTemplate relationshipTemplate1 = mock(RelationshipTemplate.class);
+        when(relationshipTemplate1.getRequirementName()).thenReturn("requirementTest");
+        when(relationshipTemplate1.getType()).thenReturn("brooklyn.relationships.Configure");
+
+        RelationshipTemplate relationshipTemplate2 = mock(RelationshipTemplate.class);
+        when(relationshipTemplate2.getRequirementName()).thenReturn("requirementTest");
+        when(relationshipTemplate2.getType()).thenReturn("brooklyn.relationships.Configure");
+
+        RelationshipTemplate relationshipTemplate3 = mock(RelationshipTemplate.class);
+        when(relationshipTemplate3.getRequirementName()).thenReturn("requirementTest");
+        when(relationshipTemplate3.getType()).thenReturn("brooklyn.relationships.Configure");
+
+        when(nodeTemplate.getRelationships()).thenReturn(
+                ImmutableMap.of(
+                        "relationTest1", relationshipTemplate1,
+                        "relationTest2", relationshipTemplate2,
+                        "relationTest3", relationshipTemplate3));
+
+        when(paaSTopology.getAllNodes()).thenReturn(ImmutableMap.of("nodeTest", paaSNodeTemplate));
+
+        when(relationshipTemplate1.getProperties()).thenReturn(
+                ImmutableMap.<String, AbstractPropertyValue>builder()
+                        .put("prop.name", new ScalarPropertyValue("prop1"))
+                        .put("prop.value", new ScalarPropertyValue("value1"))
+                        .put("prop.collection", new ScalarPropertyValue("collection1"))
+                        .build());
+
+        when(relationshipTemplate2.getProperties()).thenReturn(
+                ImmutableMap.<String, AbstractPropertyValue>builder()
+                        .put("prop.name", new ScalarPropertyValue("prop2"))
+                        .put("prop.value", new ScalarPropertyValue("value2"))
+                        .put("prop.collection", new ScalarPropertyValue("collection1"))
+                        .build());
+
+        when(relationshipTemplate3.getProperties()).thenReturn(
+                ImmutableMap.<String, AbstractPropertyValue>builder()
+                        .put("prop.value", new ScalarPropertyValue("value3"))
+                        .put("prop.collection", new ScalarPropertyValue("collection1"))
+                        .build());
+
+        Map<String, Object> propertiesRequirementTest = alien4CloudFacade
+                .getPropertiesAndTypeValues("nodeTest", toscaApplication, "requirementTest", "nodeTest");
+
+        propertiesRequirementTest.entrySet();
+        assertEquals(propertiesRequirementTest.size(), 1);
+        assertTrue(propertiesRequirementTest.containsKey("collection1"));
+        assertTrue(propertiesRequirementTest.get("collection1") instanceof Map);
+        Map<String, Object> collectionPropertiesValues =
+                (Map<String, Object>) propertiesRequirementTest.get("collection1");
+
+        assertEquals(collectionPropertiesValues.size(), 2);
+        assertTrue(collectionPropertiesValues.containsKey("prop1"));
+        assertEquals(collectionPropertiesValues.get("prop1"), "value1");
+        assertTrue(collectionPropertiesValues.containsKey("prop2"));
+        assertEquals(collectionPropertiesValues.get("prop2"), "value2");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGetListPropertiesOfRelation() {
+        Alien4CloudApplication toscaApplication = mock(Alien4CloudApplication.class);
+        NodeTemplate nodeTemplate = mock(NodeTemplate.class);
+        PaaSTopology paaSTopology = mock(PaaSTopology.class);
+
+        PaaSNodeTemplate paaSNodeTemplate = mock(PaaSNodeTemplate.class);
+        when(topologyTreeBuilderService.buildPaaSTopology(toscaApplication.getTopology())).thenReturn(paaSTopology);
+        when(toscaApplication.getNodeTemplate(anyString())).thenReturn(nodeTemplate);
+
+        Requirement requirement = mock(Requirement.class);
+        when(nodeTemplate.getRequirements()).thenReturn(ImmutableMap.of("requirementTest", requirement));
+
+        RelationshipTemplate relationshipTemplate1 = mock(RelationshipTemplate.class);
+        when(relationshipTemplate1.getRequirementName()).thenReturn("requirementTest");
+        when(relationshipTemplate1.getType()).thenReturn("brooklyn.relationships.Configure");
+
+        RelationshipTemplate relationshipTemplate2 = mock(RelationshipTemplate.class);
+        when(relationshipTemplate2.getRequirementName()).thenReturn("requirementTest");
+        when(relationshipTemplate2.getType()).thenReturn("brooklyn.relationships.Configure");
+
+        RelationshipTemplate relationshipTemplate3 = mock(RelationshipTemplate.class);
+        when(relationshipTemplate3.getRequirementName()).thenReturn("requirementTest");
+        when(relationshipTemplate3.getType()).thenReturn("brooklyn.relationships.Configure");
+
+        when(nodeTemplate.getRelationships()).thenReturn(
+                ImmutableMap.of(
+                        "relationTest1", relationshipTemplate1,
+                        "relationTest2", relationshipTemplate2,
+                        "relationTest3", relationshipTemplate3));
+
+        when(paaSTopology.getAllNodes()).thenReturn(ImmutableMap.of("nodeTest", paaSNodeTemplate));
+
+        when(relationshipTemplate1.getProperties()).thenReturn(
+                ImmutableMap.<String, AbstractPropertyValue>builder()
+                        .put("prop.value", new ScalarPropertyValue("value1"))
+                        .put("prop.collection", new ScalarPropertyValue("collection1"))
+                        .build());
+
+        when(relationshipTemplate2.getProperties()).thenReturn(
+                ImmutableMap.<String, AbstractPropertyValue>builder()
+                        .put("prop.value", new ScalarPropertyValue("value2"))
+                        .put("prop.collection", new ScalarPropertyValue("collection1"))
+                        .build());
+
+        when(relationshipTemplate3.getProperties()).thenReturn(
+                ImmutableMap.<String, AbstractPropertyValue>builder()
+                        .put("prop.name", new ScalarPropertyValue("prop3"))
+                        .put("prop.value", new ScalarPropertyValue("value3"))
+                        .put("prop.collection", new ScalarPropertyValue("collection1"))
+                        .build());
+
+        Map<String, Object> propertiesRequirementTest = alien4CloudFacade
+                .getPropertiesAndTypeValues("nodeTest", toscaApplication, "requirementTest", "nodeTest");
+
+        propertiesRequirementTest.entrySet();
+        assertEquals(propertiesRequirementTest.size(), 1);
+        assertTrue(propertiesRequirementTest.containsKey("collection1"));
+        assertTrue(propertiesRequirementTest.get("collection1") instanceof List);
+        List<String> collectionPropertiesValues =
+                (List<String>) propertiesRequirementTest.get("collection1");
+
+        assertEquals(collectionPropertiesValues.size(), 2);
+        assertTrue(collectionPropertiesValues.contains("value1"));
+        assertTrue(collectionPropertiesValues.contains("value2"));
+    }
+
+
+
+
 }

@@ -456,12 +456,12 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private Map<String, Object> joinPropertiesAndValueTypes(Map<String, Object> properties,
                                                             Map<String, Object> newProperties) {
         for(Map.Entry<String, Object> newPropertyEntry: newProperties.entrySet()) {
-            String newProeprtyKey = newPropertyEntry.getKey();
+            String newPropertyKey = newPropertyEntry.getKey();
             Object newPropertyValue = newPropertyEntry.getValue();
-            if (!properties.containsKey(newProeprtyKey)) {
-                properties.put(newProeprtyKey, newPropertyValue);
+            if (!properties.containsKey(newPropertyKey)) {
+                properties.put(newPropertyKey, newPropertyValue);
             } else {
-                Object oldPropertyValue = properties.get(newProeprtyKey);
+                Object oldPropertyValue = properties.get(newPropertyKey);
                 if ((oldPropertyValue instanceof Map)
                         && (newPropertyValue instanceof Map)) {
                     ((Map) oldPropertyValue).putAll((Map) newPropertyValue);

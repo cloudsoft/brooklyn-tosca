@@ -67,7 +67,12 @@ public class RuntimeEnvironmentModifierSpecTest extends Alien4CloudToscaTest {
         EntitySpec<TestEntity> spec = EntitySpec.create(TestEntity.class);
         RuntimeEnvironmentModifier modifier = new RuntimeEnvironmentModifier(mgmt, alien4CloudFacade);
         modifier.apply(spec, "", toscaApplication);
-        assertEquals(spec.getConfig().get(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactKey)), BrooklynDslCommon.formatString("%s/%s", BrooklynDslCommon.attributeWhenReady("run.dir"), artifactKey));
+        String[] actual = spec.getConfig().get(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactKey)).toString().split("install.dir");
+        String[] expected = BrooklynDslCommon.formatString("%s/%s/%s", BrooklynDslCommon.attributeWhenReady("install.dir"),"RANDOM", artifactKey).toString().split("install.dir");
+        assertEquals(actual.length, expected.length);
+        assertEquals(actual[0], expected[0]);
+        // remove the random string for comparison, since we can't seed the Random object
+        assertEquals(actual[1].substring(9), expected[1].substring(9));
 
     }
 

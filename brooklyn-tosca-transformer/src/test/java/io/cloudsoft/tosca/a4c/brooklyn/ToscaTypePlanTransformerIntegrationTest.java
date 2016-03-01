@@ -6,13 +6,10 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -23,20 +20,13 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.policy.PolicySpec;
-import org.apache.brooklyn.api.typereg.BrooklynTypeRegistry;
-import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
-import org.apache.brooklyn.core.entity.Attributes;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.entity.EntityAsserts;
-import org.apache.brooklyn.core.entity.lifecycle.Lifecycle;
 import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
-import org.apache.brooklyn.core.typereg.BasicRegisteredType;
-import org.apache.brooklyn.core.typereg.BasicTypeImplementationPlan;
-import org.apache.brooklyn.core.typereg.RegisteredTypes;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
@@ -52,16 +42,16 @@ import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.stream.Streams;
 import org.testng.annotations.Test;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
-import com.google.common.io.Files;
-
 import alien4cloud.component.repository.exception.CSARVersionAlreadyExistsException;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.utils.FileUtil;
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
 import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
+import com.google.common.io.Files;
 
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
@@ -177,7 +167,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
     @Test
     public void testRelation() throws ParsingException, CSARVersionAlreadyExistsException, IOException {
-        Path outputPath = makeOutputPath("relationship.yaml", "relation", "test.sh");
+        Path outputPath = makeOutputPath("relationship.yaml", "relation", "test.sh", "target.sh");
         ToscaApplication toscaApplication = platform.parse(outputPath);
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(toscaApplication);
 
@@ -195,9 +185,13 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertFlagValueContains(tomcatServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
                 "echo It works!");
 
+        EntitySpec<?> mysqlServer = EntitySpecs.findChildEntitySpecByPlanId(app, "mysql_server");
+
+        assertFlagValueContains(mysqlServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
+                "echo This is the target");
     }
 
-    private Path makeOutputPath(String yamlFile, String scriptsFolder, String script) throws IOException {
+    private Path makeOutputPath(String yamlFile, String scriptsFolder, String... scripts) throws IOException {
         File tempDir = Files.createTempDir();
         tempDir.deleteOnExit();
         File subfolder = new File(tempDir.getAbsolutePath() + "/scripts");
@@ -205,8 +199,10 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
         Streams.copy(new ResourceUtils(this).getResourceFromUrl("classpath://templates/" + yamlFile),
                 new FileOutputStream(tempDir.toString() + "/" + yamlFile));
-        Streams.copy(new ResourceUtils(this).getResourceFromUrl("classpath://scripts/" + scriptsFolder + "/" + script),
-                new FileOutputStream(subfolder.toString() + "/" + script));
+        for (String script : scripts) {
+            Streams.copy(new ResourceUtils(this).getResourceFromUrl("classpath://scripts/" + scriptsFolder + "/" + script),
+                    new FileOutputStream(subfolder.toString() + "/" + script));
+        }
 
         Path outputPath = java.nio.file.Files.createTempFile("temp", ".zip");
         FileUtil.zip(tempDir.toPath(), outputPath);
@@ -223,7 +219,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
+        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
         assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("dbConnection1").toString(), "connection1");
         assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))

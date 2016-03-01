@@ -19,13 +19,11 @@ node_types:
   brooklyn.nodes.Test:
     derived_from: tosca.nodes.SoftwareComponent
     attributes:
-      my_message: { concat: ["Message: ", get_attribute: [HOST, test_attribute]] }
+      my_message: { concat: [ "Message: ", get_attribute: [ HOST, test_attribute ] ] }
 topology_template:
   node_templates:
     Compute:
       type: test.nodes.Compute
-      attributes:
-        test_attribute: "foobar"
     Test:
       type: brooklyn.nodes.Test
       requirements:

@@ -16,8 +16,8 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.Capability;
@@ -28,7 +28,7 @@ import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 
-public class Alien4CloudApplication implements ToscaApplication{
+public class Alien4CloudApplication implements ToscaApplication {
 
     private final String name;
     private final Topology deploymentTopology;
@@ -132,8 +132,20 @@ public class Alien4CloudApplication implements ToscaApplication{
     }
 
     @Override
-    public Iterable<String> getRequirements(String nodeId) {
-        return getNodeTemplate(nodeId).getRequirements().keySet();
+    public Iterable<Relationship> getAllRelationships(String nodeId) {
+        Set<Relationship> result = Sets.newHashSet();
+        for (Map.Entry<String, NodeTemplate> nodeTemplate : getNodeTemplates().entrySet()) {
+            if (nodeTemplate.getValue().getRelationships() != null) {
+                for (Map.Entry<String, RelationshipTemplate> relationshipTemplate : nodeTemplate.getValue().getRelationships().entrySet()) {
+                    if (relationshipTemplate.getValue().getTarget().equals(nodeId)) {
+                        result.add(new Relationship(nodeTemplate.getKey(), nodeId, relationshipTemplate.getKey(), relationshipTemplate.getValue().getType()));
+                    } else if (nodeTemplate.getKey().equals(nodeId)) {
+                        result.add(new Relationship(nodeId, relationshipTemplate.getValue().getTarget(), relationshipTemplate.getKey(), relationshipTemplate.getValue().getType()));
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -242,13 +254,4 @@ public class Alien4CloudApplication implements ToscaApplication{
         addPolicies(groupId, brooklynPolicyDecorator, getBrooklynPolicies(groupId, mgmt));
     }
 
-    @Override
-    public Iterable<String> getCapabilityTypes(String nodeId) {
-        ImmutableList.Builder<String> builder = ImmutableList.builder();
-        for (Capability capability : getNodeTemplate(nodeId).getCapabilities().values()) {
-            builder.add(capability.getType());
-        }
-
-        return builder.build();
-    }
 }

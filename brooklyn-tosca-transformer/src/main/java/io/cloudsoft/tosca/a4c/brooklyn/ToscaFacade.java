@@ -14,6 +14,8 @@ import com.google.common.base.Optional;
  */
 public interface ToscaFacade<A extends ToscaApplication> {
 
+    Map<String, Object> getPropertiesAndTypeValuesByRelationshipId(String nodeId, A toscaApplication, String relationshipId, String computeName);
+
     /**
      * @param nodeId the node id
      * @param toscaApplication the tosca application
@@ -52,15 +54,6 @@ public interface ToscaFacade<A extends ToscaApplication> {
     /**
      * @param nodeId the node id
      * @param toscaApplication the tosca application
-     * @param requirementId the id of the requirement
-     * @param computeName the name of the compute node
-     * @return The Map of properties
-     */
-    Map<String, Object> getPropertiesAndTypeValues(String nodeId, A toscaApplication, String requirementId, String computeName);
-
-    /**
-     * @param nodeId the node id
-     * @param toscaApplication the tosca application
      * @return The Map of resolved attributes
      */
     Map<String, Object> getResolvedAttributes(String nodeId, A toscaApplication);
@@ -77,36 +70,12 @@ public interface ToscaFacade<A extends ToscaApplication> {
      */
     Optional<Object> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder);
 
-
-    /**
-     *
-     * @param opKey the name of the operation
-     * @param nodeId the node id
-     * @param toscaApplication the tosca application
-     * @param requirementId the id of the requirement
-     * @param computeName the name of the compute node
-     * @param expandedFolder the name of the expanded folder
-     * @return The script associated with the operation on the relationship.  This optional script may be in the form
-     * of a String if all the input values have been resolved otherwise a {@link
-     * BrooklynDslDeferredSupplier}
-     */
-    Optional<Object> getRelationshipScript(String opKey, String nodeId, A toscaApplication, String requirementId, String computeName, String expandedFolder);
-
     /**
      * @param nodeId the node id
      * @param toscaApplication the tosca application
      * @return The interface operations
      */
     Iterable<String> getInterfaceOperations(String nodeId, A toscaApplication);
-
-    /**
-     *
-     * @param nodeId the node id
-     * @param toscaApplication the tosca application
-     * @param requirementId the requirement id
-     * @return The interface operations associated with this requirement
-     */
-    Iterable<String> getInterfaceOperations(String nodeId, A toscaApplication, String requirementId);
 
     /**
      * @param nodeId the node id
@@ -145,6 +114,8 @@ public interface ToscaFacade<A extends ToscaApplication> {
      */
     A parsePlan(Path path, Uploader uploader);
 
+    Iterable<String> getInterfaceOperationsByRelationship(A toscaApplication, ToscaApplication.Relationship relationship);
+
     /**
      * @param nodeId the node id
      * @param toscaApplication the tosca application
@@ -152,4 +123,11 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @return the resolved property specified by key
      */
     Object resolveProperty(String nodeId, A toscaApplication, String key);
+
+    /**
+     * @param expandedFolder the name of the expanded CSAR folder
+     * @return the script to be run as part of the relationship is present, Optional.absent() otherwise
+     */
+    Optional<Object> getRelationshipScript(String opKey, A toscaApplication, ToscaApplication.Relationship relationship, String computeName, String expandedFolder);
+
 }

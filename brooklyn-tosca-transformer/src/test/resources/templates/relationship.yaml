@@ -28,6 +28,8 @@ relationship_types:
           inputs:
             DB_IP: { get_attribute: [TARGET, ip_address] }
           implementation: scripts/test.sh
+        pre_configure_target:
+          implementation: scripts/target.sh
 
 
 node_types:

@@ -248,7 +248,11 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
                         value = Optional.<Object>fromNullable(BrooklynDslCommon.entity(node).attributeWhenReady(functionPropertyValue.getElementNameToFetch()));
                         break;
                     case ToscaFunctionConstants.GET_INPUT:
+                        value = Optional.<Object>of("get_input was called (please don't merge me!)");
+                        break;
                     case ToscaFunctionConstants.GET_OPERATION_OUTPUT:
+                        value = Optional.<Object>of("The node is " + node);
+                        break;
                     default:
                         value = Optional.absent();
                 }

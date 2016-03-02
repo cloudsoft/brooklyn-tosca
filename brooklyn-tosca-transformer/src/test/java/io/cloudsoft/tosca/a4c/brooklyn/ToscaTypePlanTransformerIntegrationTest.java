@@ -466,4 +466,14 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(compute.getType(), SameServerEntity.class);
     }
 
+    @Test
+    public void testSomething() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/jdk-type.tosca.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertNotNull(compute);
+        assertEquals(compute.getType(), SameServerEntity.class);
+    }
+
 }

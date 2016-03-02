@@ -384,6 +384,20 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(value, "Message: It Works!");
     }
 
+    @Test(enabled = false)
+    // TODO: est fails due to unknown problem creating topology when running in Liunx
+    public void testConcatFunctionWithGetAttributeInTopology() throws Exception {
+        EntitySpec<? extends Application> spec = create("classpath://templates/concat-with-get-attribute.tosca.yaml");
+
+        assertNotNull(spec);
+        Application app = this.mgmt.getEntityManager().createEntity(spec);
+        assertEquals(app.getChildren().size(), 1);
+        Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(entity.getChildren().size(), 1);
+        Entity test = Iterators.getOnlyElement(entity.getChildren().iterator());
+        EntityAsserts.assertAttributeEqualsEventually(test, Sensors.newStringSensor("my_message"), "Message: my attribute");
+    }
+
     @Test
     public void testGetAttributeFunctionInTopology() throws Exception {
         EntitySpec<? extends Application> spec = create("classpath://templates/get_attribute-function.yaml");

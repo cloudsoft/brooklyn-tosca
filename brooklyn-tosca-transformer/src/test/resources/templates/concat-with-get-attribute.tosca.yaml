@@ -1,0 +1,39 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+- tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: concat-function-with-get-attribute-test
+template_version: 1.0.0-SNAPSHOT
+
+description: Deploys an application with a property set using concat and get attribute
+
+node_types:
+
+  test.nodes.Compute:
+    derived_from: tosca.nodes.Compute
+    attributes:
+      test_attribute:
+        default: "my attribute"
+        type: string
+  brooklyn.nodes.Test:
+    derived_from: tosca.nodes.SoftwareComponent
+    attributes:
+      my_message: { concat: [ "Message: ", get_attribute: [ HOST, test_attribute ] ] }
+topology_template:
+  node_templates:
+    Compute:
+      type: test.nodes.Compute
+    Test:
+      type: brooklyn.nodes.Test
+      requirements:
+      - host:
+          node: Compute
+          capability: tosca.capabilities.Container
+          relationship: tosca.relationships.HostedOn
+
+  groups:
+    add_brooklyn_location:
+      members: [ Compute ]
+      policies:
+      - brooklyn.location: localhost

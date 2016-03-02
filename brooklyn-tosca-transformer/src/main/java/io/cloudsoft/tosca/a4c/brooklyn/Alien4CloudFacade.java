@@ -36,7 +36,9 @@ import alien4cloud.component.repository.ICsarRepositry;
 import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.application.Application;
 import alien4cloud.model.components.AbstractPropertyValue;
+import alien4cloud.model.components.AttributeDefinition;
 import alien4cloud.model.components.ComplexPropertyValue;
+import alien4cloud.model.components.ConcatPropertyValue;
 import alien4cloud.model.components.Csar;
 import alien4cloud.model.components.DeploymentArtifact;
 import alien4cloud.model.components.FunctionPropertyValue;
@@ -58,7 +60,6 @@ import alien4cloud.model.topology.Requirement;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.IPaaSTemplate;
 import alien4cloud.paas.function.FunctionEvaluator;
-import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.paas.model.PaaSTopology;
@@ -210,13 +211,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return propertyMap;
     }
 
-    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key) {
-        IValue v = props.get(key);
-        if (v == null) {
-            LOG.warn("No value available for {}", key);
-            return Optional.absent();
-        }
-
+    private Optional<Object> resolve(IValue v) {
         if (v instanceof ScalarPropertyValue) {
             return Optional.<Object>fromNullable(((ScalarPropertyValue) v).getValue());
         }
@@ -229,10 +224,19 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return Optional.absent();
     }
 
-    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key, IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
-        Optional<Object> value = resolve(props, key);
+    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key) {
+        IValue v = props.get(key);
+        if (v == null) {
+            LOG.warn("No value available for {}", key);
+            return Optional.absent();
+        }
+
+        return resolve(v);
+    }
+
+    private Optional<Object> resolve(IValue v,  IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+        Optional<Object> value = resolve(v);
         if (!value.isPresent()) {
-            IValue v = props.get(key);
             if (v instanceof FunctionPropertyValue) {
                 FunctionPropertyValue functionPropertyValue = (FunctionPropertyValue) v;
                 String node = Optional.fromNullable(keywordMap.get(functionPropertyValue.getTemplateName())).or(functionPropertyValue.getTemplateName());
@@ -251,6 +255,15 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             }
         }
         return value;
+    }
+
+    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key, IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+        IValue v = props.get(key);
+        if (v == null) {
+            LOG.warn("No value available for {}", key);
+            return Optional.absent();
+        }
+        return resolve(v, template, builtPaaSNodeTemplates, keywordMap);
     }
 
     private Optional<Path> getCsarPath(DeploymentArtifact artifact) {
@@ -387,21 +400,37 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return getTemplatePropertyObjects(relationshipTemplate, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeTemplate, relationshipTemplate));
     }
 
-    private String resolveAttribute(Map.Entry<String, IValue> attribute, Alien4CloudApplication toscaApplication, PaaSNodeTemplate paaSNodeTemplate, Map<String, PaaSNodeTemplate> allNodes) {
-        String returnValue = FunctionEvaluator.parseAttribute(
-                attribute.getKey(),
-                attribute.getValue(),
-                toscaApplication.getTopology(),
-                ImmutableMap.<String, Map<String, InstanceInformation>>of(),
-                "",
-                paaSNodeTemplate,
-                allNodes);
-        // Alien4Cloud returns the attribute key surrounded by <> if it does not evaluate to anything
-        // We turn this to the empty String to avoid populating sensors.
-        if (returnValue.equals("<" + attribute.getKey() + ">")) {
-            return "";
+    private Object resolveAttribute(Map.Entry<String, IValue> attribute, Alien4CloudApplication toscaApplication, String nodeId, PaaSNodeTemplate paaSNodeTemplate, Map<String, PaaSNodeTemplate> allNodes) {
+        Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = getAllNodes(toscaApplication);
+        PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(nodeId);
+        IValue attributeValue = attribute.getValue();
+        if (attributeValue instanceof AttributeDefinition) {
+            String defaultValue = ((AttributeDefinition) attribute.getValue()).getDefault();
+            if (Strings.isBlank(defaultValue)) {
+                return null;
+            }
+            return defaultValue;
+        } else if (attributeValue instanceof ConcatPropertyValue) {
+            return resolveConcat((ConcatPropertyValue) attributeValue, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
+        } else if (attributeValue instanceof FunctionPropertyValue) {
+            Optional<Object> optionalResolvedAttribute = resolve(attributeValue, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
+            return  optionalResolvedAttribute.orNull();
+        } else {
+            LOG.warn("Unable to resolve attribute {} of type {}", attribute.getKey(), attributeValue.getClass());
+            return null;
         }
-        return returnValue;
+    }
+
+    private Object resolveConcat(ConcatPropertyValue attributeValue, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+        Object[] vals = new Object[attributeValue.getParameters().size()];
+        for (int i = 0; i < attributeValue.getParameters().size(); i++) {
+            IValue param = attributeValue.getParameters().get(i);
+            Optional<Object> optionalResolvedAttribute = resolve(param, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap);
+            vals[i] = optionalResolvedAttribute.or("");
+        }
+
+        String format = Strings.repeat("%s", vals.length);
+        return BrooklynDslCommon.formatString(format, vals);
     }
 
     @Override
@@ -426,15 +455,19 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     }
 
     @Override
-    public Map<String, String> getResolvedAttributes(String nodeId, Alien4CloudApplication toscaApplication) {
-        Map<String, String> resolvedAttributes = MutableMap.of();
+    public Map<String, Object> getResolvedAttributes(String nodeId, Alien4CloudApplication toscaApplication) {
+        Map<String, Object> resolvedAttributes = MutableMap.of();
         Optional<PaaSNodeTemplate> optionalPaaSNodeTemplate = getPaasNodeTemplate(nodeId, toscaApplication);
         if (optionalPaaSNodeTemplate.isPresent()) {
             Map<String, PaaSNodeTemplate> allNodes = getAllNodes(toscaApplication);
             final Map<String, IValue> attributes = getIndexedNodeTemplate(nodeId, toscaApplication).getAttributes();
             for (Map.Entry<String, IValue> attribute : attributes.entrySet()) {
                 String key = attribute.getKey().replaceAll("\\s+", ".");
-                String value = resolveAttribute(attribute, toscaApplication, optionalPaaSNodeTemplate.get(), allNodes);
+                Object value = resolveAttribute(attribute, toscaApplication, nodeId, optionalPaaSNodeTemplate.get(), allNodes);
+                if (value == null) {
+                    LOG.warn("Unable to resolve value for attribute {}", key);
+                    continue;
+                }
                 resolvedAttributes.put(key, value);
             }
         }

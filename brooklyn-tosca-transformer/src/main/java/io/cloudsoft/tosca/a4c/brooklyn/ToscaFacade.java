@@ -56,7 +56,7 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @param toscaApplication the tosca application
      * @return The Map of resolved attributes
      */
-    Map<String, String> getResolvedAttributes(String nodeId, A toscaApplication);
+    Map<String, Object> getResolvedAttributes(String nodeId, A toscaApplication);
 
     /**
      * @param opKey the key name of the operation

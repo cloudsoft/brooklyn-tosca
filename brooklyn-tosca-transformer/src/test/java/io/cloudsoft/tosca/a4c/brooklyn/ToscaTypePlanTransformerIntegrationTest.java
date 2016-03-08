@@ -32,6 +32,7 @@ import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
+import org.apache.brooklyn.entity.webapp.DynamicWebAppCluster;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.location.byon.FixedListMachineProvisioningLocation;
 import org.apache.brooklyn.location.jclouds.JcloudsLocation;
@@ -219,10 +220,10 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
-        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
         assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("dbConnection1").toString(), "connection1");
-        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("dbConnection2").toString(), "connection2");
     }
 
@@ -245,9 +246,8 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(autoScalerPolicyFlags.get("metricUpperBound"), "100");
         assertEquals(autoScalerPolicyFlags.get("minPoolSize"), "1");
         assertEquals(autoScalerPolicyFlags.get("maxPoolSize"), "5");
-        assertEquals(autoScalerPolicyFlags.get("metric"), "$brooklyn:sensor(" +
-                "\"org.apache.brooklyn.entity.webapp.DynamicWebAppCluster\"," +
-                " \"webapp.reqs.perSec.windowed.perNode\")");
+        assertEquals(autoScalerPolicyFlags.get("metric"),
+                DynamicWebAppCluster.REQUESTS_PER_SECOND_IN_WINDOW_PER_NODE);
     }
 
     @Test
@@ -266,8 +266,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(testPolicyFlags.get("policyLiteralValue1"), "Hello");
         assertEquals(testPolicyFlags.get("policyLiteralValue2"), "World");
         assertEquals(testPolicyFlags.get("test.confName"), "Name from YAML");
-        assertEquals(testPolicyFlags.get("test.confFromFunction"),
-                "$brooklyn:formatString(\"%s: is a fun place\", \"$brooklyn\")");
+        assertEquals(testPolicyFlags.get("test.confFromFunction"), "$brooklyn: is a fun place");
     }
 
     @Test

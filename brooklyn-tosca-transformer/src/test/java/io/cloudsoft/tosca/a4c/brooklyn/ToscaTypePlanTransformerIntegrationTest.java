@@ -370,7 +370,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 "expected " + TomcatServer.class.getName() + " in " + appChild.getChildren());
     }
 
-    @Test
+    @Test(enabled = false)
     public void testConcatFunctionInTopology() throws Exception {
         EntitySpec<? extends Application> spec = create("classpath://templates/concat-function.yaml");
 

@@ -74,7 +74,7 @@ public class ToscaPlanToSpecTransformer implements PlanToSpecTransformer {
     private boolean hasLoggedDisabled = false;
 
     static {
-        BrooklynFeatureEnablement.setDefault(FEATURE_TOSCA_ENABLED, true);
+        BrooklynFeatureEnablement.setDefault(FEATURE_TOSCA_ENABLED, false);
     }
 
     @Override

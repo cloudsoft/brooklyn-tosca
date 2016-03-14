@@ -467,4 +467,26 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(compute.getType(), SameServerEntity.class);
     }
 
+    @Test(enabled = true)
+    public void testChainedRelations() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/chained-relations-frontend-backend-db.yml");
+        assertNotNull(app);
+
+        assertEquals(app.getChildren().size(), 3);
+
+        EntitySpec<?> frontend = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "frontend");
+        EntitySpec<?> backend = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "backend");
+
+        assertNotNull(frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS));
+        assertEquals(((Map) frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
+        assertEquals(((Map) frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+                .get("brooklyn.example.backend.endpoint").toString(), "$brooklyn:entity(\"backend\").attributeWhenReady(\"webapp.url\")");
+
+        assertNotNull(backend.getConfig().get(TomcatServer.JAVA_SYSPROPS));
+        assertEquals(((Map) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
+        assertEquals(((Map) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+    }
 }

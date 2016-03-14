@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
+import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
@@ -65,7 +66,9 @@ public class RelationshipModifier extends ConfigKeyModifier {
                     }
                 }
             }
-            joinPropertiesAndValueTypes(propertiesAndTypedValues, getToscaFacade().getPropertiesAndTypeValuesByRelationshipId(relationship.getSourceNodeId(), toscaApplication, relationship.getRelationshipId(), computeName));
+            if(relationship.getSourceNodeId().equals(nodeId)){
+                joinPropertiesAndValueTypes(propertiesAndTypedValues, getToscaFacade().getPropertiesAndTypeValuesByRelationshipId(relationship.getSourceNodeId(), toscaApplication, relationship.getRelationshipId(), computeName));
+            }
         }
         configureConfigKeysSpec(entitySpec, ConfigBag.newInstance(propertiesAndTypedValues));
     }

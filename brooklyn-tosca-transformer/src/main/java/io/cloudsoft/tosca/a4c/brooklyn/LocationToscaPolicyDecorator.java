@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
-import org.apache.brooklyn.api.location.Location;
+import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlLocationResolver;
 
@@ -25,24 +25,24 @@ public class LocationToscaPolicyDecorator extends AbstractToscaPolicyDecorator {
     }
 
     public void decorate(Map<String, ?> policyData, String policyName, Optional<String> type, Set<String> groupMembers) {
-        List<Location> locations = getLocations(policyData);
+        List<LocationSpec<?>> locations = getLocationSpecs(policyData);
         for (String id : groupMembers) {
             EntitySpec<?> spec = specs.get(id);
             if (spec == null) {
                 throw new IllegalStateException("No node " + id + " found, when setting locations");
             }
-            spec.locations(locations);
+            spec.locationSpecs(locations);
         }
     }
 
-    private List<Location> getLocations(Map<String, ?> policyData) {
+    private List<LocationSpec<?>> getLocationSpecs(Map<String, ?> policyData) {
         Object data = policyData.containsKey(GroupPolicyParser.VALUE)
                 ? policyData.get(GroupPolicyParser.VALUE)
                 : getPolicyProperties(policyData);
-        return resolveLocations(ImmutableMap.of("location", data));
+        return resolveLocationSpecs(ImmutableMap.of("location", data));
     }
 
-    private List<Location> resolveLocations(Map<String, ?> locations) {
+    private List<LocationSpec<?>> resolveLocationSpecs(Map<String, ?> locations) {
         return new BrooklynYamlLocationResolver(mgmt).resolveLocations(locations, true);
     }
 }

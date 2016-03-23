@@ -1,3 +1,14 @@
+# Important note!
+#
+# Set the following in brooklyn.properties for this test:
+#
+# brooklyn.ssh.config.scriptHeader=#!/bin/bash\n
+#
+# The bash scripts used by the alien.nodes.Mongod type to install, customise
+# and start MongoDB test whether the process is running by executing a command
+# that may exit with a non-zero code. By default Brooklyn prepends scripts with
+# "#!/bin/bash -e" (see ShellTool). This causes it to mistakenly conclude that
+# the Alien4Cloud scripts have failed.
 tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
 description: Alien4Cloud generated service template
 template_name: php

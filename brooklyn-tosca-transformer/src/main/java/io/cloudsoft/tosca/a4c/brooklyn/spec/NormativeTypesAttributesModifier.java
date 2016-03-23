@@ -46,6 +46,6 @@ public class NormativeTypesAttributesModifier extends AbstractSpecModifier {
 
 
         // open up any ports that end with "_port" in addition to the default ".port"
-        entitySpec.configure(SoftwareProcess.INBOUND_PORTS_CONFIG_REGEX, ".*[\\._]port$");
+        entitySpec.configure(SoftwareProcess.INBOUND_PORTS_CONFIG_REGEX, "(.*[\\._])?port$");
     }
 }

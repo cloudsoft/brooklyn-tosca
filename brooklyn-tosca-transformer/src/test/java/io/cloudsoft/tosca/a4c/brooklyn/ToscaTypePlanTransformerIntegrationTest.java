@@ -378,8 +378,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
         assertEquals(app.getChildren().size(), 1);
         Entity entity = Iterators.getOnlyElement(app.getChildren().iterator());
-        String value = entity.sensors().get(Sensors.newStringSensor("my_message"));
-        assertEquals(value, "Message: It Works!");
+        EntityAsserts.assertAttributeEqualsEventually(entity, Sensors.newStringSensor("my_message"), "Message: It Works!");
     }
 
     @Test(enabled = false)

@@ -19,6 +19,7 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.Location;
+import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
@@ -78,8 +79,8 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
         assertEquals(server.getFlags().get("tosca.node.type"), "tosca.nodes.Compute");
         assertEquals(server.getType(), SameServerEntity.class);
-        assertEquals(server.getLocations().size(), 1);
-        assertEquals(server.getLocations().get(0).getDisplayName(), "localhost");
+        assertEquals(server.getLocationSpecs().size(), 1);
+        assertEquals(server.getLocationSpecs().get(0).getFlags().get("name"), "localhost");
 
         assertEquals(hostedSoftwareComponent.getFlags().get("tosca.node.type"),
                 "tosca.nodes.SoftwareComponent");
@@ -115,8 +116,8 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertTrue(javaSysProps.get("brooklyn.example.db.url") instanceof BrooklynDslDeferredSupplier);
         assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
 
-        assertEquals(tomcatServer.getLocations().size(), 1, "Expected one location");
-        assertTrue(tomcatServer.getLocations().get(0) instanceof LocalhostMachineProvisioningLocation);
+        assertEquals(tomcatServer.getLocationSpecs().size(), 1, "Expected one LocationSpec");
+        assertTrue(tomcatServer.getLocationSpecs().get(0) instanceof LocationSpec);
     }
 
     @Test
@@ -126,13 +127,12 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(app.getChildren().size(), 1);
 
         EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
-        assertEquals(vanillaEntity.getLocations().size(), 1);
-        Location location = Iterables.getOnlyElement(vanillaEntity.getLocations());
-        assertTrue(location instanceof JcloudsLocation);
-        assertEquals(((JcloudsLocation) location).getProvider(), "aws-ec2");
-        assertEquals(((JcloudsLocation) location).getRegion(), "us-west-2");
-        assertEquals(((JcloudsLocation) location).getIdentity(), "user-key-id");
-        assertEquals(((JcloudsLocation) location).getCredential(), "user-key");
+        assertEquals(vanillaEntity.getLocationSpecs().size(), 1);
+        LocationSpec<?> locationSpec = Iterables.getOnlyElement(vanillaEntity.getLocationSpecs());
+        assertEquals(locationSpec.getFlags().get("provider"), "aws-ec2");
+        assertEquals(locationSpec.getFlags().get("region"), "us-west-2");
+        assertEquals(locationSpec.getFlags().get("identity"), "user-key-id");
+        assertEquals(locationSpec.getFlags().get("credential"), "user-key");
     }
 
     @Test
@@ -142,14 +142,12 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(app.getChildren().size(), 1);
 
         EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
-        assertEquals(vanillaEntity.getLocations().size(), 1);
-        assertTrue(Iterables.getOnlyElement(vanillaEntity.getLocations())
-                instanceof FixedListMachineProvisioningLocation);
+        assertEquals(vanillaEntity.getLocationSpecs().size(), 1);
+        assertTrue(Iterables.getOnlyElement(vanillaEntity.getLocationSpecs())
+                instanceof LocationSpec);
 
-        FixedListMachineProvisioningLocation location =
-                (FixedListMachineProvisioningLocation) Iterables
-                        .getOnlyElement(vanillaEntity.getLocations());
-        Map<String, Object> configByon = location.getLocalConfigBag().getAllConfig();
+        LocationSpec<?> locationSpec = Iterables.getOnlyElement(vanillaEntity.getLocationSpecs());
+        Map<String, ?> configByon = locationSpec.getFlags();
         assertEquals(configByon.get("user"), "brooklyn");
         assertEquals(configByon.get("provider"), "byon");
         assertTrue(configByon.get("machines") instanceof Collection);

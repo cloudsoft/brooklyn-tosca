@@ -1,27 +1,24 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlLocationResolver;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
-
-import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class LocationToscaPolicyDecorator extends AbstractToscaPolicyDecorator {
 
     private Map<String, EntitySpec<?>> specs;
-    private ManagementContext mgmt;
 
     LocationToscaPolicyDecorator(Map<String, EntitySpec<?>> specs, ManagementContext mgmt) {
+        super(mgmt);
         this.specs = specs;
-        this.mgmt = mgmt;
     }
 
     public void decorate(Map<String, ?> policyData, String policyName, Optional<String> type, Set<String> groupMembers) {

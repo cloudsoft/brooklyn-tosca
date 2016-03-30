@@ -150,17 +150,17 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         Map<String, ?> configByon = locationSpec.getFlags();
         assertEquals(configByon.get("user"), "brooklyn");
         assertEquals(configByon.get("provider"), "byon");
-        assertTrue(configByon.get("machines") instanceof Collection);
-        assertEquals(((Collection) configByon.get("machines")).size(), 1);
+        assertTrue(configByon.get("byon.machineSpecs") instanceof Collection);
+        assertEquals(((Collection) configByon.get("byon.machineSpecs")).size(), 1);
 
-        Object machinesObj = configByon.get("machines");
-        assertNotNull(machinesObj, "machines");
+        Object machinesObj = configByon.get("byon.machineSpecs");
+        assertNotNull(machinesObj, "byon.machineSpecs");
         List<?> machines = List.class.cast(machinesObj);
         assertFalse(machines.isEmpty(), "expected value for machines key in " + configByon);
         Object obj = machines.get(0);
-        assertEquals(obj.getClass(), SshMachineLocation.class);
-        SshMachineLocation sml = SshMachineLocation.class.cast(obj);
-        assertEquals(sml.getAddress().getHostAddress(), "192.168.0.18");
+        assertEquals(obj.getClass(), LocationSpec.class);
+        LocationSpec sml = LocationSpec.class.cast(obj);
+        assertEquals(sml.getFlags().get("address"), "192.168.0.18");
     }
 
     @Test

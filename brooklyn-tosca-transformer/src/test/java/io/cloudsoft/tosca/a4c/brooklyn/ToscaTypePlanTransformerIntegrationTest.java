@@ -178,7 +178,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
 
     @Test
-    public void testRelationNotReplacePropColectionConfigKey()
+    public void testRelationNotOverridePropCollectionConfigKey()
             throws ParsingException, CSARVersionAlreadyExistsException, IOException {
 
         Path outputPath = makeOutputPath("relationship-defined-prop-collection.yaml", "relation", "test.sh", "target.sh");
@@ -196,6 +196,28 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
         assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+                .get("key1").toString(), "value1");
+    }
+
+    @Test
+    public void testRelationNotOverridePropCollectionFlag()
+            throws ParsingException, CSARVersionAlreadyExistsException, IOException {
+
+        Path outputPath = makeOutputPath("relationship-defined-prop-collection-flag.yaml", "relation", "test.sh", "target.sh");
+        ToscaApplication toscaApplication = platform.parse(outputPath);
+        EntitySpec<? extends Application> app = transformer.createApplicationSpec(toscaApplication);
+
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 2);
+
+        EntitySpec<?> tomcatServer = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
+
+        assertNotNull(tomcatServer.getFlags().get("javaSysProps"));
+        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps")).size(), 2);
+        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps"))
+                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps"))
                 .get("key1").toString(), "value1");
     }
 

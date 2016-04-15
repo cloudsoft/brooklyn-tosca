@@ -47,17 +47,27 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
     private void configureWithResolvedFlag(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
         Optional<Object> resolvedValue = resolveValue(r.getFlagMaybeValue().get(), Optional.<TypeToken>absent());
-        if (resolvedValue.isPresent()) {
-            spec.configure(r.getFlagName(), resolvedValue.get());
+        Optional<Object> oldValue = findFlagValue(spec, r);
+
+        Optional<Object> joinedValues = joinOldAndNewSpecConfigValues(oldValue, resolvedValue);
+
+        if (joinedValues.isPresent()) {
+            spec.configure(r.getFlagName(), joinedValues.get());
         }
         keyNamesUsed.add(r.getFlagName());
     }
 
+
     private void configureWithResolvedConfigKey(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
         try {
-            Optional<Object> resolvedValue = joinOldAndNewEntityConfigValues(r, spec);
-            if (resolvedValue.isPresent()) {
-                spec.configure(r.getConfigKey(), resolvedValue.get());
+            Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(),
+                    Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
+            Optional<Object> oldValue = getConfigKeyValue(spec, r);
+
+            Optional<Object> joinedValues = joinOldAndNewSpecConfigValues(oldValue, resolvedValue);
+
+            if (joinedValues.isPresent()) {
+                spec.configure(r.getConfigKey(), joinedValues.get());
             }
             // todo: Should this be in the if block?
             keyNamesUsed.add(r.getConfigKey().getName());
@@ -68,20 +78,17 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         }
     }
 
-    private Optional<Object> joinOldAndNewEntityConfigValues(FlagUtils.FlagConfigKeyAndValueRecord newRecord,
-                                                             EntitySpec spec) {
+    private Optional<Object> joinOldAndNewSpecConfigValues(Optional<Object> oldValue,
+                                                             Optional<Object> newValue) {
         Optional<Object> result;
-        Optional<Object> resolvedValue = resolveValue(newRecord.getConfigKeyMaybeValue().get(),
-                Optional.<TypeToken>of(newRecord.getConfigKey().getTypeToken()));
-        Optional<Object> currentValue = findCurrentConfigKeyValue(spec, newRecord);
 
-        if ((resolvedValue.isPresent()) && (currentValue.isPresent())) {
+        if ((newValue.isPresent()) && (oldValue.isPresent())) {
             result = Optional.of(
-                    joinOldAndNewValues(currentValue.get(), resolvedValue.get()));
-        } else if (resolvedValue.isPresent()) {
-            result = resolvedValue;
-        } else if (currentValue.isPresent()) {
-            result = currentValue;
+                    joinOldAndNewValues(oldValue.get(), newValue.get()));
+        } else if (newValue.isPresent()) {
+            result = newValue;
+        } else if (oldValue.isPresent()) {
+            result = oldValue;
         } else {
             result = Optional.absent();
         }
@@ -109,12 +116,20 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         return currentValue;
     }
 
-    private Optional<Object> findCurrentConfigKeyValue(EntitySpec spec,
-                                                       FlagUtils.FlagConfigKeyAndValueRecord r) {
+    private Optional<Object> getConfigKeyValue(EntitySpec spec,
+                                               FlagUtils.FlagConfigKeyAndValueRecord r) {
         Object configValue = spec.getConfig().get(r.getConfigKey());
         return (configValue == null)
                 ? Optional.absent()
-                : Optional.of(spec.getConfig().get(r.getConfigKey()));
+                : Optional.of(configValue);
+    }
+
+    private Optional<Object> findFlagValue(EntitySpec spec,
+                                               FlagUtils.FlagConfigKeyAndValueRecord r) {
+        Object flagValue = spec.getFlags().get(r.getFlagName());
+        return (flagValue == null)
+                ? Optional.absent()
+                : Optional.of(flagValue);
     }
 
 

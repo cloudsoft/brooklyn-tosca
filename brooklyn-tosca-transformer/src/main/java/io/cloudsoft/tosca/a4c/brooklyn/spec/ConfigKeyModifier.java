@@ -1,9 +1,9 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
+import com.google.common.base.Optional;
+import com.google.common.reflect.TypeToken;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
@@ -14,11 +14,11 @@ import org.apache.brooklyn.util.core.flags.FlagUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
-import com.google.common.reflect.TypeToken;
-
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
@@ -34,7 +34,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         setUnusedKeysAsAnonymousKeys(spec, keyNamesUsed, bag);
     }
 
-    private void configureWithAllRecords(Collection<FlagUtils.FlagConfigKeyAndValueRecord> records, EntitySpec spec, Set<String> keyNamesUsed){
+    private void configureWithAllRecords(Collection<FlagUtils.FlagConfigKeyAndValueRecord> records, EntitySpec spec, Set<String> keyNamesUsed) {
         for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
             if (r.getFlagMaybeValue().isPresent()) {
                 configureWithResolvedFlag(r, spec, keyNamesUsed);
@@ -45,7 +45,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         }
     }
 
-    private void configureWithResolvedFlag(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed){
+    private void configureWithResolvedFlag(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
         Optional<Object> resolvedValue = resolveValue(r.getFlagMaybeValue().get(), Optional.<TypeToken>absent());
         if (resolvedValue.isPresent()) {
             spec.configure(r.getFlagName(), resolvedValue.get());
@@ -53,9 +53,9 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         keyNamesUsed.add(r.getFlagName());
     }
 
-    private void configureWithResolvedConfigKey(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed){
+    private void configureWithResolvedConfigKey(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
         try {
-            Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(), Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
+            Optional<Object> resolvedValue = joinOldAndNewEntityConfigValues(r, spec);
             if (resolvedValue.isPresent()) {
                 spec.configure(r.getConfigKey(), resolvedValue.get());
             }
@@ -68,7 +68,57 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         }
     }
 
-    private void setUnusedKeysAsAnonymousKeys(EntitySpec spec, Set<String> keyNamesUsed, ConfigBag bag){
+    private Optional<Object> joinOldAndNewEntityConfigValues(FlagUtils.FlagConfigKeyAndValueRecord newRecord,
+                                                             EntitySpec spec) {
+        Optional<Object> result;
+        Optional<Object> resolvedValue = resolveValue(newRecord.getConfigKeyMaybeValue().get(),
+                Optional.<TypeToken>of(newRecord.getConfigKey().getTypeToken()));
+        Optional<Object> currentValue = findCurrentConfigKeyValue(spec, newRecord);
+
+        if ((resolvedValue.isPresent()) && (currentValue.isPresent())) {
+            result = Optional.of(
+                    joinOldAndNewValues(currentValue.get(), resolvedValue.get()));
+        } else if (resolvedValue.isPresent()) {
+            result = resolvedValue;
+        } else if (currentValue.isPresent()) {
+            result = currentValue;
+        } else {
+            result = Optional.absent();
+        }
+        return result;
+    }
+
+    private Object joinOldAndNewValues(Object oldValue, Object newValue) {
+        if ((oldValue instanceof Map) && (newValue instanceof Map)) {
+            return combineCurrentAndResolvedValueMaps((Map) oldValue, (Map) newValue);
+        } else if ((oldValue instanceof List) && (newValue instanceof List)) {
+            return combineCurrentAndResolvedValueList((List) oldValue, (List) newValue);
+        } else {
+            return newValue;
+        }
+    }
+
+
+    private Map combineCurrentAndResolvedValueMaps(Map currentValue, Map resolvedVaue) {
+        currentValue.putAll(resolvedVaue);
+        return currentValue;
+    }
+
+    private List combineCurrentAndResolvedValueList(List currentValue, List resolvedVaue) {
+        currentValue.addAll(resolvedVaue);
+        return currentValue;
+    }
+
+    private Optional<Object> findCurrentConfigKeyValue(EntitySpec spec,
+                                                       FlagUtils.FlagConfigKeyAndValueRecord r) {
+        Object configValue = spec.getConfig().get(r.getConfigKey());
+        return (configValue == null)
+                ? Optional.absent()
+                : Optional.of(spec.getConfig().get(r.getConfigKey()));
+    }
+
+
+    private void setUnusedKeysAsAnonymousKeys(EntitySpec spec, Set<String> keyNamesUsed, ConfigBag bag) {
         // they aren't flags or known config keys, so must be passed as config keys in order for
         // EntitySpec to know what to do with them (as they are passed to the spec as flags)
         for (String key : MutableSet.copyOf(bag.getUnusedConfig().keySet())) {

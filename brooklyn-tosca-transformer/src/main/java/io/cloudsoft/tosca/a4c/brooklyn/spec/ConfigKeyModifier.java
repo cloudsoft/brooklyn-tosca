@@ -8,6 +8,8 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.util.collections.MutableList;
+import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.core.flags.FlagUtils;
@@ -79,7 +81,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
     }
 
     private Optional<Object> joinOldAndNewSpecConfigValues(Optional<Object> oldValue,
-                                                             Optional<Object> newValue) {
+                                                           Optional<Object> newValue) {
         Optional<Object> result;
 
         if ((newValue.isPresent()) && (oldValue.isPresent())) {
@@ -95,41 +97,37 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         return result;
     }
 
-    private Object joinOldAndNewValues(Object oldValue, Object newValue) {
+    protected Object joinOldAndNewValues(Object oldValue, Object newValue) {
         if ((oldValue instanceof Map) && (newValue instanceof Map)) {
             return combineCurrentAndResolvedValueMaps((Map) oldValue, (Map) newValue);
         } else if ((oldValue instanceof List) && (newValue instanceof List)) {
             return combineCurrentAndResolvedValueList((List) oldValue, (List) newValue);
         } else {
+            LOG.debug("Types of oldValue {} and newValue {} are not the same, so {} is not able " +
+                    "to join them. Then, new type will be returned ",
+                    new Object[]{oldValue, newValue, this});
             return newValue;
         }
     }
-
-
+    
     private Map combineCurrentAndResolvedValueMaps(Map currentValue, Map resolvedVaue) {
-        currentValue.putAll(resolvedVaue);
-        return currentValue;
+        return MutableMap.copyOf(currentValue).add(resolvedVaue);
     }
 
     private List combineCurrentAndResolvedValueList(List currentValue, List resolvedVaue) {
-        currentValue.addAll(resolvedVaue);
-        return currentValue;
+        MutableList result = MutableList.copyOf(currentValue);
+        result.addAll(resolvedVaue);
+        return result;
     }
 
     private Optional<Object> getConfigKeyValue(EntitySpec spec,
                                                FlagUtils.FlagConfigKeyAndValueRecord r) {
-        Object configValue = spec.getConfig().get(r.getConfigKey());
-        return (configValue == null)
-                ? Optional.absent()
-                : Optional.of(configValue);
+        return Optional.fromNullable(spec.getConfig().get(r.getConfigKey()));
     }
 
     private Optional<Object> findFlagValue(EntitySpec spec,
-                                               FlagUtils.FlagConfigKeyAndValueRecord r) {
-        Object flagValue = spec.getFlags().get(r.getFlagName());
-        return (flagValue == null)
-                ? Optional.absent()
-                : Optional.of(flagValue);
+                                           FlagUtils.FlagConfigKeyAndValueRecord r) {
+        return Optional.fromNullable(spec.getFlags().get(r.getFlagName()));
     }
 
 

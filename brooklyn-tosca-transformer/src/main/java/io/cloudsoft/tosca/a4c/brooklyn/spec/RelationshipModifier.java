@@ -1,28 +1,23 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import alien4cloud.paas.plan.ToscaRelationshipLifecycleConstants;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
-import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import alien4cloud.paas.plan.ToscaRelationshipLifecycleConstants;
-import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
-
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import javax.inject.Inject;
+import java.util.Map;
 
 @Component
 public class RelationshipModifier extends ConfigKeyModifier {
@@ -66,13 +61,18 @@ public class RelationshipModifier extends ConfigKeyModifier {
                     }
                 }
             }
-            if(relationship.getSourceNodeId().equals(nodeId)){
-                joinPropertiesAndValueTypes(propertiesAndTypedValues, getToscaFacade().getPropertiesAndTypeValuesByRelationshipId(relationship.getSourceNodeId(), toscaApplication, relationship.getRelationshipId(), computeName));
+            if (relationship.getSourceNodeId().equals(nodeId)) {
+                Map<String, Object> newPropertyValue = getToscaFacade()
+                        .getPropertiesAndTypeValuesByRelationshipId(
+                                relationship.getSourceNodeId(),
+                                toscaApplication,
+                                relationship.getRelationshipId(),
+                                computeName);
+                joinPropertiesAndValueTypes(propertiesAndTypedValues, newPropertyValue);
             }
         }
         configureConfigKeysSpec(entitySpec, ConfigBag.newInstance(propertiesAndTypedValues));
     }
-
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> joinPropertiesAndValueTypes(Map<String, Object> properties,
@@ -82,14 +82,7 @@ public class RelationshipModifier extends ConfigKeyModifier {
             if (!properties.containsKey(newPropertyId)) {
                 properties.put(newPropertyId, newPropertyValue);
             } else {
-                Object oldPropertyValue = properties.get(newPropertyId);
-                if ((oldPropertyValue instanceof Map)
-                        && (newPropertyValue instanceof Map)) {
-                    ((Map) oldPropertyValue).putAll((Map) newPropertyValue);
-                } else if ((oldPropertyValue instanceof List)
-                        && (newPropertyValue instanceof List)) {
-                    ((List) oldPropertyValue).addAll((List) newPropertyValue);
-                }
+                properties.put(newPropertyId, joinOldAndNewValues(properties.get(newPropertyId), newPropertyValue));
             }
         }
         return properties;

@@ -143,24 +143,18 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
         EntitySpec<?> vanillaEntity = Iterables.getOnlyElement(app.getChildren());
         assertEquals(vanillaEntity.getLocationSpecs().size(), 1);
-        assertTrue(Iterables.getOnlyElement(vanillaEntity.getLocationSpecs())
-                instanceof LocationSpec);
 
         LocationSpec<?> locationSpec = Iterables.getOnlyElement(vanillaEntity.getLocationSpecs());
         Map<String, ?> configByon = locationSpec.getFlags();
         assertEquals(configByon.get("user"), "brooklyn");
         assertEquals(configByon.get("provider"), "byon");
-        assertTrue(configByon.get("machines") instanceof Collection);
-        assertEquals(((Collection) configByon.get("machines")).size(), 1);
 
-        Object machinesObj = configByon.get("machines");
-        assertNotNull(machinesObj, "machines");
-        List<?> machines = List.class.cast(machinesObj);
-        assertFalse(machines.isEmpty(), "expected value for machines key in " + configByon);
-        Object obj = machines.get(0);
-        assertEquals(obj.getClass(), SshMachineLocation.class);
-        SshMachineLocation sml = SshMachineLocation.class.cast(obj);
-        assertEquals(sml.getAddress().getHostAddress(), "192.168.0.18");
+        List<?> machineSpecs = (List) configByon.get("byon.machineSpecs");
+        assertNotNull(machineSpecs);
+        assertEquals(machineSpecs.size(), 1, "machineSpecs=" + Iterables.toString(machineSpecs));
+
+        LocationSpec<?> spec = (LocationSpec<?>) machineSpecs.get(0);
+        assertEquals(spec.getFlags().get("address"), "192.168.0.18");
     }
 
     @Test

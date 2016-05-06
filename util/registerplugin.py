@@ -29,7 +29,7 @@ if "BROOKLYN_PLUGIN" in os.environ:
     BROOKLYN_PLUGIN_FILE = os.path.abspath(os.environ["BROOKLYN_PLUGIN"])
 else:
     scriptDir = os.path.dirname(sys.argv[0])
-    guess = scriptDir + "/../a4c-brooklyn-plugin/target/a4c-brooklyn-plugin-0.9.0-SNAPSHOT.zip"
+    guess = scriptDir + "/../a4c-brooklyn-plugin/target/a4c-brooklyn-plugin-0.10.0-SNAPSHOT.zip"
     BROOKLYN_PLUGIN_FILE = os.path.abspath(guess)
 
 if not os.path.exists(BROOKLYN_PLUGIN_FILE):

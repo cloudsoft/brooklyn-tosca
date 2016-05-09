@@ -31,6 +31,13 @@
         <spring.version>4.1.4.RELEASE</spring.version>
     </properties>
 
+    <scm>
+        <url>https://github.com/cloudsoft/brooklyn-tosca/</url>
+        <connection>scm:git:https://github.com/cloudsoft/brooklyn-tosca.git</connection>
+        <developerConnection>scm:git:git@github.com:cloudsoft/brooklyn-tosca.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
     <repositories>
         <repository>
             <id>apache.snapshots</id>

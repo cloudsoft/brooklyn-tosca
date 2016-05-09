@@ -12,7 +12,7 @@
     <groupId>io.cloudsoft.brooklyn.tosca</groupId>
     <artifactId>brooklyn-tosca-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.9.0</version>  <!-- BROOKLYN_TOSCA_VERSION -->
+    <version>0.10.0-SNAPSHOT</version>  <!-- BROOKLYN_TOSCA_VERSION -->
 
     <name>Brooklyn TOSCA parent project</name>
 
@@ -34,7 +34,7 @@
         <url>https://github.com/cloudsoft/brooklyn-tosca/</url>
         <connection>scm:git:https://github.com/cloudsoft/brooklyn-tosca.git</connection>
         <developerConnection>scm:git:git@github.com:cloudsoft/brooklyn-tosca.git</developerConnection>
-        <tag>brooklyn-tosca-parent-0.9.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <repositories>

@@ -18,7 +18,6 @@ import javax.annotation.Nullable;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
-import org.apache.brooklyn.api.location.Location;
 import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
@@ -34,25 +33,22 @@ import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
-import org.apache.brooklyn.location.byon.FixedListMachineProvisioningLocation;
-import org.apache.brooklyn.location.jclouds.JcloudsLocation;
-import org.apache.brooklyn.location.localhost.LocalhostMachineProvisioningLocation;
 import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.stream.Streams;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
+import com.google.common.io.Files;
+
 import alien4cloud.component.repository.exception.CSARVersionAlreadyExistsException;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.utils.FileUtil;
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
 import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
-import com.google.common.io.Files;
 
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
@@ -183,6 +179,45 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 "echo This is the target");
     }
 
+
+    @Test
+    public void testRelationNotOverridePropCollectionConfigKey()
+            throws Exception {
+
+        EntitySpec<? extends Application> app = create("classpath://templates/relationship-defined-prop-collection.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 2);
+
+        EntitySpec<?> tomcatServer = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
+
+        assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
+        
+        
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("key1").toString(), "value1");
+    }
+
+    @Test(enabled = true)
+    public void testRelationNotOverridePropCollectionFlag()
+            throws Exception {
+
+        EntitySpec<? extends Application> app = create("classpath://templates/relationship-defined-prop-collection-flag.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 2);
+
+        EntitySpec<?> tomcatServer = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
+
+        assertNotNull(tomcatServer.getFlags().get("javaSysProps"));
+        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps")).size(), 2);
+        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps"))
+                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps"))
+                .get("key1").toString(), "value1");
+    }
+
     private Path makeOutputPath(String yamlFile, String scriptsFolder, String... scripts) throws IOException {
         File tempDir = Files.createTempDir();
         tempDir.deleteOnExit();
@@ -211,11 +246,9 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
-        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
-        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
-                .get("dbConnection1").toString(), "connection1");
-        assertEquals(((Map)tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
-                .get("dbConnection2").toString(), "connection2");
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("dbConnection1").toString(), "connection1");
+        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("dbConnection2").toString(), "connection2");
     }
 
     @Test

@@ -39,6 +39,7 @@ import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.stream.Streams;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -142,15 +143,17 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
         LocationSpec<?> locationSpec = Iterables.getOnlyElement(vanillaEntity.getLocationSpecs());
         Map<String, ?> configByon = locationSpec.getFlags();
-        assertEquals(configByon.get("user"), "brooklyn");
-        assertEquals(configByon.get("provider"), "byon");
+        final String configStr = Joiner.on(", ").withKeyValueSeparator("=").join(configByon);
+        assertEquals(configByon.get("user"), "brooklyn", "expected user=brooklyn in " + configStr);
+        assertEquals(configByon.get("provider"), "byon", "expected provider=byon in " + configStr);
 
         List<?> machineSpecs = (List) configByon.get("byon.machineSpecs");
-        assertNotNull(machineSpecs);
+        assertNotNull(machineSpecs, "expected byon.machineSpecs != null in " + configStr);
         assertEquals(machineSpecs.size(), 1, "machineSpecs=" + Iterables.toString(machineSpecs));
 
         LocationSpec<?> spec = (LocationSpec<?>) machineSpecs.get(0);
-        assertEquals(spec.getFlags().get("address"), "192.168.0.18");
+        assertEquals(spec.getFlags().get("address"), "192.168.0.18", "expected address=192.168.0.18 in location flags " +
+                Joiner.on(", ").withKeyValueSeparator("=").join(spec.getFlags()));
     }
 
     @Test

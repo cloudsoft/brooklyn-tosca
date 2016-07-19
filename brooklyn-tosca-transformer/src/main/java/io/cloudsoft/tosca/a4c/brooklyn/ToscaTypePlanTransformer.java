@@ -52,10 +52,6 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     private ToscaPlatform platform;
     private final AtomicBoolean alienInitialised = new AtomicBoolean();
 
-    static {
-        BrooklynFeatureEnablement.setDefault(FEATURE_TOSCA_ENABLED, true);
-    }
-
     public static final String FORMAT = "brooklyn-tosca";
 
     public ToscaTypePlanTransformer() {

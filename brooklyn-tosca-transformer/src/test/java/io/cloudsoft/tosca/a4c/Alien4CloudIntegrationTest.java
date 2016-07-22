@@ -7,6 +7,7 @@ import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampPlatformLauncherNoServer;
+import org.apache.brooklyn.core.BrooklynFeatureEnablement;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.mgmt.internal.ManagementContextInternal;
 import org.apache.brooklyn.core.typereg.RegisteredTypes;
@@ -34,8 +35,13 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
     protected ToscaTypePlanTransformer transformer;
     protected Uploader uploader;
 
+    protected Boolean origFeatureEnablement;
+    
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
+    	origFeatureEnablement = BrooklynFeatureEnablement.isEnabled(ToscaTypePlanTransformer.FEATURE_TOSCA_ENABLED);
+    	BrooklynFeatureEnablement.setDefault(ToscaTypePlanTransformer.FEATURE_TOSCA_ENABLED, true);
+    	
         assertNotNull(super.applicationContext, "No application context for test");
         Alien4CloudToscaPlatform.grantAdminAuth();
         this.platform = super.applicationContext.getBean(Alien4CloudToscaPlatform.class);
@@ -62,6 +68,9 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
             LOG.error("Caught exception in tearDown method", e);
         } finally {
             this.mgmt = null;
+        	if (origFeatureEnablement != null) {
+        		BrooklynFeatureEnablement.setDefault(ToscaTypePlanTransformer.FEATURE_TOSCA_ENABLED, origFeatureEnablement);
+        	}
         }
     }
 

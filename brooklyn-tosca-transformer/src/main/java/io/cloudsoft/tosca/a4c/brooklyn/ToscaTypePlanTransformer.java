@@ -41,7 +41,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
             .build();
 
     @VisibleForTesting
-    static final String FEATURE_TOSCA_ENABLED = BrooklynFeatureEnablement.FEATURE_PROPERTY_PREFIX + ".tosca";
+    public static final String FEATURE_TOSCA_ENABLED = BrooklynFeatureEnablement.FEATURE_PROPERTY_PREFIX + ".tosca";
     private static final AtomicBoolean hasLoggedDisabled = new AtomicBoolean(false);
 
     private static final ConfigKey<String> TOSCA_ID = ConfigKeys.newStringConfigKey("tosca.id");

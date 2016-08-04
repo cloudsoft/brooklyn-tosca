@@ -26,6 +26,7 @@ import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
+import alien4cloud.model.components.CSARSource;
 
 @Component
 public class Uploader {
@@ -43,8 +44,8 @@ public class Uploader {
 
     public void upload(Path zip) throws ParsingException, CSARVersionAlreadyExistsException {
         LOG.debug("Uploading type: " + zip);
-        ParsingResult<Csar> types = archiveUploadService.upload(zip);
-        if (ArchiveUploadService.hasError(types, ParsingErrorLevel.ERROR)) {
+        ParsingResult<Csar> types = archiveUploadService.upload(zip, CSARSource.UPLOAD);
+        if (types.hasError(ParsingErrorLevel.ERROR)) {
             throw new UserFacingException("Errors parsing types:\n" + Strings.join(types.getContext().getParsingErrors(), "\n  "));
         }
     }
@@ -63,12 +64,12 @@ public class Uploader {
     public ParsingResult<Csar> uploadArchive(File zipFile, String callerReferenceName) {
         try {
             String nameCleaned = Strings.makeValidFilename(callerReferenceName);
-            ParsingResult<Csar> result = archiveUploadService.upload(Paths.get(zipFile.toString()));
+            ParsingResult<Csar> result = archiveUploadService.upload(Paths.get(zipFile.toString()), CSARSource.UPLOAD);
 
-            if (ArchiveUploadService.hasError(result, null)) {
+            if (result.hasError(null)) {
                 LOG.debug("A4C parse notes for " + nameCleaned + ":\n  " + Strings.join(result.getContext().getParsingErrors(), "\n  "));
             }
-            if (ArchiveUploadService.hasError(result, ParsingErrorLevel.ERROR)) {
+            if (result.hasError(ParsingErrorLevel.ERROR)) {
                 // archive will not be installed in this case, so we should throw
                 throw new UserFacingException("Could not parse " + callerReferenceName + " as TOSCA:\n  "
                         + Strings.join(result.getContext().getParsingErrors(), "\n  "));

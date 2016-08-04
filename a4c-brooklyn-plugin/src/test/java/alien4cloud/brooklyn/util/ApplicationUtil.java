@@ -32,7 +32,7 @@ public class ApplicationUtil {
     @SneakyThrows
     public Topology createAlienApplication(String applicationName, String topologyFileName) {
         Topology topology = parseYamlTopology(topologyFileName);
-        String applicationId = applicationService.create("alien", applicationName, null, null);
+        String applicationId = applicationService.create("alien", applicationName, (String)null);
         topology.setDelegateId(applicationId);
         topology.setDelegateType(Application.class.getSimpleName().toLowerCase());
         alienDAO.save(topology);

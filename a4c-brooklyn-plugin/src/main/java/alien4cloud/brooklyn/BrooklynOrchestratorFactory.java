@@ -71,4 +71,9 @@ public class BrooklynOrchestratorFactory implements IOrchestratorPluginFactory<B
         return null;
     }
 
+    @Override
+    public String getType() {
+        return "Brooklyn";
+    }
+
 }

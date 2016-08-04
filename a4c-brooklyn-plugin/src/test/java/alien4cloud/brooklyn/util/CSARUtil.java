@@ -17,6 +17,7 @@ import alien4cloud.git.RepositoryManager;
 import alien4cloud.security.model.Role;
 import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.utils.FileUtil;
+import alien4cloud.model.components.CSARSource;
 
 @Component
 @Slf4j
@@ -50,7 +51,7 @@ public class CSARUtil {
         FileUtil.zip(path, zipPath);
         Authentication auth = new TestingAuthenticationToken(Role.ADMIN, "", Role.ADMIN.name());
         SecurityContextHolder.getContext().setAuthentication(auth);
-        archiveUploadService.upload(zipPath);
+        archiveUploadService.upload(zipPath, CSARSource.UPLOAD);
     }
 
     public void uploadNormativeTypes() throws Exception {

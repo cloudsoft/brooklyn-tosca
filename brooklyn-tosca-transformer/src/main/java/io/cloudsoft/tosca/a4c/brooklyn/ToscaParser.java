@@ -87,7 +87,7 @@ public class ToscaParser {
             tp = uploader.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
         }
 
-        if (ArchiveUploadService.hasError(tp, ParsingErrorLevel.ERROR)) {
+        if (tp.hasError(ParsingErrorLevel.ERROR)) {
             throw new UserFacingException("Could not parse TOSCA plan: "
                     + Strings.join(tp.getContext().getParsingErrors(), "\n  "));
         }

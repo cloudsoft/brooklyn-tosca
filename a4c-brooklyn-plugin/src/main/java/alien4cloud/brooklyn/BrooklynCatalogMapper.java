@@ -15,6 +15,7 @@ import alien4cloud.model.components.Interface;
 import alien4cloud.model.components.Operation;
 import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.model.components.RequirementDefinition;
+import alien4cloud.model.components.ScalarPropertyValue;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.normative.ToscaType;
@@ -29,6 +30,7 @@ import org.apache.brooklyn.rest.domain.EffectorSummary;
 import org.apache.brooklyn.rest.domain.EntityConfigSummary;
 import org.apache.brooklyn.rest.domain.SensorSummary;
 import org.apache.brooklyn.util.collections.MutableList;
+import org.apache.brooklyn.util.stream.StreamGobbler;
 import org.apache.brooklyn.util.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -58,6 +60,7 @@ import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import io.cloudsoft.tosca.metadata.ToscaMetadataProvider;
 import lombok.extern.slf4j.Slf4j;
+import alien4cloud.model.components.PropertyValue;
 
 /**
  * This component is used to map components out of brooklyn to a4c.
@@ -201,9 +204,9 @@ public class BrooklynCatalogMapper {
                 propertyDefinition.setType(propertyType);
                 if (entityConfigSummary.getDefaultValue() != null) {
                     if (propertyType.equals(ToscaType.TIME)) {
-                        propertyDefinition.setDefault(Duration.of(entityConfigSummary.getDefaultValue()).toSeconds() + " s");
+                        propertyDefinition.setDefault(new ScalarPropertyValue(Duration.of(entityConfigSummary.getDefaultValue()).toSeconds() + " s"));
                     } else {
-                        propertyDefinition.setDefault(entityConfigSummary.getDefaultValue().toString());
+                        propertyDefinition.setDefault(new ScalarPropertyValue(entityConfigSummary.getDefaultValue().toString()));
                     }
                 }
                 if (ToscaType.MAP.equals(propertyType)) {
@@ -257,7 +260,7 @@ public class BrooklynCatalogMapper {
                     propertyDefinition.setType(parameterType);
                     propertyDefinition.setDescription(parameterSummary.getDescription());
                     if(parameterSummary.getDefaultValue()!=null) {
-                        propertyDefinition.setDefault(parameterSummary.getDefaultValue().toString());
+                        propertyDefinition.setDefault(new ScalarPropertyValue(parameterSummary.getDefaultValue().toString()));
                     }
                     operation.getInputParameters().put(parameterSummary.getName(), propertyDefinition);
                 }

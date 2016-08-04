@@ -33,6 +33,7 @@ import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import lombok.extern.slf4j.Slf4j;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -105,6 +106,9 @@ public class BrooklynLocationConfigurer implements ILocationConfiguratorPlugin {
 
         try {
             IndexedNodeType nodeType = resourceAccessor.getIndexedToscaElement(elementType);
+            if (nodeType.getDerivedFrom() == null) {
+                nodeType.setDerivedFrom(Lists.<String>newArrayList());
+            }
             computeContext.getNodeTypes().add(nodeType);
         } catch (NotFoundException e) {
             log.warn("No compute found with the element id: " + elementType, e);

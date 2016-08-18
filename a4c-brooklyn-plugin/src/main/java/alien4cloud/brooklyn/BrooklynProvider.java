@@ -95,7 +95,10 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     private LocationService locationService;
 
     @Autowired
-    private BrooklynCatalogMapper catalogMapper;
+    private BrooklynCatalogApplicationItemMapper catalogItemMapper;
+
+    @Autowired
+    private BrooklynCatalogEntityItemMapper catalogEntityItemMapper;
 
     @Autowired
     @Qualifier("alien-es-dao")
@@ -126,7 +129,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         try {
             log.info("INIT: " + activeDeployments);
             // TODO synchronise locations
-            catalogMapper.addBaseTypes();
+            catalogEntityItemMapper.addBaseTypes();
 
             List<ToscaTypeProvider> metadataProviders = new LinkedList<>();
             for (String providerClass : configuration.getProviders()) {
@@ -142,7 +145,9 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
                     log.warn("Could not load metadata provider " + providerClass, e);
                 }
             }
-            catalogMapper.mapBrooklynEntities(getNewBrooklynApi(), new ToscaMetadataProvider(metadataProviders));
+            catalogEntityItemMapper.mapBrooklynEntities(getNewBrooklynApi(), new ToscaMetadataProvider(metadataProviders));
+
+            catalogItemMapper.mapBrooklynEntities(getNewBrooklynApi(), new ToscaMetadataProvider(metadataProviders));
 
         } finally {
             revertContextClassLoader();

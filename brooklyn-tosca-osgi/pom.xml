@@ -1,0 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+        <artifactId>brooklyn-tosca-parent</artifactId>
+        <version>0.10.0-SNAPSHOT</version> <!-- BROOKLYN_TOSCA_VERSION -->
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>brooklyn-tosca-osgi</artifactId>
+    <packaging>bundle</packaging>
+    <name>Brooklyn TOSCA OSGI Integration</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+            <artifactId>brooklyn-tosca-transformer</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>3.2.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Import-Package>!org.apache.brooklyn.cli, org.apache.brooklyn.*</Import-Package>
+                        <Export-Package>io.cloudsoft.tosca.a4c.brooklyn</Export-Package>
+                        <Embed-Transitive>true</Embed-Transitive>
+                        <Embed-Dependency>*;scope=compile;groupId=!org.apache.brooklyn</Embed-Dependency>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

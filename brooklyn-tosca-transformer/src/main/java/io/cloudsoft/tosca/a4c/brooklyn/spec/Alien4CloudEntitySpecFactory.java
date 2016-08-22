@@ -52,7 +52,7 @@ public class Alien4CloudEntitySpecFactory implements EntitySpecFactory<Alien4Clo
             spec = (EntitySpec<?>) mgmt.getCatalog().createSpec(catalogItem);
 
         } else if (isComputeType(nodeId, toscaApplication)) {
-            spec = EntitySpec.create(SameServerEntity.class);
+            spec = EntitySpec.create(BasicApplication.class);
         } else {
             try {
                 LOG.info("Found Brooklyn entity that match node type: " + type);

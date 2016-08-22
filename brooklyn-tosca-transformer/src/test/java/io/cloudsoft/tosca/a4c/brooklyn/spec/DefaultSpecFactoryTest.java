@@ -47,6 +47,6 @@ public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
         when(toscaApplication.getNodeTemplate(Mockito.anyString())).thenReturn(nodeTemplate1);
         when(alien4CloudFacade.isDerivedFrom("Test", toscaApplication, "tosca.nodes.Compute")).thenReturn(true);
         EntitySpecFactory factory = new Alien4CloudEntitySpecFactory(mgmt, alien4CloudFacade);
-        assertEquals(factory.create("Test", toscaApplication).getType(), SameServerEntity.class);
+        assertEquals(factory.create("Test", toscaApplication).getType(), BasicApplication.class);
     }
 }

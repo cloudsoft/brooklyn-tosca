@@ -29,7 +29,19 @@
                 <version>3.2.0</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <supportedProjectTypes>
+                        <!--
+                         Very strange that we have to include this section. The project is quite happy to build
+                         without specifying supportedProjectTypes if there is no 'src/main/resources' directory,
+                         but adding that directory causes the build to break with:
+                         [WARNING] Ignoring project type bundle - supportedProjectTypes = [jar]
+                         ...
+                         MojoExecutionException: The packaging for this project did not assign a file to the build artifact
+                         -->
+                        <supportedProjectType>bundle</supportedProjectType>
+                    </supportedProjectTypes>
                     <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>!org.apache.brooklyn.cli, org.apache.brooklyn.*</Import-Package>
                         <Export-Package>io.cloudsoft.tosca.a4c.brooklyn</Export-Package>
                         <Embed-Transitive>true</Embed-Transitive>

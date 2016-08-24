@@ -44,38 +44,12 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>
                             !org.apache.brooklyn.cli, org.apache.brooklyn.*,
-                            ch.qos.*,
-                            com.fasterxml.*,
-                            com.google.*,
-                            com.jayway.*,
-                            com.mongodb.*,
-                            freemarker.cache.*,
-                            freemarker.template.*,
-                            groovy.lang.*,
-                            groovy.util.*,
-                            javax.annotation.*,
-                            javax.inject.*,
-                            javax.management.*,
-                            javax.naming.*,
-                            javax.net.*,
-                            javax.security.*,
-                            javax.servlet.*,
-                            javax.ws.*,
-                            javax.xml.*,
-                            org.apache.*,
-                            org.bouncycastle.*,
-                            org.codehaus.*,
-                            org.eclipse.*,
-                            org.jboss.*,
-                            org.osgi.*,
                             org.slf4j.*,
-                            org.w3c.*,
-                            org.xml.*,
-                            org.yaml
+                            org.yaml.snakeyaml.*
                         </Import-Package>
                         <Export-Package>io.cloudsoft.tosca.a4c.brooklyn</Export-Package>
                         <Embed-Transitive>true</Embed-Transitive>
-                        <Embed-Dependency>*;scope=compile;groupId=!org.apache.brooklyn</Embed-Dependency>
+                        <Embed-Dependency>*;groupId=!org.apache.brooklyn</Embed-Dependency>
                     </instructions>
                 </configuration>
             </plugin>

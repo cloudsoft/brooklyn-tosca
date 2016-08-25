@@ -44,12 +44,22 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>
                             !org.apache.brooklyn.cli, org.apache.brooklyn.*,
+                            javax.management.*,
+                            javax.naming.*,
+                            javax.xml.*,
+                            org.xml.sax.*,
                             org.slf4j.*,
+                            org.w3c.dom.*,
                             org.yaml.snakeyaml.*
                         </Import-Package>
-                        <Export-Package>io.cloudsoft.tosca.a4c.brooklyn</Export-Package>
+                        <Export-Package>
+                            io.cloudsoft.tosca.a4c.brooklyn.plan,
+                            io.cloudsoft.tosca.a4c.brooklyn.osgi
+                        </Export-Package>
                         <Embed-Transitive>true</Embed-Transitive>
-                        <Embed-Dependency>*;groupId=!org.apache.brooklyn</Embed-Dependency>
+                        <Embed-Dependency>
+                            *;groupId=!org.apache.brooklyn
+                        </Embed-Dependency>
                     </instructions>
                 </configuration>
             </plugin>

@@ -46,6 +46,7 @@
                             !org.apache.brooklyn.cli, org.apache.brooklyn.*,
                             javax.management.*,
                             javax.naming.*,
+                            javax.xml.stream,
                             javax.xml.*,
                             org.xml.sax.*,
                             org.slf4j.*,

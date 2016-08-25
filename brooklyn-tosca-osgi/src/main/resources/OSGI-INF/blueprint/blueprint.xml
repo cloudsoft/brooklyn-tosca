@@ -4,7 +4,13 @@
              http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
 
     <bean id="toscaTypePlanTransformer" scope="prototype"
-          class="io.cloudsoft.tosca.a4c.brooklyn.ToscaTypePlanTransformer" />
-    <service ref="toscaTypePlanTransformer"
+          class="io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer" />
+
+    <bean id="transformerClassloaderWrapper"
+          class="io.cloudsoft.tosca.a4c.brooklyn.osgi.ToscaTypePlanTransformerClassloaderWrapper">
+        <argument ref="toscaTypePlanTransformer" />
+    </bean>
+
+    <service ref="transformerClassloaderWrapper"
              interface="org.apache.brooklyn.core.typereg.BrooklynTypePlanTransformer" />
 </blueprint>

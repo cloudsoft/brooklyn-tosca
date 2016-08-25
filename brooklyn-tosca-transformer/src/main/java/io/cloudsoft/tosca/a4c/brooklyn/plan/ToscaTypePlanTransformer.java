@@ -1,9 +1,11 @@
-package io.cloudsoft.tosca.a4c.brooklyn;
+package io.cloudsoft.tosca.a4c.brooklyn.plan;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;

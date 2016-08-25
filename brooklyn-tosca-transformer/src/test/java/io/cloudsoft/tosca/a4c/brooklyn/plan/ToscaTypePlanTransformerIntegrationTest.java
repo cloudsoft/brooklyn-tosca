@@ -1,4 +1,4 @@
-package io.cloudsoft.tosca.a4c.brooklyn;
+package io.cloudsoft.tosca.a4c.brooklyn.plan;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -15,6 +15,7 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;

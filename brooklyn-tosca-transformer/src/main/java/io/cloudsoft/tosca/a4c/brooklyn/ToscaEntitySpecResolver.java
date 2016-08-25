@@ -2,6 +2,7 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 
 import java.util.Set;
 
+import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.core.resolve.entity.AbstractEntitySpecResolver;

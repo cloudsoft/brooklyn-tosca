@@ -13,6 +13,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.core.env.PropertiesPropertySource;
+import org.springframework.core.io.ResourceLoader;
 
 @ComponentScan
 @ImportResource("classpath:/base-context.xml")
@@ -21,12 +22,20 @@ public class Alien4CloudSpringContext {
     private static final Logger log = LoggerFactory.getLogger(Alien4CloudSpringContext.class);
 
     public static ApplicationContext newApplicationContext(ManagementContext mgmt) throws Exception {
+        return newApplicationContext(mgmt, null);
+    }
+
+    public static ApplicationContext newApplicationContext(ManagementContext mgmt, ResourceLoader resourceLoader) throws Exception {
         log.info("Loading Alien4Cloud platform...");
         // TODO if ES cannot find a config file, it will hang waiting for peers; should warn if does not complete in 1m
         try {
             Stopwatch s = Stopwatch.createStarted();
 
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+
+            if (null != resourceLoader) {
+                ctx.setResourceLoader(resourceLoader);
+            }
 
             // messy, but seems we must manually load the properties before loading the beans; otherwise we get e.g.
             // Caused by: java.lang.IllegalArgumentException: Could not resolve placeholder 'directories.alien' in string value "${directories.alien}/plugins"

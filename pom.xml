@@ -21,7 +21,7 @@
         <module>brooklyn-tosca-common</module>
         <module>brooklyn-tosca-transformer</module>
         <module>brooklyn-tosca-dist</module>
-        <module>brooklyn-tosca-osgi</module>
+        <module>brooklyn-tosca-karaf</module>
         <module>qa</module>
     </modules>
 

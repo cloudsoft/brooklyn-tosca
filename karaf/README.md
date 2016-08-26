@@ -24,4 +24,9 @@ and also we have a diff version of core already included
 
 
 
+FOR reference:
 
+the DEPENDENCIES.txt in this folder gives a tree of the actual dependencies pulled in.
+the versions are different than those found by bnd wrap (eg spring-beans 3.2.8.RELEASE v 4.1.4.RELEASE)
+
+it's produced with ahgittin maven license audit plugin -Dreport=summary -DoutputFile=DEPENDENCIES.txt

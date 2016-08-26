@@ -1,0 +1,914 @@
+io.cloudsoft.brooklyn.tosca:brooklyn-tosca-transformer:0.10.0-SNAPSHOT: ASL2
++-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-com.google.code.findbugs:jsr305:2.0.1 (compile, no dependencies): ASL2
+| +-org.slf4j:slf4j-api:1.6.6 (compile, no dependencies): MIT
++-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-rt-felix:0.10.0-SNAPSHOT (compile): ASL2
+| | +-org.apache.felix:org.apache.felix.framework:5.4.0 (compile, no dependencies): ASL2
+| | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-groovy:0.10.0-SNAPSHOT (compile): ASL2
+| | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| | +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| | +-org.codehaus.groovy:groovy-all:2.3.7 (compile, reported below): ASL2
+| +-net.schmizz:sshj:0.8.1 (compile): ASL2
+| | +-org.slf4j:slf4j-api:1.6.1 (compile, v 1.6.6 used): <not loaded>
+| +-com.thoughtworks.xstream:xstream:1.4.8 (compile): BSD
+| | +-dom4j:dom4j:1.6.1 (compile, optional, reported below): <unknown>
+| | +-joda-time:joda-time:1.6 (compile, optional, v 2.2 used): <not loaded>
+| | +-xmlpull:xmlpull:1.1.3.1 (compile, no dependencies): Public Domain
+| | +-xpp3:xpp3_min:1.1.4c (compile, no dependencies): Indiana University Extreme! Lab Software License, vesion 1.1.1; Public Domain
+| +-com.google.code.gson:gson:2.3 (compile, no dependencies): ASL2
+| +-commons-io:commons-io:2.4 (compile, no dependencies): ASL2
+| +-org.apache.httpcomponents:httpclient:4.4.1 (compile): ASL2
+| | +-org.apache.httpcomponents:httpcore:4.4.1 (compile, reported below): ASL2
+| | +-commons-logging:commons-logging:1.2 (compile, reported below): ASL2
+| | +-commons-codec:commons-codec:1.9 (compile, no dependencies): ASL2
+| +-org.bouncycastle:bcprov-ext-jdk15on:1.49 (compile, no dependencies): Bouncy Castle Licence
+| +-org.bouncycastle:bcpkix-jdk15on:1.49 (compile, no dependencies): Bouncy Castle Licence
+| +-org.reflections:reflections:0.9.9-RC1 (compile): WTFPL
+| | +-com.google.guava:guava:11.0.2 (compile, v 16.0.1 used): <not loaded>
+| | +-org.javassist:javassist:3.16.1-GA (compile, no dependencies): MPL 1.1; LGPL2.1; ASL2
+| | +-org.slf4j:slf4j-api:1.6.1 (compile, optional, v 1.6.6 used): <not loaded>
+| | +-dom4j:dom4j:1.6.1 (compile, no dependencies): <unknown>
+| | +-com.google.code.gson:gson:1.4 (compile, optional, v 2.3 used): <not loaded>
+| +-org.freemarker:freemarker:2.3.22 (compile, no dependencies): ASL2
+| +-org.codehaus.groovy:groovy-all:2.3.7 (compile): ASL2
+| | +-commons-logging:commons-logging:1.1.1 (compile, optional, v 1.2 used): <not loaded>
+| | +-com.thoughtworks.xstream:xstream:1.4.7 (compile, optional, v 1.4.8 used): <not loaded>
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.httpcomponents:httpcore:4.4.1 (compile, no dependencies): ASL2
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| +-com.maxmind.geoip2:geoip2:0.8.1 (compile): ASL2
+| | +-com.maxmind.db:maxmind-db:0.3.4 (compile): ASL2
+| | | +-com.fasterxml.jackson.core:jackson-databind:2.4.2 (compile, v 2.4.5 used): <not loaded>
+| | +-com.google.http-client:google-http-client:1.18.0-rc (compile): ASL2
+| | | +-com.google.code.findbugs:jsr305:1.3.9 (compile, v 2.0.1 used): <not loaded>
+| | | +-org.apache.httpcomponents:httpclient:4.0.1 (compile, v 4.4.1 used): <not loaded>
+| | +-com.fasterxml.jackson.core:jackson-databind:2.4.2 (compile, v 2.4.5 used): <not loaded>
+| +-org.apache.commons:commons-lang3:3.3.2 (compile, reported below): ASL2
+| +-com.fasterxml.jackson.core:jackson-annotations:2.4.5 (compile, no dependencies): ASL2
+| +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, no dependencies): ASL2
+| +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile): ASL2
+| | +-com.fasterxml.jackson.core:jackson-annotations:2.4.0 (compile, v 2.4.5 used): <not loaded>
+| | +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, reported above): ASL2
+| +-com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.4.5 (compile): ASL2
+| | +-com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.4.5 (compile): ASL2
+| | | +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, reported above): ASL2
+| | | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| | +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, reported above): ASL2
+| | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| | +-com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.4.5 (compile): ASL2
+| | | +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, reported above): ASL2
+| | | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| +-com.jayway.jsonpath:json-path:2.0.0 (compile): ASL2
+| | +-org.slf4j:slf4j-api:1.7.10 (compile, v 1.6.6 used): <not loaded>
+| | +-net.minidev:json-smart:2.1.1 (compile): ASL2
+| | | +-net.minidev:asm:1.0.2 (compile): ASL2
+| | | | +-asm:asm:3.3.1 (compile, no dependencies): BSD
+| | +-com.google.code.gson:gson:2.3.1 (compile, optional, v 2.3 used): <not loaded>
+| | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, optional, reported above): ASL2
++-org.apache.brooklyn:brooklyn-locations-jclouds:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-software-winrm:0.10.0-SNAPSHOT (compile): ASL2
+| | +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | +-io.cloudsoft.windows:winrm4j:0.3.5 (compile): ASL2
+| | | +-io.cloudsoft.windows:winrm4j-client:0.3.5 (compile): ASL2
+| | | | +-org.apache.cxf:cxf-rt-transports-http:3.1.4 (compile): ASL2
+| | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | +-org.apache.cxf:cxf-rt-transports-http-hc:3.1.4 (compile): ASL2
+| | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | +-org.apache.cxf:cxf-rt-transports-http:3.1.4 (compile, reported above): ASL2
+| | | | | +-org.slf4j:slf4j-api:1.7.12 (compile, v 1.6.6 used): <not loaded>
+| | | | | +-org.slf4j:jcl-over-slf4j:1.7.12 (compile, v 1.7.7 used): <not loaded>
+| | | | | +-org.apache.httpcomponents:httpcore-nio:4.4.1 (compile): ASL2
+| | | | | | +-org.apache.httpcomponents:httpcore:4.4.1 (compile, reported above): ASL2
+| | | | | +-org.apache.httpcomponents:httpasyncclient:4.1 (compile): ASL2
+| | | | | | +-org.apache.httpcomponents:httpcore:4.4.1 (compile, reported above): ASL2
+| | | | | | +-org.apache.httpcomponents:httpcore-nio:4.4.1 (compile, reported above): ASL2
+| | | | | | +-org.apache.httpcomponents:httpclient:4.4.1 (compile, reported above): ASL2
+| | | | | | +-commons-logging:commons-logging:1.2 (compile, reported below): ASL2
+| | | | +-org.apache.cxf:cxf-rt-frontend-jaxws:3.1.4 (compile): ASL2
+| | | | | +-xml-resolver:xml-resolver:1.2 (compile, no dependencies): ASL2
+| | | | | +-org.ow2.asm:asm:5.0.4 (compile, no dependencies): BSD
+| | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | +-org.apache.cxf:cxf-rt-bindings-soap:3.1.4 (compile): ASL2
+| | | | | | +-org.springframework:spring-core:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | | +-org.springframework:spring-beans:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | | +-org.apache.cxf:cxf-rt-wsdl:3.1.4 (compile): ASL2
+| | | | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | | | +-wsdl4j:wsdl4j:1.6.3 (compile, no dependencies): CPL
+| | | | | | | +-org.ow2.asm:asm:5.0.4 (compile, reported above): BSD
+| | | | | | +-org.apache.cxf:cxf-rt-databinding-jaxb:3.1.4 (compile): ASL2
+| | | | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | | | +-org.apache.cxf:cxf-rt-wsdl:3.1.4 (compile, reported above): ASL2
+| | | | | | | +-com.sun.xml.bind:jaxb-impl:2.2.11 (compile, no dependencies): CDDL+GPL License
+| | | | | | | +-com.sun.xml.bind:jaxb-core:2.2.11 (compile, no dependencies): CDDL+GPL License
+| | | | | | | +-org.ow2.asm:asm:5.0.4 (compile, optional, reported above): BSD
+| | | | | +-org.apache.cxf:cxf-rt-bindings-xml:3.1.4 (compile): ASL2
+| | | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | +-org.apache.cxf:cxf-rt-frontend-simple:3.1.4 (compile): ASL2
+| | | | | | +-org.springframework:spring-core:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | | +-org.springframework:spring-beans:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | | +-org.springframework:spring-context:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | | +-org.apache.cxf:cxf-rt-bindings-soap:3.1.4 (compile, reported above): ASL2
+| | | | | | +-org.apache.cxf:cxf-rt-wsdl:3.1.4 (compile, reported above): ASL2
+| | | | | | +-org.apache.cxf:cxf-rt-databinding-jaxb:3.1.4 (compile, optional, reported above): ASL2
+| | | | | +-org.apache.cxf:cxf-rt-ws-addr:3.1.4 (compile): ASL2
+| | | | | | +-org.springframework:spring-core:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | | +-org.springframework:spring-beans:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | | +-org.apache.cxf:cxf-rt-bindings-soap:3.1.4 (compile, reported above): ASL2
+| | | | | | +-org.apache.cxf:cxf-rt-ws-policy:3.1.4 (compile): ASL2
+| | | | | | | +-wsdl4j:wsdl4j:1.6.3 (compile, reported above): CPL
+| | | | | | | +-org.apache.cxf:cxf-core:3.1.4 (compile, reported below): ASL2
+| | | | | | | +-org.apache.neethi:neethi:3.0.3 (compile): ASL2
+| | | | | | | | +-org.codehaus.woodstox:woodstox-core-asl:4.2.0 (compile, v 4.4.1 used): <not loaded>
+| | +-org.slf4j:jcl-over-slf4j:1.6.6 (compile, v 1.7.7 used): <not loaded>
+| +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-groovy:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| +-com.google.inject:guice:3.0 (compile): ASL2
+| | +-javax.inject:javax.inject:1 (compile, reported below): ASL2
+| | +-aopalliance:aopalliance:1.0 (compile, reported below): Public Domain
+| +-javax.inject:javax.inject:1 (compile, no dependencies): ASL2
+| +-commons-io:commons-io:2.4 (compile, reported above): ASL2
+| +-org.apache.httpcomponents:httpclient:4.4.1 (compile, reported above): ASL2
+| +-javax.annotation:jsr250-api:1.0 (compile, no dependencies): CDDL1
+| +-aopalliance:aopalliance:1.0 (compile, no dependencies): Public Domain
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-org.apache.jclouds:jclouds-core:1.9.2 (compile): ASL2
+| | +-com.google.inject.extensions:guice-assistedinject:3.0 (compile): ASL2
+| | | +-com.google.inject:guice:3.0 (compile, reported above): ASL2
+| | +-com.google.inject:guice:3.0 (compile, reported above): ASL2
+| | +-org.99soft.guice:rocoto:6.2 (compile): ASL2
+| | | +-javax.inject:javax.inject:1 (compile, reported above): ASL2
+| | | +-com.google.inject:guice:3.0 (compile, reported above): ASL2
+| | +-javax.inject:javax.inject:1 (compile, reported above): ASL2
+| | +-javax.annotation:jsr250-api:1.0 (compile, reported above): CDDL1
+| | +-com.google.code.gson:gson:2.3 (compile, reported above): ASL2
+| | +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-org.apache.jclouds.driver:jclouds-slf4j:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.slf4j:slf4j-api:1.7.2 (compile, v 1.6.6 used): <not loaded>
+| +-org.apache.jclouds.driver:jclouds-bouncycastle:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.bouncycastle:bcprov-ext-jdk15on:1.49 (compile, reported above): Bouncy Castle Licence
+| +-org.apache.jclouds.driver:jclouds-sshj:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-scriptbuilder:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.driver:jclouds-slf4j:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.driver:jclouds-bouncycastle:1.9.2 (compile, reported above): ASL2
+| | +-net.schmizz:sshj:0.8.1 (compile, reported above): ASL2
+| | +-org.bouncycastle:bcpkix-jdk15on:1.49 (compile, reported above): Bouncy Castle Licence
+| | +-com.jcraft:jsch.agentproxy.sshj:0.0.8 (compile): BSD-3-Clause
+| | | +-net.schmizz:sshj:[0.8.1,) (compile, v 0.8.1 used): <not loaded>
+| | | +-com.jcraft:jsch.agentproxy.core:0.0.8 (compile, no dependencies): BSD-3-Clause
+| | +-com.jcraft:jsch.agentproxy.connector-factory:0.0.8 (compile): BSD-3-Clause
+| | | +-com.jcraft:jsch.agentproxy.core:0.0.8 (compile, reported above): BSD-3-Clause
+| | | +-com.jcraft:jsch.agentproxy.usocket-jna:0.0.8 (compile): BSD-3-Clause
+| | | | +-com.jcraft:jsch.agentproxy.core:0.0.8 (compile, reported above): BSD-3-Clause
+| | | | +-net.java.dev.jna:jna:4.1.0 (compile, v 4.0.0 used): <not loaded>
+| | | | +-net.java.dev.jna:jna-platform:4.1.0 (compile, v 4.0.0 used): <not loaded>
+| | | +-com.jcraft:jsch.agentproxy.usocket-nc:0.0.8 (compile): BSD-3-Clause
+| | | | +-com.jcraft:jsch.agentproxy.core:0.0.8 (compile, reported above): BSD-3-Clause
+| | | +-com.jcraft:jsch.agentproxy.sshagent:0.0.8 (compile): BSD-3-Clause
+| | | | +-com.jcraft:jsch.agentproxy.core:0.0.8 (compile, reported above): BSD-3-Clause
+| | | +-com.jcraft:jsch.agentproxy.pageant:0.0.8 (compile): BSD-3-Clause
+| | | | +-com.jcraft:jsch.agentproxy.core:0.0.8 (compile, reported above): BSD-3-Clause
+| | | | +-net.java.dev.jna:jna:4.1.0 (compile, v 4.0.0 used): <not loaded>
+| | | | +-net.java.dev.jna:jna-platform:4.1.0 (compile, v 4.0.0 used): <not loaded>
+| +-net.java.dev.jna:jna:4.0.0 (compile, no dependencies): LGPL2.1; ASL2
+| +-net.java.dev.jna:jna-platform:4.0.0 (compile): LGPL2.1; ASL2
+| | +-net.java.dev.jna:jna:4.0.0 (compile, reported above): LGPL2.1; ASL2
+| +-org.apache.jclouds:jclouds-allblobstore:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds.api:s3:1.9.2 (compile): ASL2
+| | | +-com.jamesmurty.utils:java-xmlbuilder:1.1 (compile): ASL2
+| | | | +-net.iharder:base64:2.3.8 (compile, no dependencies): Public domain
+| | | +-org.apache.jclouds.api:sts:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-blobstore:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:aws-s3:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:s3:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:azureblob:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-blobstore:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.api:atmos:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-blobstore:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.api:swift:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | | +-com.google.inject.extensions:guice-multibindings:3.0 (compile, reported below): ASL2
+| | | +-org.apache.jclouds.common:openstack-common:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-blobstore:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.api:openstack-swift:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-blobstore:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:rackspace-cloudfiles-us:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:openstack-swift:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:rackspace-cloudfiles:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds.api:openstack-swift:1.9.2 (compile, reported above): ASL2
+| | | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile, reported above): ASL2
+| | | | +-org.apache.jclouds.api:rackspace-cloudidentity:1.9.2 (compile, reported below): ASL2
+| | | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:rackspace-cloudidentity:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:rackspace-cloudfiles-uk:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:openstack-swift:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:rackspace-cloudfiles:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:rackspace-cloudidentity:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:hpcloud-objectstorage:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:swift:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile, reported above): ASL2
+| +-org.apache.jclouds:jclouds-allcompute:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds.provider:aws-ec2:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:ec2:1.9.2 (compile, reported below): ASL2
+| | +-org.apache.jclouds.api:openstack-nova:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:openstack-keystone:1.9.2 (compile, reported above): ASL2
+| | | +-com.google.inject.extensions:guice-multibindings:3.0 (compile, reported below): ASL2
+| | | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.api:openstack-nova-ec2:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:openstack-nova:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:ec2:1.9.2 (compile, reported below): ASL2
+| | +-org.apache.jclouds.api:byon:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | | +-org.yaml:snakeyaml:1.11 (compile, reported below): ASL2
+| | +-org.apache.jclouds.api:ec2:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:sts:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:gogrid:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:elastichosts-lon-p:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:elastichosts-sat-p:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:elastichosts-lon-b:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:openhosting-east1:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:serverlove-z1-man:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:skalicloud-sdg-my:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:go2cloud-jhb1:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:elasticstack:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:softlayer:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.api:cloudstack:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.provider:hpcloud-compute:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:openstack-nova:1.9.2 (compile, reported above): ASL2
+| | | +-com.google.inject.extensions:guice-multibindings:3.0 (compile, reported below): ASL2
+| | +-org.apache.jclouds.provider:rackspace-cloudservers-us:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:rackspace-cloudidentity:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:openstack-nova:1.9.2 (compile, reported above): ASL2
+| | | +-com.google.inject.extensions:guice-multibindings:3.0 (compile, reported below): ASL2
+| | +-org.apache.jclouds.provider:rackspace-cloudservers-uk:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.api:rackspace-cloudidentity:1.9.2 (compile, reported above): ASL2
+| | | +-org.apache.jclouds.api:openstack-nova:1.9.2 (compile, reported above): ASL2
+| | | +-com.google.inject.extensions:guice-multibindings:3.0 (compile, reported below): ASL2
+| +-org.apache.jclouds.labs:abiquo:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| +-org.apache.jclouds.labs:google-compute-engine:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.labs:googlecloud:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds.labs:oauth:1.9.2 (compile): ASL2
+| | | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| +-org.apache.jclouds.labs:docker:1.9.2 (compile): ASL2
+| | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds:jclouds-compute:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.driver:jclouds-sshj:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.driver:jclouds-bouncycastle:1.9.2 (compile, reported above): ASL2
+| | +-org.apache.jclouds.driver:jclouds-okhttp:1.9.2 (compile): ASL2
+| | | +-org.apache.jclouds:jclouds-core:1.9.2 (compile, reported above): ASL2
+| | | +-com.squareup.okhttp:okhttp:2.2.0 (compile): ASL2
+| | | | +-com.squareup.okio:okio:1.2.0 (compile, no dependencies): ASL2
+| | +-com.google.inject.extensions:guice-multibindings:3.0 (compile): ASL2
+| | | +-com.google.inject:guice:3.0 (compile, reported above): ASL2
+| +-ch.qos.logback:logback-classic:1.0.7 (compile): EPL1; LGPL
+| | +-ch.qos.logback:logback-core:1.0.7 (compile, reported below): EPL1; LGPL
+| | +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| | +-org.codehaus.groovy:groovy-all:2.0.0 (compile, optional, v 2.3.7 used): <not loaded>
+| +-ch.qos.logback:logback-core:1.0.7 (compile, no dependencies): EPL1; LGPL
++-org.apache.brooklyn:brooklyn-software-base:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-software-winrm:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-jmxmp-agent:0.10.0-SNAPSHOT (compile): ASL2
+| | +-org.glassfish.external:opendmk_jmxremote_optional_jar:1.0-b01-ea (compile, no dependencies): <unknown>
+| | +-org.bouncycastle:bcprov-ext-jdk15on:1.49 (compile, reported above): Bouncy Castle Licence
+| +-org.apache.brooklyn:brooklyn-jmxrmi-agent:0.10.0-SNAPSHOT (compile, no dependencies): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-policy:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.brooklyn:brooklyn-locations-jclouds:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.freemarker:freemarker:2.3.22 (compile, reported above): ASL2
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| +-com.google.code.gson:gson:2.3 (compile, reported above): ASL2
+| +-commons-io:commons-io:2.4 (compile, reported above): ASL2
+| +-org.apache.httpcomponents:httpclient:4.4.1 (compile, reported above): ASL2
++-org.apache.brooklyn:brooklyn-cli:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-launcher:0.10.0-SNAPSHOT (compile): ASL2
+| | +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | +-org.apache.brooklyn:brooklyn-launcher-common:0.10.0-SNAPSHOT (compile): ASL2
+| | | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | +-org.apache.brooklyn:brooklyn-software-base:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | +-org.apache.brooklyn:brooklyn-camp:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | +-org.apache.brooklyn:brooklyn-locations-jclouds:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | +-org.apache.brooklyn:brooklyn-rest-server:0.10.0-SNAPSHOT (compile): ASL2
+| | | +-org.apache.brooklyn:brooklyn-rest-api:0.10.0-SNAPSHOT (compile): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | | +-com.fasterxml.jackson.core:jackson-annotations:2.4.5 (compile, reported above): ASL2
+| | | | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| | | | +-javax.validation:validation-api:1.1.0.Final (compile, reported below): ASL2
+| | | | +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| | | | +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| | | | +-commons-lang:commons-lang:2.4 (compile, reported below): ASL2
+| | | | +-javax.servlet:javax.servlet-api:3.1.0 (compile, reported below): CDDL + GPLv2 with classpath exception
+| | | | +-javax.ws.rs:javax.ws.rs-api:2.0.1 (compile, reported below): CDDL1.1; GPL2 w/ CPE
+| | | | +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | | +-io.swagger:swagger-annotations:1.5.6 (compile, v 1.5.3 used): <not loaded>
+| | | +-org.apache.brooklyn:brooklyn-camp:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | +-org.apache.brooklyn.camp:camp-base:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | +-org.apache.brooklyn:brooklyn-software-base:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | +-org.apache.brooklyn:brooklyn-rest-resources:0.10.0-SNAPSHOT (compile): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-rest-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-camp:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | | +-org.apache.brooklyn.camp:camp-base:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-software-base:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | | | +-org.apache.brooklyn:brooklyn-utils-rest-swagger:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | | +-javax.ws.rs:javax.ws.rs-api:2.0.1 (compile, reported below): CDDL1.1; GPL2 w/ CPE
+| | | | +-org.apache.cxf:cxf-rt-frontend-jaxrs:3.1.4 (compile, reported below): ASL2
+| | | | +-org.yaml:snakeyaml:1.11 (compile, reported below): ASL2
+| | | | +-org.reflections:reflections:0.9.9-RC1 (compile, reported above): WTFPL
+| | | | +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| | | | +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| | | | +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| | | | +-com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.4.5 (compile, reported above): ASL2
+| | | | +-org.eclipse.jetty:jetty-jaas:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | | +-org.eclipse.jetty:jetty-server:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.yaml:snakeyaml:1.11 (compile, reported below): ASL2
+| | | +-org.reflections:reflections:0.9.9-RC1 (compile, reported above): WTFPL
+| | | +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| | | +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| | | +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| | | +-com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.4.5 (compile, reported above): ASL2
+| | | +-org.eclipse.jetty:jetty-webapp:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-server:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-servlet:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-jaas:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | | +-org.eclipse.jetty:jetty-security:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-javax.ws.rs:javax.ws.rs-api:2.0.1 (compile, no dependencies): CDDL1.1; GPL2 w/ CPE
+| | | +-org.apache.cxf:cxf-rt-frontend-jaxrs:3.1.4 (compile): ASL2
+| | | | +-javax.validation:validation-api:1.1.0.Final (compile, optional, reported below): ASL2
+| | | | +-org.apache.cxf:cxf-core:3.1.4 (compile): ASL2
+| | | | | +-javax.validation:validation-api:1.1.0.Final (compile, optional, reported below): ASL2
+| | | | | +-org.ow2.asm:asm:5.0.4 (compile, optional, reported above): BSD
+| | | | | +-xml-resolver:xml-resolver:1.2 (compile, optional, reported above): ASL2
+| | | | | +-org.slf4j:slf4j-api:1.7.12 (compile, optional, v 1.6.6 used): <not loaded>
+| | | | | +-org.codehaus.woodstox:woodstox-core-asl:4.4.1 (compile): ASL2
+| | | | | | +-org.codehaus.woodstox:stax2-api:3.1.4 (compile, no dependencies): BSD
+| | | | | +-org.springframework:spring-beans:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | +-org.springframework:spring-context:4.1.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| | | | | +-org.apache.ws.xmlschema:xmlschema-core:2.2.1 (compile, no dependencies): ASL2
+| | | | +-javax.ws.rs:javax.ws.rs-api:2.0.1 (compile, reported above): CDDL1.1; GPL2 w/ CPE
+| | | | +-javax.annotation:javax.annotation-api:1.2 (compile, no dependencies): CDDL + GPLv2 with classpath exception
+| | | | +-org.apache.cxf:cxf-rt-transports-http:3.1.4 (compile, reported above): ASL2
+| | +-org.apache.brooklyn:brooklyn-camp:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | +-org.apache.brooklyn.camp:camp-base:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | +-org.apache.brooklyn.camp:camp-server:0.10.0-SNAPSHOT (compile): ASL2
+| | | +-org.apache.brooklyn.camp:camp-base:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| | | +-com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.4.5 (compile, reported above): ASL2
+| | | +-javax.validation:validation-api:1.1.0.Final (compile, reported below): ASL2
+| | | +-org.eclipse.jetty:jetty-webapp:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-server:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-servlet:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-util:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-javax.servlet:javax.servlet-api:3.1.0 (compile, reported below): CDDL + GPLv2 with classpath exception
+| | | +-org.apache.brooklyn:brooklyn-utils-rest-swagger:0.10.0-SNAPSHOT (compile): ASL2
+| | | | +-javax.ws.rs:javax.ws.rs-api:2.0.1 (compile, reported above): CDDL1.1; GPL2 w/ CPE
+| | | | +-javax.servlet:javax.servlet-api:3.1.0 (compile, reported below): CDDL + GPLv2 with classpath exception
+| | | | +-io.swagger:swagger-core:1.5.6 (compile): ASL2
+| | | | | +-org.apache.commons:commons-lang3:3.2.1 (compile, v 3.3.2 used): <not loaded>
+| | | | | +-org.slf4j:slf4j-api:1.6.3 (compile, v 1.6.6 used): <not loaded>
+| | | | | +-com.fasterxml.jackson.core:jackson-annotations:2.4.5 (compile, reported above): ASL2
+| | | | | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| | | | | +-com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.5 (compile): ASL2
+| | | | | | +-com.fasterxml.jackson.core:jackson-annotations:2.4.0 (compile, v 2.4.5 used): <not loaded>
+| | | | | | +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, reported above): ASL2
+| | | | | | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| | | | | | +-joda-time:joda-time:2.2 (compile, no dependencies): ASL2
+| | | | | +-com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.4.5 (compile): ASL2
+| | | | | | +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, reported above): ASL2
+| | | | | | +-org.yaml:snakeyaml:1.12 (compile, v 1.11 used): <not loaded>
+| | | | | +-io.swagger:swagger-models:1.5.6 (compile, v 1.5.3 used): <not loaded>
+| | | | | +-com.google.guava:guava:18.0 (compile, v 16.0.1 used): <not loaded>
+| | | | | +-javax.validation:validation-api:1.1.0.Final (compile, reported below): ASL2
+| | | | +-io.swagger:swagger-jaxrs:1.5.6 (compile): ASL2
+| | | | | +-com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.4.5 (compile, reported above): ASL2
+| | | | | +-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.4.5 (compile): ASL2
+| | | | | | +-com.fasterxml.jackson.core:jackson-core:2.4.5 (compile, reported above): ASL2
+| | | | | | +-com.fasterxml.jackson.core:jackson-annotations:2.4.0 (compile, v 2.4.5 used): <not loaded>
+| | | | | | +-com.fasterxml.jackson.core:jackson-databind:2.4.5 (compile, reported above): ASL2
+| | | | | | +-com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.4.5 (compile, reported above): ASL2
+| | | | | | +-org.codehaus.woodstox:stax2-api:3.1.4 (compile, reported above): BSD
+| | | | | +-io.swagger:swagger-core:1.5.6 (compile, reported above): ASL2
+| | | | | +-org.reflections:reflections:0.9.10 (compile, v 0.9.9-RC1 used): <not loaded>
+| | | | | +-com.google.guava:guava:18.0 (compile, v 16.0.1 used): <not loaded>
+| | | | | +-com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.4.5 (compile, reported above): ASL2
+| | | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | | +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| | | +-org.apache.commons:commons-lang3:3.3.2 (compile, reported below): ASL2
+| | | +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| | | +-org.apache.cxf:cxf-rt-frontend-jaxrs:3.1.4 (compile, reported above): ASL2
+| | +-org.apache.brooklyn:brooklyn-software-base:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| | +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| | +-org.apache.felix:org.apache.felix.framework:5.4.0 (compile, reported above): ASL2
+| | +-com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.0_jdk5 (compile, no dependencies): ASL
+| | +-org.eclipse.jetty:jetty-server:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | +-javax.servlet:javax.servlet-api:3.1.0 (compile, reported below): CDDL + GPLv2 with classpath exception
+| | | +-org.eclipse.jetty:jetty-http:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | | +-org.eclipse.jetty:jetty-util:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-io:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | | +-org.eclipse.jetty:jetty-util:9.2.13.v20150730 (compile, reported below): ASL2; EPL1
+| | +-org.eclipse.jetty:jetty-servlet:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-security:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | | +-org.eclipse.jetty:jetty-server:9.2.13.v20150730 (compile, reported above): ASL2; EPL1
+| | +-org.eclipse.jetty:jetty-util:9.2.13.v20150730 (compile, no dependencies): ASL2; EPL1
+| | +-org.eclipse.jetty:jetty-webapp:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-xml:9.2.13.v20150730 (compile): ASL2; EPL1
+| | | | +-org.eclipse.jetty:jetty-util:9.2.13.v20150730 (compile, reported above): ASL2; EPL1
+| | | +-org.eclipse.jetty:jetty-servlet:9.2.13.v20150730 (compile, reported above): ASL2; EPL1
+| | +-org.eclipse.jetty.toolchain:jetty-schemas:3.1.M0 (compile, no dependencies): ASL2; EPL1
+| | +-javax.servlet:javax.servlet-api:3.1.0 (compile, no dependencies): CDDL + GPLv2 with classpath exception
+| | +-org.apache.httpcomponents:httpclient:4.4.1 (compile, reported above): ASL2
+| | +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| | +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| | +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| | +-org.apache.brooklyn:brooklyn-locations-jclouds:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-io.airlift:airline:0.6 (compile): ASL2
+| | +-javax.inject:javax.inject:1 (compile, reported above): ASL2
+| | +-com.google.guava:guava:12.0 (compile, v 16.0.1 used): <not loaded>
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-javax.inject:javax.inject:1 (compile, reported above): ASL2
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
++-org.apache.brooklyn.camp:camp-base:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.commons:commons-lang3:3.3.2 (compile, reported below): ASL2
+| +-org.apache.commons:commons-compress:1.4 (compile): ASL2
+| | +-org.tukaani:xz:1.0 (compile, no dependencies): Public Domain
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
++-org.apache.brooklyn:brooklyn-camp:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-policy:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.apache.brooklyn.camp:camp-base:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-commons-beanutils:commons-beanutils:1.9.1 (compile): ASL2
+| | +-commons-logging:commons-logging:1.1.1 (compile, v 1.2 used): <not loaded>
+| | +-commons-collections:commons-collections:3.2.1 (compile, no dependencies): ASL2
+| +-org.apache.brooklyn:brooklyn-software-base:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-commons-logging:commons-logging:1.2 (compile, no dependencies): ASL2
++-org.apache.brooklyn:brooklyn-policy:0.10.0-SNAPSHOT (compile): ASL2
+| +-org.apache.brooklyn:brooklyn-core:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile, reported below): ASL2
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-org.apache.brooklyn:brooklyn-utils-groovy:0.10.0-SNAPSHOT (compile, reported above): ASL2
+| +-org.apache.brooklyn:brooklyn-api:0.10.0-SNAPSHOT (compile, reported above): ASL2
++-org.apache.brooklyn:brooklyn-utils-common:0.10.0-SNAPSHOT (compile): ASL2
+| +-com.google.guava:guava:16.0.1 (compile, reported below): ASL2
+| +-ch.qos.logback:logback-classic:1.0.7 (compile, reported above): EPL1; LGPL
+| +-org.slf4j:jul-to-slf4j:1.6.6 (compile): MIT
+| | +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-org.slf4j:slf4j-api:1.6.6 (compile, reported above): MIT
+| +-commons-io:commons-io:2.4 (compile, reported above): ASL2
+| +-org.apache.httpcomponents:httpclient:4.4.1 (compile, reported above): ASL2
+| +-org.yaml:snakeyaml:1.11 (compile, no dependencies): ASL2
+| +-org.apache.brooklyn:brooklyn-logback-includes:0.10.0-SNAPSHOT (compile): ASL2
+| | +-ch.qos.logback:logback-classic:1.0.7 (compile, reported above): EPL1; LGPL
+| | +-ch.qos.logback:logback-core:1.0.7 (compile, reported above): EPL1; LGPL
+| +-org.codehaus.groovy:groovy-all:2.3.7 (compile, reported above): ASL2
+| +-com.google.code.findbugs:jsr305:2.0.1 (compile, reported above): ASL2
+| +-org.osgi:org.osgi.core:6.0.0 (compile, no dependencies): ASL2
++-com.google.guava:guava:16.0.1 (compile): ASL2
+| +-com.google.code.findbugs:jsr305:1.3.9 (compile, optional, v 2.0.1 used): <not loaded>
++-alien4cloud:alien4cloud-core:1.1.0-SM8 (compile, no dependencies): <unknown>
++-org.springframework:spring-tx:4.1.4.RELEASE (compile): ASL2
+| +-aopalliance:aopalliance:1.0 (compile, optional, reported above): Public Domain
+| +-org.springframework:spring-aop:4.1.4.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported below): ASL2
+| +-org.springframework:spring-context:4.1.4.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework:spring-core:4.1.4.RELEASE (compile): ASL2
+| | +-commons-codec:commons-codec:1.10 (compile, optional, v 1.9 used): <not loaded>
+| | +-commons-logging:commons-logging:1.2 (compile, reported above): ASL2
+| | +-org.aspectj:aspectjweaver:1.8.4 (compile, optional, v 1.7.4 used): <not loaded>
++-org.springframework:spring-webmvc:4.1.4.RELEASE (compile): ASL2
+| +-com.fasterxml.jackson.core:jackson-databind:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-javax.el:javax.el-api:2.2.5 (compile, optional, v 3.0.0 used): <not loaded>
+| +-org.apache.velocity:velocity:1.7 (compile, optional, reported below): ASL2
+| +-org.codehaus.groovy:groovy-all:2.3.9 (compile, optional, v 2.3.7 used): <not loaded>
+| +-org.freemarker:freemarker:2.3.20 (compile, optional, v 2.3.22 used): <not loaded>
+| +-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported below): ASL2
+| +-org.springframework:spring-context:4.1.4.RELEASE (compile, reported below): ASL2
+| +-org.springframework:spring-context-support:4.1.4.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
+| +-org.springframework:spring-expression:4.1.4.RELEASE (compile): ASL2
+| | +-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
+| +-org.springframework:spring-web:4.1.4.RELEASE (compile): ASL2
+| | +-aopalliance:aopalliance:1.0 (compile, optional, reported above): Public Domain
+| | +-com.fasterxml.jackson.core:jackson-databind:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| | +-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| | +-com.google.code.gson:gson:2.3.1 (compile, optional, v 2.3 used): <not loaded>
+| | +-javax.el:javax.el-api:2.2.5 (compile, optional, v 3.0.0 used): <not loaded>
+| | +-org.apache.httpcomponents:httpasyncclient:4.0.2 (compile, optional, v 4.1 used): <not loaded>
+| | +-org.apache.httpcomponents:httpclient:4.3.6 (compile, optional, v 4.4.1 used): <not loaded>
+| | +-org.codehaus.groovy:groovy-all:2.3.9 (compile, optional, v 2.3.7 used): <not loaded>
+| | +-org.eclipse.jetty:jetty-server:9.2.6.v20141205 (compile, optional, v 9.2.13.v20150730 used): <not loaded>
+| | +-org.eclipse.jetty:jetty-servlet:9.2.6.v20141205 (compile, optional, v 9.2.13.v20150730 used): <not loaded>
+| | +-org.springframework:spring-aop:4.1.4.RELEASE (compile, reported below): ASL2
+| | +-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported below): ASL2
+| | +-org.springframework:spring-context:4.1.4.RELEASE (compile, reported below): ASL2
+| | +-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework.data:spring-data-commons:1.9.1.RELEASE (compile): ASL2
+| +-org.springframework:spring-core:4.0.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-beans:4.0.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-context:4.0.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-expression:4.0.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-tx:4.0.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-com.fasterxml.jackson.core:jackson-databind:2.4.2 (compile, optional, v 2.4.5 used): <not loaded>
+| +-org.springframework:spring-web:4.0.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-javax.annotation:jsr250-api:1.0 (compile, optional, reported above): CDDL1
+| +-joda-time:joda-time:2.4 (compile, optional, v 2.2 used): <not loaded>
+| +-com.google.guava:guava:17.0 (compile, optional, v 16.0.1 used): <not loaded>
+| +-org.springframework.hateoas:spring-hateoas:0.16.0.RELEASE (compile, optional, v 0.18.0.RELEASE used): <not loaded>
+| +-org.springframework:spring-webmvc:4.0.7.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-org.slf4j:slf4j-api:1.7.7 (compile, v 1.6.6 used): <not loaded>
+| +-org.slf4j:jcl-over-slf4j:1.7.7 (runtime): MIT
+| | +-org.slf4j:slf4j-api:1.7.7 (compile, v 1.6.6 used): <not loaded>
++-org.springframework.social:spring-social-config:1.1.0.RELEASE (compile): ASL2
+| +-org.springframework.social:spring-social-web:1.1.0.RELEASE (compile): ASL2
+| | +-javax.inject:javax.inject:1 (compile, reported above): ASL2
+| | +-org.springframework.social:spring-social-core:1.1.0.RELEASE (compile, reported below): ASL2
+| | +-org.springframework:spring-web:4.0.3.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| | +-org.springframework:spring-webmvc:4.0.3.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework.security:spring-security-core:3.2.3.RELEASE (compile, optional, v 3.2.5.RELEASE used): <not loaded>
+| +-org.springframework.social:spring-social-security:1.1.0.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework.social:spring-social-core:1.1.0.RELEASE (compile): ASL2
+| | +-org.apache.httpcomponents:httpclient:4.3.1 (compile, optional, v 4.4.1 used): <not loaded>
+| | +-org.springframework:spring-web:4.0.3.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.apache.commons:commons-lang3:3.3.2 (compile, no dependencies): ASL2
++-org.springframework:spring-test:4.1.4.RELEASE (compile): ASL2
+| +-com.jayway.jsonpath:json-path:1.1.0 (compile, optional, v 2.0.0 used): <not loaded>
+| +-javax.el:javax.el-api:2.2.5 (compile, optional, v 3.0.0 used): <not loaded>
+| +-javax.inject:javax.inject:1 (compile, optional, reported above): ASL2
+| +-javax.servlet:javax.servlet-api:3.0.1 (compile, optional, v 3.1.0 used): <not loaded>
+| +-org.aspectj:aspectjweaver:1.8.4 (compile, optional, v 1.7.4 used): <not loaded>
+| +-org.codehaus.groovy:groovy-all:2.3.9 (compile, optional, v 2.3.7 used): <not loaded>
+| +-org.springframework:spring-beans:4.1.4.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework:spring-context:4.1.4.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
+| +-org.springframework:spring-tx:4.1.4.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework:spring-web:4.1.4.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework:spring-webmvc:4.1.4.RELEASE (compile, optional, reported above): ASL2
+alien4cloud:alien4cloud-security:1.1.0-SM8 (unknown, no dependencies): <unknown>
+alien4cloud:alien4cloud-common:1.1.0-SM8 (unknown, no dependencies): <unknown>
+org.eclipse.jgit:org.eclipse.jgit:3.4.1.201406201815-r (unknown): Eclipse Distribution License (New BSD License)
++-com.jcraft:jsch:0.1.50 (compile, no dependencies): BSD-3-Clause
++-com.googlecode.javaewah:JavaEWAH:0.7.9 (compile, no dependencies): ASL2
++-org.apache.httpcomponents:httpclient:4.1.3 (compile, v 4.4.1 used): <not loaded>
+org.apache.commons:commons-collections4:4.0 (unknown, no dependencies): ASL2
+fr.lucboutier.elasticsearch:elasticsearch-mapping:1.4.0 (unknown, no dependencies): <unknown>
+org.elasticsearch:elasticsearch:1.7.0 (unknown): ASL2
++-org.apache.lucene:lucene-core:4.10.4 (compile, no dependencies): ASL2
++-org.apache.lucene:lucene-analyzers-common:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-queries:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-memory:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-highlighter:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-memory:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-queries:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-queryparser:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-queries:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-sandbox:4.10.4 (compile, reported below): ASL2
++-org.apache.lucene:lucene-sandbox:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-suggest:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-analyzers-common:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-misc:4.10.4 (compile, reported below): ASL2
+| +-org.apache.lucene:lucene-queries:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-misc:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-join:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-grouping:4.10.4 (compile, reported below): ASL2
++-org.apache.lucene:lucene-grouping:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-queries:4.10.4 (compile, reported above): ASL2
++-org.apache.lucene:lucene-spatial:4.10.4 (compile): ASL2
+| +-org.apache.lucene:lucene-core:4.10.4 (compile, reported above): ASL2
+| +-org.apache.lucene:lucene-queries:4.10.4 (compile, reported above): ASL2
+| +-com.spatial4j:spatial4j:0.4.1 (compile, no dependencies): ASL2
++-org.antlr:antlr-runtime:3.5 (compile, no dependencies): BSD licence
++-org.ow2.asm:asm:4.1 (compile, v 5.0.4 used): <not loaded>
++-org.ow2.asm:asm-commons:4.1 (compile, no dependencies): BSD
++-com.spatial4j:spatial4j:0.4.1 (compile, optional, reported above): ASL2
++-org.yaml:snakeyaml:1.12 (compile, v 1.11 used): <not loaded>
++-org.codehaus.groovy:groovy-all:2.4.4 (compile, optional, v 2.3.7 used): <not loaded>
++-org.slf4j:slf4j-api:1.6.2 (compile, optional, v 1.6.6 used): <not loaded>
++-net.java.dev.jna:jna:4.1.0 (compile, optional, v 4.0.0 used): <not loaded>
+fr.lucboutier.elasticsearch:elasticsearch-annotations:1.4.0 (unknown, no dependencies): <unknown>
+org.springframework:spring-aspects:4.1.4.RELEASE (unknown): ASL2
++-org.aspectj:aspectjweaver:1.8.4 (compile, v 1.7.4 used): <not loaded>
++-org.springframework:spring-aop:4.1.4.RELEASE (compile, optional, reported below): ASL2
++-org.springframework:spring-beans:4.1.4.RELEASE (compile, optional, reported below): ASL2
++-org.springframework:spring-context:4.1.4.RELEASE (compile, optional, reported below): ASL2
++-org.springframework:spring-context-support:4.1.4.RELEASE (compile, optional, reported below): ASL2
++-org.springframework:spring-tx:4.1.4.RELEASE (compile, optional, reported above): ASL2
+org.springframework.boot:spring-boot-actuator:1.2.1.RELEASE (unknown): ASL2
++-org.springframework.boot:spring-boot:1.2.1.RELEASE (compile): ASL2
+| +-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
+| +-org.springframework:spring-context:4.1.4.RELEASE (compile, reported below): ASL2
+| +-ch.qos.logback:logback-classic:1.1.2 (compile, optional, v 1.0.7 used): <not loaded>
+| +-com.fasterxml.jackson.core:jackson-databind:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-com.google.code.gson:gson:2.3 (compile, optional, reported above): ASL2
+| +-javax.servlet:javax.servlet-api:3.1.0 (compile, optional, reported above): CDDL + GPLv2 with classpath exception
+| +-org.apache.httpcomponents:httpclient:4.3.6 (compile, optional, v 4.4.1 used): <not loaded>
+| +-org.eclipse.jetty:jetty-webapp:9.2.4.v20141103 (compile, optional, v 9.2.13.v20150730 used): <not loaded>
+| +-org.eclipse.jetty:jetty-util:9.2.4.v20141103 (compile, optional, v 9.2.13.v20150730 used): <not loaded>
+| +-org.hibernate:hibernate-validator:5.1.3.Final (compile, optional, v 5.0.2.Final used): <not loaded>
+| +-org.slf4j:slf4j-api:1.7.8 (compile, optional, v 1.6.6 used): <not loaded>
+| +-org.slf4j:jul-to-slf4j:1.7.8 (compile, optional, v 1.6.6 used): <not loaded>
+| +-org.springframework:spring-test:4.1.4.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework:spring-web:4.1.4.RELEASE (compile, optional, reported above): ASL2
+| +-org.yaml:snakeyaml:1.14 (compile, optional, v 1.11 used): <not loaded>
++-org.springframework.boot:spring-boot-autoconfigure:1.2.1.RELEASE (compile): ASL2
+| +-org.springframework.boot:spring-boot:1.2.1.RELEASE (compile, reported above): ASL2
+| +-com.fasterxml.jackson.core:jackson-databind:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-com.fasterxml.jackson.datatype:jackson-datatype-joda:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-com.google.code.gson:gson:2.3 (compile, optional, reported above): ASL2
+| +-org.apache.velocity:velocity:1.7 (compile, optional, reported below): ASL2
+| +-org.eclipse.jetty:jetty-webapp:9.2.4.v20141103 (compile, optional, v 9.2.13.v20150730 used): <not loaded>
+| +-org.freemarker:freemarker:2.3.21 (compile, optional, v 2.3.22 used): <not loaded>
+| +-org.hibernate:hibernate-validator:5.1.3.Final (compile, optional, v 5.0.2.Final used): <not loaded>
+| +-org.springframework:spring-tx:4.1.4.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework:spring-web:4.1.4.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework:spring-webmvc:4.1.4.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework.hateoas:spring-hateoas:0.16.0.RELEASE (compile, optional, v 0.18.0.RELEASE used): <not loaded>
+| +-org.springframework.security:spring-security-web:3.2.5.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework.security:spring-security-config:3.2.5.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework.social:spring-social-config:1.1.0.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework.social:spring-social-core:1.1.0.RELEASE (compile, optional, reported above): ASL2
+| +-org.springframework.social:spring-social-web:1.1.0.RELEASE (compile, optional, reported above): ASL2
+| +-org.aspectj:aspectjweaver:1.8.4 (compile, optional, v 1.7.4 used): <not loaded>
++-com.fasterxml.jackson.core:jackson-databind:2.4.4 (compile, v 2.4.5 used): <not loaded>
++-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-context:4.1.4.RELEASE (compile, reported below): ASL2
++-javax.servlet:javax.servlet-api:3.1.0 (compile, optional, reported above): CDDL + GPLv2 with classpath exception
++-org.hibernate:hibernate-validator:5.1.3.Final (compile, optional, v 5.0.2.Final used): <not loaded>
++-org.springframework:spring-messaging:4.1.4.RELEASE (compile, optional, reported below): ASL2
++-org.springframework:spring-webmvc:4.1.4.RELEASE (compile, optional, reported above): ASL2
++-org.springframework.security:spring-security-web:3.2.5.RELEASE (compile, optional, reported below): ASL2
++-org.springframework.security:spring-security-config:3.2.5.RELEASE (compile, optional, reported below): ASL2
+org.aspectj:aspectjrt:1.7.4 (unknown, no dependencies): EPL1
+org.aspectj:aspectjweaver:1.7.4 (unknown, no dependencies): EPL1
+org.springframework.boot:spring-boot-starter-security:1.2.1.RELEASE (unknown): ASL2
++-org.springframework.boot:spring-boot-starter:1.2.1.RELEASE (compile): ASL2
+| +-org.springframework.boot:spring-boot:1.2.1.RELEASE (compile, reported above): ASL2
+| +-org.springframework.boot:spring-boot-autoconfigure:1.2.1.RELEASE (compile, reported above): ASL2
+| +-org.springframework.boot:spring-boot-starter-logging:1.2.1.RELEASE (compile): ASL2
+| | +-org.slf4j:jcl-over-slf4j:1.7.8 (compile, v 1.7.7 used): <not loaded>
+| | +-org.slf4j:jul-to-slf4j:1.7.8 (compile, v 1.6.6 used): <not loaded>
+| | +-ch.qos.logback:logback-classic:1.1.2 (compile, v 1.0.7 used): <not loaded>
+| +-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
+| +-org.yaml:snakeyaml:1.14 (runtime, v 1.11 used): <not loaded>
++-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported below): ASL2
++-org.springframework:spring-context:4.1.4.RELEASE (compile, reported below): ASL2
++-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-expression:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-web:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework.security:spring-security-config:3.2.5.RELEASE (compile): ASL2
+| +-aopalliance:aopalliance:1.0 (compile, reported above): Public Domain
+| +-org.springframework.security:spring-security-core:3.2.5.RELEASE (compile, reported below): ASL2
+| +-org.springframework:spring-aop:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-beans:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-context:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-core:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-commons-logging:commons-logging:1.1.1 (compile, optional, v 1.2 used): <not loaded>
+| +-org.aspectj:aspectjweaver:1.6.10 (compile, optional, v 1.7.4 used): <not loaded>
+| +-org.springframework.security:spring-security-ldap:3.2.5.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework.security:spring-security-web:3.2.5.RELEASE (compile, optional, reported below): ASL2
+| +-org.springframework:spring-tx:3.2.8.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-web:3.2.8.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-webmvc:3.2.8.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework.security:spring-security-web:3.2.5.RELEASE (compile): ASL2
+| +-aopalliance:aopalliance:1.0 (compile, reported above): Public Domain
+| +-org.springframework.security:spring-security-core:3.2.5.RELEASE (compile, reported below): ASL2
+| +-org.springframework:spring-beans:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-context:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-core:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-expression:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-web:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-commons-logging:commons-logging:1.1.1 (compile, optional, v 1.2 used): <not loaded>
+| +-org.springframework:spring-tx:3.2.8.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-webmvc:3.2.8.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework:spring-aop:4.1.4.RELEASE (compile, reported below): ASL2
+org.springframework.security:spring-security-ldap:3.2.5.RELEASE (unknown): ASL2
++-org.springframework.ldap:spring-ldap-core:1.3.2.RELEASE (compile, v 2.0.1.RELEASE used): <not loaded>
++-org.springframework.security:spring-security-core:3.2.5.RELEASE (compile): ASL2
+| +-aopalliance:aopalliance:1.0 (compile, reported above): Public Domain
+| +-org.springframework:spring-aop:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-beans:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-context:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-core:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-expression:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-commons-logging:commons-logging:1.1.1 (compile, optional, v 1.2 used): <not loaded>
+| +-javax.annotation:jsr250-api:1.0 (compile, optional, reported above): CDDL1
+| +-org.aspectj:aspectjrt:1.6.10 (compile, optional, v 1.7.4 used): <not loaded>
+| +-org.springframework:spring-tx:3.2.8.RELEASE (compile, optional, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework:spring-beans:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework:spring-context:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework:spring-core:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework:spring-tx:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-commons-logging:commons-logging:1.1.1 (compile, optional, v 1.2 used): <not loaded>
+org.springframework.social:spring-social-github:1.0.0.M4 (unknown, no dependencies): <unknown>
+org.springframework.social:spring-social-security:1.1.0.RELEASE (unknown): ASL2
++-org.springframework.social:spring-social-web:1.1.0.RELEASE (compile, reported above): ASL2
++-org.springframework.security:spring-security-config:3.2.3.RELEASE (compile, optional, v 3.2.5.RELEASE used): <not loaded>
++-org.springframework.security:spring-security-web:3.2.3.RELEASE (compile, v 3.2.5.RELEASE used): <not loaded>
++-org.springframework.social:spring-social-core:1.1.0.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-web:4.0.3.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework:spring-webmvc:4.0.3.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+org.springframework.ldap:spring-ldap-core:2.0.1.RELEASE (unknown): ASL2
++-org.springframework:spring-tx:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework.data:spring-data-commons:1.6.1.RELEASE (compile, v 1.9.1.RELEASE used): <not loaded>
++-org.springframework:spring-beans:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework:spring-core:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+org.springframework.ldap:spring-ldap-core-tiger:2.0.1.RELEASE (unknown): ASL2
++-org.springframework:spring-tx:3.2.8.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
++-org.springframework.ldap:spring-ldap-core:2.0.1.RELEASE (compile, reported above): ASL2
+io.springfox:springfox-swagger2:2.2.2 (unknown): ASL2
++-org.mapstruct:mapstruct:1.0.0.CR1 (compile, no dependencies): ASL2
++-io.swagger:swagger-annotations:1.5.3 (compile, no dependencies): ASL2
++-io.swagger:swagger-models:1.5.3 (compile): ASL2
+| +-com.fasterxml.jackson.core:jackson-annotations:2.4.5 (compile, reported above): ASL2
+| +-org.slf4j:slf4j-api:1.6.3 (compile, v 1.6.6 used): <not loaded>
+| +-io.swagger:swagger-annotations:1.5.3 (compile, reported above): ASL2
++-io.springfox:springfox-spi:2.2.2 (compile): ASL2
+| +-io.springfox:springfox-core:2.2.2 (compile): ASL2
+| | +-com.google.guava:guava:18.0 (compile, v 16.0.1 used): <not loaded>
+| | +-com.fasterxml:classmate:1.2.0 (compile, v 1.0.0 used): <not loaded>
+| | +-org.slf4j:slf4j-api:1.7.12 (compile, v 1.6.6 used): <not loaded>
+| | +-org.aspectj:aspectjrt:1.8.6 (compile, v 1.7.4 used): <not loaded>
+| | +-org.aspectj:aspectjweaver:1.8.6 (compile, v 1.7.4 used): <not loaded>
+| | +-org.springframework.plugin:spring-plugin-core:1.2.0.RELEASE (compile, reported below): ASL2
+| | +-org.springframework.plugin:spring-plugin-metadata:1.2.0.RELEASE (compile, reported below): ASL2
+| | +-org.springframework.hateoas:spring-hateoas:0.18.0.RELEASE (compile, reported below): ASL2
++-io.springfox:springfox-schema:2.2.2 (compile): ASL2
+| +-io.springfox:springfox-core:2.2.2 (compile, reported above): ASL2
+| +-io.springfox:springfox-spi:2.2.2 (compile, reported above): ASL2
++-io.springfox:springfox-swagger-common:2.2.2 (compile): ASL2
+| +-io.swagger:swagger-annotations:1.5.3 (compile, reported above): ASL2
+| +-io.swagger:swagger-models:1.5.3 (compile, reported above): ASL2
+| +-io.springfox:springfox-spi:2.2.2 (compile, reported above): ASL2
+| +-io.springfox:springfox-schema:2.2.2 (compile, reported above): ASL2
+| +-io.springfox:springfox-spring-web:2.2.2 (compile, reported below): ASL2
+| +-com.google.guava:guava:18.0 (compile, v 16.0.1 used): <not loaded>
+| +-com.fasterxml:classmate:1.2.0 (compile, v 1.0.0 used): <not loaded>
+| +-org.slf4j:slf4j-api:1.7.12 (compile, v 1.6.6 used): <not loaded>
+| +-org.aspectj:aspectjrt:1.8.6 (compile, v 1.7.4 used): <not loaded>
+| +-org.aspectj:aspectjweaver:1.8.6 (compile, v 1.7.4 used): <not loaded>
+| +-org.springframework.plugin:spring-plugin-core:1.2.0.RELEASE (compile, reported below): ASL2
+| +-org.springframework.plugin:spring-plugin-metadata:1.2.0.RELEASE (compile, reported below): ASL2
+| +-org.springframework.hateoas:spring-hateoas:0.18.0.RELEASE (compile, reported below): ASL2
++-io.springfox:springfox-spring-web:2.2.2 (compile): ASL2
+| +-com.google.guava:guava:18.0 (compile, v 16.0.1 used): <not loaded>
+| +-com.fasterxml:classmate:1.2.0 (compile, v 1.0.0 used): <not loaded>
+| +-org.slf4j:slf4j-api:1.7.12 (compile, v 1.6.6 used): <not loaded>
+| +-org.aspectj:aspectjrt:1.8.6 (compile, v 1.7.4 used): <not loaded>
+| +-org.aspectj:aspectjweaver:1.8.6 (compile, v 1.7.4 used): <not loaded>
+| +-org.springframework.plugin:spring-plugin-core:1.2.0.RELEASE (compile, reported below): ASL2
+| +-org.springframework.plugin:spring-plugin-metadata:1.2.0.RELEASE (compile, reported below): ASL2
+| +-org.springframework.hateoas:spring-hateoas:0.18.0.RELEASE (compile, reported below): ASL2
+| +-io.springfox:springfox-spi:2.2.2 (compile, reported above): ASL2
+| +-io.springfox:springfox-schema:2.2.2 (compile, reported above): ASL2
++-com.google.guava:guava:18.0 (compile, v 16.0.1 used): <not loaded>
++-com.fasterxml:classmate:1.2.0 (compile, v 1.0.0 used): <not loaded>
++-org.slf4j:slf4j-api:1.7.12 (compile, v 1.6.6 used): <not loaded>
++-org.aspectj:aspectjrt:1.8.6 (compile, v 1.7.4 used): <not loaded>
++-org.aspectj:aspectjweaver:1.8.6 (compile, v 1.7.4 used): <not loaded>
++-org.springframework.plugin:spring-plugin-core:1.2.0.RELEASE (compile): ASL2
+| +-org.springframework:spring-beans:4.0.9.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-context:4.0.9.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-aop:4.0.9.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.slf4j:slf4j-api:1.7.10 (compile, v 1.6.6 used): <not loaded>
++-org.springframework.plugin:spring-plugin-metadata:1.2.0.RELEASE (compile): ASL2
+| +-org.springframework.plugin:spring-plugin-core:1.2.0.RELEASE (compile, reported above): ASL2
+| +-org.slf4j:slf4j-api:1.7.10 (compile, v 1.6.6 used): <not loaded>
++-org.springframework.hateoas:spring-hateoas:0.18.0.RELEASE (compile): ASL2
+| +-org.springframework:spring-aop:4.1.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-beans:4.1.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-context:4.1.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-core:4.1.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-web:4.1.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework:spring-webmvc:4.1.7.RELEASE (compile, v 4.1.4.RELEASE used): <not loaded>
+| +-org.springframework.plugin:spring-plugin-core:1.2.0.RELEASE (compile, optional, reported above): ASL2
+| +-com.fasterxml.jackson.core:jackson-annotations:2.5.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-com.fasterxml.jackson.core:jackson-databind:2.5.4 (compile, optional, v 2.4.5 used): <not loaded>
+| +-com.jayway.jsonpath:json-path:2.0.0 (compile, optional, reported above): ASL2
+| +-org.slf4j:slf4j-api:1.7.12 (compile, v 1.6.6 used): <not loaded>
+org.springframework:spring-beans:4.1.4.RELEASE (unknown): ASL2
++-javax.el:javax.el-api:2.2.5 (compile, optional, v 3.0.0 used): <not loaded>
++-javax.inject:javax.inject:1 (compile, optional, reported above): ASL2
++-org.codehaus.groovy:groovy-all:2.3.9 (compile, optional, v 2.3.7 used): <not loaded>
++-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
++-org.yaml:snakeyaml:1.14 (compile, optional, v 1.11 used): <not loaded>
+org.springframework:spring-context:4.1.4.RELEASE (unknown): ASL2
++-javax.inject:javax.inject:1 (compile, optional, reported above): ASL2
++-javax.validation:validation-api:1.0.0.GA (compile, optional, v 1.1.0.Final used): <not loaded>
++-joda-time:joda-time:2.6 (compile, optional, v 2.2 used): <not loaded>
++-org.aspectj:aspectjweaver:1.8.4 (compile, optional, v 1.7.4 used): <not loaded>
++-org.codehaus.groovy:groovy-all:2.3.9 (compile, optional, v 2.3.7 used): <not loaded>
++-org.hibernate:hibernate-validator:4.3.2.Final (compile, optional, v 5.0.2.Final used): <not loaded>
++-org.springframework:spring-aop:4.1.4.RELEASE (compile): ASL2
+| +-aopalliance:aopalliance:1.0 (compile, reported above): Public Domain
+| +-org.aspectj:aspectjweaver:1.8.4 (compile, optional, v 1.7.4 used): <not loaded>
+| +-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported above): ASL2
+| +-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-expression:4.1.4.RELEASE (compile, reported above): ASL2
+org.springframework:spring-context-support:4.1.4.RELEASE (unknown): ASL2
++-com.google.guava:guava:18.0 (compile, optional, v 16.0.1 used): <not loaded>
++-org.apache.velocity:velocity:1.7 (compile, optional, reported below): ASL2
++-org.freemarker:freemarker:2.3.21 (compile, optional, v 2.3.22 used): <not loaded>
++-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-context:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-tx:4.1.4.RELEASE (compile, optional, reported above): ASL2
+org.springframework:spring-messaging:4.1.4.RELEASE (unknown): ASL2
++-com.fasterxml.jackson.core:jackson-databind:2.4.4 (compile, optional, v 2.4.5 used): <not loaded>
++-org.springframework:spring-beans:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-context:4.1.4.RELEASE (compile, reported above): ASL2
++-org.springframework:spring-core:4.1.4.RELEASE (compile, reported above): ASL2
+javax.xml.bind:jaxb-api:2.0 (unknown): CDDL1
++-javax.xml.bind:jsr173_api:1.0 (compile, no dependencies): <unknown>
++-javax.activation:activation:1.1 (compile, no dependencies): <unknown>
+com.sun.xml.bind:jaxb:2.1.9 (unknown, no dependencies): CDDL1; GPL2
+org.hibernate:hibernate-validator:5.0.2.Final (unknown): ASL2
++-javax.validation:validation-api:1.1.0.Final (compile, no dependencies): ASL2
++-org.jboss.logging:jboss-logging:3.1.1.GA (compile, no dependencies): LGPL2.1
++-com.fasterxml:classmate:1.0.0 (compile, no dependencies): ASL2
++-joda-time:joda-time:2.1 (compile, optional, v 2.2 used): <not loaded>
+javax.el:javax.el-api:3.0.0 (unknown, no dependencies): CDDL + GPLv2 with classpath exception
+org.glassfish.web:javax.el:2.2.6 (unknown): CDDL + GPLv2 with classpath exception
++-javax.el:javax.el-api:2.2.5 (compile, v 3.0.0 used): <not loaded>
+org.apache.velocity:velocity:1.7 (unknown): ASL2
++-commons-collections:commons-collections:3.2.1 (compile, reported above): ASL2
++-commons-lang:commons-lang:2.4 (compile, no dependencies): ASL2

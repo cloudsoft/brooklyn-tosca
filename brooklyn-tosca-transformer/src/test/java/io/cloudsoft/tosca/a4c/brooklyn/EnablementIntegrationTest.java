@@ -3,6 +3,7 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
+import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.CampTypePlanTransformer;

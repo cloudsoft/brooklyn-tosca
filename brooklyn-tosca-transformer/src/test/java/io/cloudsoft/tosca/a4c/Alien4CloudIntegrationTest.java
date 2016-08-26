@@ -19,7 +19,7 @@ import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaTypePlanTransformer;
+import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
 import io.cloudsoft.tosca.a4c.brooklyn.Uploader;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 

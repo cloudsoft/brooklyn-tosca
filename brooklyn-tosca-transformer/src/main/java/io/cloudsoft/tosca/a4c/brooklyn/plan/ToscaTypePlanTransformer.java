@@ -1,9 +1,11 @@
-package io.cloudsoft.tosca.a4c.brooklyn;
+package io.cloudsoft.tosca.a4c.brooklyn.plan;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
@@ -31,6 +33,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudSpringContext;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import io.cloudsoft.tosca.a4c.platform.ToscaPlatform;
+import org.springframework.core.io.ResourceLoader;
 
 public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
@@ -50,6 +53,8 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
     private ManagementContext mgmt;
     private ToscaPlatform platform;
+    private ResourceLoader resourceLoader;
+
     private final AtomicBoolean alienInitialised = new AtomicBoolean();
 
     public static final String FORMAT = "brooklyn-tosca";
@@ -80,7 +85,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
                 platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
                 if (platform == null) {
                     Alien4CloudToscaPlatform.grantAdminAuth();
-                    ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt);
+                    ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt, resourceLoader);
                     platform = applicationContext.getBean(ToscaPlatform.class);
                     ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
                 }
@@ -183,5 +188,14 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         public ToscaTypeImplementationPlan(String planData) {
             this(new BasicTypeImplementationPlan(FORMAT, planData));
         }
+    }
+
+
+    public ResourceLoader getResourceLoader() {
+        return resourceLoader;
+    }
+
+    public void setResourceLoader(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
     }
 }

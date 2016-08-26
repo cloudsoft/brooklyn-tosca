@@ -1,0 +1,21 @@
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="
+             http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+
+    <bean id="osgiResourceLoader"
+          class="io.cloudsoft.tosca.a4c.brooklyn.osgi.OsgiAwarePathMatchingResourcePatternResolver"/>
+
+    <bean id="toscaTypePlanTransformer" scope="prototype"
+          class="io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer" >
+        <property name="resourceLoader" ref="osgiResourceLoader"/>
+    </bean>
+
+    <bean id="transformerClassloaderWrapper"
+          class="io.cloudsoft.tosca.a4c.brooklyn.osgi.ToscaTypePlanTransformerClassloaderWrapper">
+        <argument ref="toscaTypePlanTransformer" />
+    </bean>
+
+    <service ref="transformerClassloaderWrapper"
+             interface="org.apache.brooklyn.core.typereg.BrooklynTypePlanTransformer" />
+</blueprint>

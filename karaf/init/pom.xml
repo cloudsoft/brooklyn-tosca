@@ -20,36 +20,18 @@
         </dependency>
         <dependency>
             <groupId>io.cloudsoft.brooklyn.tosca</groupId>
-            <artifactId>brooklyn-tosca-transformer</artifactId>
+            <artifactId>_brooklyn-tosca-karaf-patches</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
-            <version>${spring.version}</version>
+            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+            <artifactId>brooklyn-tosca-transformer</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.karaf.tooling</groupId>
-                <artifactId>features-maven-plugin</artifactId>
-                <version>2.4.4</version>
-                <executions>
-                    <execution>
-                        <id>generate</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>generate-features-xml</goal>
-                        </goals>
-                        <configuration>
-                            <outputFile>target/features.xml</outputFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>

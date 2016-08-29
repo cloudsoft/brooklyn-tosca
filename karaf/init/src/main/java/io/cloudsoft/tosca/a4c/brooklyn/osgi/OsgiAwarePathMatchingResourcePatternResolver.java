@@ -24,6 +24,8 @@ import java.util.List;
 
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.text.Strings;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleReference;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.wiring.BundleWiring;
 import org.slf4j.Logger;
@@ -36,8 +38,19 @@ public class OsgiAwarePathMatchingResourcePatternResolver extends PathMatchingRe
 
     private static final Logger LOG = LoggerFactory.getLogger(OsgiAwarePathMatchingResourcePatternResolver.class);
 
+    private Bundle getBundle() {
+        Bundle bundle = FrameworkUtil.getBundle(getClass());
+        if (bundle==null) {
+            // it wrong jar is included, it may take the wrong bundle classloader
+            LOG.warn("Cannot find bundle for "+this+", loader "+getClass().getClassLoader()+" of type "+getClass().getClassLoader().getClass()+"; is bundle reference? "+(getClass().getClassLoader() instanceof BundleReference));
+            LOG.info("Classloaders are: "+getClass().getClassLoader().getClass().getClassLoader()+" / "+BundleReference.class.getClassLoader());
+            //                throw new IllegalStateException("Cannot find bundle for "+this+", loader "+getClass().getClassLoader()+" of type "+getClass().getClassLoader().getClass());
+        }
+        return bundle;
+    }
     public OsgiAwarePathMatchingResourcePatternResolver() {
         super( OsgiAwarePathMatchingResourcePatternResolver.class.getClassLoader() );
+        LOG.debug("Initialized "+this+", bundle "+getBundle());
     }
     
     @Override
@@ -51,22 +64,27 @@ public class OsgiAwarePathMatchingResourcePatternResolver extends PathMatchingRe
             if (path.endsWith("**/")) path = Strings.removeFromEnd(path, "**/");
             if (Strings.isBlank(file)) file = "*";
             
-            BundleWiring wiring = FrameworkUtil.getBundle(OsgiAwarePathMatchingResourcePatternResolver.class).adapt(BundleWiring.class);
-            
-            Collection<String> result1 = wiring.listResources(path, file, BundleWiring.LISTRESOURCES_LOCAL | BundleWiring.LISTRESOURCES_RECURSE);
-            List<String> result = MutableList.copyOf(result1);
-            
-            LOG.debug("Osgi resolver found "+result.size()+" match(es) for "+locationPattern+" ("+path+" "+file+"): "+result);
-            
-            Resource[] resultA = new Resource[result1.size()];
-            for (int i=0; i<result1.size(); i++) {
-                resultA[i] = new ClassPathResource(result.get(i), getClassLoader());
-            }
+            Bundle bundle = getBundle();
+            if (bundle!=null) {
+                BundleWiring wiring = bundle.adapt(BundleWiring.class);
 
-            return resultA;
+                Collection<String> result1 = wiring.listResources(path, file, BundleWiring.LISTRESOURCES_LOCAL | BundleWiring.LISTRESOURCES_RECURSE);
+                List<String> result = MutableList.copyOf(result1);
+
+                LOG.debug("Osgi resolver found "+result.size()+" match(es) for "+locationPattern+" ("+path+" "+file+"): "+result);
+
+                Resource[] resultA = new Resource[result1.size()];
+                for (int i=0; i<result1.size(); i++) {
+                    resultA[i] = new ClassPathResource(result.get(i), getClassLoader());
+                }
+
+                return resultA;
+            } else {
+                throw new IllegalStateException("No OSGi bundle found for "+this+"; is this class exported correctly in OSGi?");
+            }
         } else {
-            LOG.debug("Osgi resolver does not know pattern ("+locationPattern+"); passing to super");
-            return super.getResources(locationPattern);
+            LOG.debug("OSGi resolver "+this+" does not know pattern ("+locationPattern+"); passing to super");
         }
+        return super.getResources(locationPattern);
     }
 }

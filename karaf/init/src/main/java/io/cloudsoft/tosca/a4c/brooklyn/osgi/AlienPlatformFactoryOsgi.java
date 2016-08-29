@@ -12,7 +12,6 @@ import org.springframework.core.io.ResourceLoader;
 import alien4cloud.utils.TypeScanner;
 
 public class AlienPlatformFactoryOsgi implements AlienPlatformFactory {
-    
     @Override
     public ToscaPlatform newPlatform(ManagementContext mgmt) throws Exception {
         ResourceLoader rl = new OsgiAwarePathMatchingResourcePatternResolver();

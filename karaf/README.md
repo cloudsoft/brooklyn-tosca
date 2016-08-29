@@ -33,8 +33,8 @@ it's produced with ahgittin's maven license audit plugin:
 
     mvn org.heneveld.maven:license-audit-maven-plugin:report -Dreport=format -DoutputFile=DEPENDENCIES.txt
 
-to get the embed-dependencies line (in the init project), you can then use:
+to get the embed-dependencies line (for the init project), you can then use (in the brooklyn-deps project):
 
-    tail +2 DEPENDENCIES.txt  | sed 's/^[^(a-z)]*//' | sed s/:.*// | sort | uniq | awk '{printf("|%s",$1)}' | sed 's/|/*;groupId=!/'
+    ./generate-embed-deps-line.sh
 
 

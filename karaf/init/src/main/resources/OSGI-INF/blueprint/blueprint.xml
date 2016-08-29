@@ -3,12 +3,12 @@
            xsi:schemaLocation="
              http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
 
-    <bean id="osgiResourceLoader"
-          class="io.cloudsoft.tosca.a4c.brooklyn.osgi.OsgiAwarePathMatchingResourcePatternResolver"/>
+    <bean id="toscaPlatformFactory"
+          class="io.cloudsoft.tosca.a4c.brooklyn.osgi.AlienPlatformFactoryOsgi"/>
 
     <bean id="toscaTypePlanTransformer" scope="prototype"
           class="io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer" >
-        <property name="resourceLoader" ref="osgiResourceLoader"/>
+        <property name="platformFactory" ref="toscaPlatformFactory"/>
     </bean>
 
     <bean id="toscaTypePlanTransformerOsgi"

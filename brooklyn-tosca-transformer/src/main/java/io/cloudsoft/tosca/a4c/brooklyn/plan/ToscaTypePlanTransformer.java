@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.cloudsoft.tosca.a4c.brooklyn.AlienPlatformFactory;
 import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 
@@ -55,7 +56,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
     private ManagementContext mgmt;
     private ToscaPlatform platform;
-    private ResourceLoader resourceLoader;
+    private AlienPlatformFactory platformFactory;
 
     private final AtomicBoolean alienInitialised = new AtomicBoolean();
 
@@ -87,17 +88,9 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
                 platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
                 if (platform == null) {
                     Alien4CloudToscaPlatform.grantAdminAuth();
-                    ClassLoader oldCL = null;
-                    if (getResourceLoader()!=null) {
-                        oldCL = Thread.currentThread().getContextClassLoader(); 
-                        Thread.currentThread().setContextClassLoader(getResourceLoader().getClass().getClassLoader());
-                    }
-                    ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt, resourceLoader);
-                    platform = applicationContext.getBean(ToscaPlatform.class);
+                    if (platformFactory==null) platformFactory = new AlienPlatformFactory.Default();
+                    platform = platformFactory.newPlatform(mgmt);
                     ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
-                    if (oldCL!=null) {
-                        Thread.currentThread().setContextClassLoader(oldCL);
-                    }
                 }
             }
             alienInitialised.set(true);
@@ -200,12 +193,10 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         }
     }
 
-
-    public ResourceLoader getResourceLoader() {
-        return resourceLoader;
+    public AlienPlatformFactory getPlatformFactory() {
+        return platformFactory;
     }
-
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
+    public void setPlatformFactory(AlienPlatformFactory platformFactory) {
+        this.platformFactory = platformFactory;
     }
 }

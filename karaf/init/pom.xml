@@ -1,0 +1,79 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+        <artifactId>brooklyn-tosca-karaf</artifactId>
+        <version>0.10.0-SNAPSHOT</version> <!-- BROOKLYN_TOSCA_VERSION -->
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>brooklyn-tosca-karaf-init</artifactId>
+    <packaging>bundle</packaging>
+    <name>Brooklyn TOSCA Karaf OSGI Initialization</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+            <artifactId>brooklyn-tosca-karaf-deps-brooklyn</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+            <artifactId>_brooklyn-tosca-karaf-patches</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
+            <artifactId>brooklyn-tosca-transformer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+<!--
+                <version>3.2.0</version>
+-->
+                <extensions>true</extensions>
+                <configuration>
+                    <supportedProjectTypes>
+                        <!--
+                         Very strange that we have to include this section. The project is quite happy to build
+                         without specifying supportedProjectTypes if there is no 'src/main/resources' directory,
+                         but adding that directory causes the build to break with:
+                         [WARNING] Ignoring project type bundle - supportedProjectTypes = [jar]
+                         ...
+                         MojoExecutionException: The packaging for this project did not assign a file to the build artifact
+                         -->
+                        <supportedProjectType>bundle</supportedProjectType>
+                    </supportedProjectTypes>
+          <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+<!--
+            <Import-Package>org.apache.brooklyn.*</Import-Package>
+-->
+<Require-Bundle>
+  brooklyn-tosca-karaf-deps-brooklyn
+</Require-Bundle>
+                        <Embed-Transitive>true</Embed-Transitive>
+                        <!-- see note in parent README, run command in brooklyn-deps to generate group id exclusions -->
+                        <Embed-Dependency>
+                            *;groupId=!aopalliance|asm|ch.qos.logback|com.fasterxml.jackson.core|com.fasterxml.jackson.jaxrs|com.fasterxml.jackson.module|com.google.code.findbugs|com.google.code.gson|com.google.guava|com.google.http-client|com.google.inject|com.google.inject.extensions|com.jamesmurty.utils|com.jayway.jsonpath|com.jcraft|com.maxmind.db|com.maxmind.geoip2|com.squareup.okhttp|com.squareup.okio|com.sun.xml.bind|com.thoughtworks.xstream|commons-beanutils|commons-codec|commons-io|commons-logging|dom4j|io.cloudsoft.windows|javax.annotation|javax.inject|net.iharder|net.java.dev.jna|net.minidev|net.schmizz|org.99soft.guice|org.apache.brooklyn|org.apache.brooklyn.camp|org.apache.cxf|org.apache.felix|org.apache.httpcomponents|org.apache.jclouds|org.apache.jclouds.api|org.apache.jclouds.common|org.apache.jclouds.driver|org.apache.jclouds.labs|org.apache.jclouds.provider|org.apache.neethi|org.apache.ws.xmlschema|org.bouncycastle|org.codehaus.groovy|org.freemarker|org.glassfish.external|org.javassist|org.osgi|org.ow2.asm|org.reflections|org.slf4j|org.tukaani|org.yaml|wsdl4j|xml-resolver|xmlpull|xpp3
+                        </Embed-Dependency>
+                        <Bundle-ClassPath>.,_brooklyn-tosca-karaf-patches-0.10.0-SNAPSHOT.jar</Bundle-ClassPath>
+            <Import-Package>org.apache.brooklyn.api.*</Import-Package>
+            <DynamicImport-Package>*</DynamicImport-Package>
+<!--
+            <Export-Package>io.cloudsoft.tosca.a4c.brooklyn.osgi</Export-Package>
+-->
+          </instructions>
+        </configuration>
+      </plugin>
+     </plugins>
+   </build>
+
+</project>

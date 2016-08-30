@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>brooklyn-tosca-karaf-deps-brooklyn</artifactId>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
     <name>Brooklyn TOSCA Karaf OSGI Brooklyn Dependencies</name>
 
     <dependencies>

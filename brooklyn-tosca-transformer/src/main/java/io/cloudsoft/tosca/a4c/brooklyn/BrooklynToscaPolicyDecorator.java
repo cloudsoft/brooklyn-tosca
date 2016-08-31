@@ -69,6 +69,6 @@ public class BrooklynToscaPolicyDecorator extends AbstractToscaPolicyDecorator{
     }
 
     private void decorateWithPolicy(BrooklynYamlTypeInstantiator.Factory yamlLoader, EntitySpec<?> spec, ConfigBag policyDefinition) {
-        new BrooklynEntityDecorationResolver.PolicySpecResolver(yamlLoader).decorate(spec, policyDefinition);
+        new BrooklynEntityDecorationResolver.PolicySpecResolver(yamlLoader).decorate(spec, policyDefinition, null);
     }
 }

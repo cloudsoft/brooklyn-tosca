@@ -64,7 +64,7 @@
                         <Embed-Dependency>
                             *;groupId=!aopalliance|asm|ch.qos.logback|com.fasterxml.jackson.core|com.fasterxml.jackson.jaxrs|com.fasterxml.jackson.module|com.google.code.findbugs|com.google.code.gson|com.google.guava|com.google.http-client|com.google.inject|com.google.inject.extensions|com.jamesmurty.utils|com.jayway.jsonpath|com.jcraft|com.maxmind.db|com.maxmind.geoip2|com.squareup.okhttp|com.squareup.okio|com.sun.xml.bind|com.thoughtworks.xstream|commons-beanutils|commons-codec|commons-io|commons-logging|dom4j|io.cloudsoft.windows|javax.annotation|javax.inject|net.iharder|net.java.dev.jna|net.minidev|net.schmizz|org.99soft.guice|org.apache.brooklyn|org.apache.brooklyn.camp|org.apache.cxf|org.apache.felix|org.apache.httpcomponents|org.apache.jclouds|org.apache.jclouds.api|org.apache.jclouds.common|org.apache.jclouds.driver|org.apache.jclouds.labs|org.apache.jclouds.provider|org.apache.neethi|org.apache.ws.xmlschema|org.bouncycastle|org.codehaus.groovy|org.freemarker|org.glassfish.external|org.javassist|org.osgi|org.ow2.asm|org.reflections|org.slf4j|org.tukaani|org.yaml|wsdl4j|xml-resolver|xmlpull|xpp3
                         </Embed-Dependency>
-                        <Bundle-ClassPath>.,_brooklyn-tosca-karaf-patches-0.10.0-SNAPSHOT.jar</Bundle-ClassPath>
+                        <Bundle-ClassPath>.,_brooklyn-tosca-karaf-patches-${project.version}.jar</Bundle-ClassPath>
             <Import-Package>org.apache.brooklyn.api.*</Import-Package>
             <DynamicImport-Package>*</DynamicImport-Package>
 <!--

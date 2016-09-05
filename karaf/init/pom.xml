@@ -15,11 +15,6 @@
     <dependencies>
         <dependency>
             <groupId>io.cloudsoft.brooklyn.tosca</groupId>
-            <artifactId>brooklyn-tosca-karaf-deps-brooklyn</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.cloudsoft.brooklyn.tosca</groupId>
             <artifactId>_brooklyn-tosca-karaf-patches</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -35,9 +30,6 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-<!--
-                <version>3.2.0</version>
--->
                 <extensions>true</extensions>
                 <configuration>
                     <supportedProjectTypes>
@@ -53,12 +45,6 @@
                     </supportedProjectTypes>
           <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-<!--
-            <Import-Package>org.apache.brooklyn.*</Import-Package>
--->
-<Require-Bundle>
-  brooklyn-tosca-karaf-deps-brooklyn
-</Require-Bundle>
                         <Embed-Transitive>true</Embed-Transitive>
                         <!-- see note in parent README, run command in brooklyn-deps to generate group id exclusions -->
                         <Embed-Dependency>
@@ -67,9 +53,7 @@
                         <Bundle-ClassPath>.,_brooklyn-tosca-karaf-patches-${project.version}.jar</Bundle-ClassPath>
             <Import-Package>org.apache.brooklyn.api.*</Import-Package>
             <DynamicImport-Package>*</DynamicImport-Package>
-<!--
-            <Export-Package>io.cloudsoft.tosca.a4c.brooklyn.osgi</Export-Package>
--->
+            <Export-Package>!*</Export-Package>
           </instructions>
         </configuration>
       </plugin>

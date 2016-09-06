@@ -19,6 +19,10 @@ import java.util.List;
  * using org.springframework.util.ClassUtils#getDefaultClassLoader() will find the
  * classloader for this bundle, rather than whatever may happen to be in place at the
  * point of call.
+ *
+ * Note that the subclassing of ToscaTypePlanTransformer is only required so that
+ * a bean of this type can be injected into the {@link io.cloudsoft.tosca.a4c.brooklyn.ToscaEntitySpecResolver},
+ * which needs the {@link #createApplicationSpecFromTopologyId}.
  */
 public class ToscaTypePlanTransformerClassloaderWrapper extends ToscaTypePlanTransformer implements BrooklynTypePlanTransformer {
 

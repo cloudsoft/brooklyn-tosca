@@ -27,6 +27,7 @@ public class ToscaEntitySpecResolver extends AbstractEntitySpecResolver {
         return toscaTypePlanTransformer.createApplicationSpecFromTopologyId(getLocalType(type));
     }
 
+    // Note this is used to inject the type plan transformer bean in the OSGI blueprint.xml context.
     public void setToscaTypePlanTransformer(ToscaTypePlanTransformer toscaTypePlanTransformer) {
         this.toscaTypePlanTransformer = toscaTypePlanTransformer;
     }

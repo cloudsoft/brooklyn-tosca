@@ -67,7 +67,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     }
 
     @Override
-    public void setManagementContext(ManagementContext managementContext) {
+    public synchronized void setManagementContext(ManagementContext managementContext) {
         if (!isEnabled()) {
             if (hasLoggedDisabled.compareAndSet(false, true)) {
                 log.info("Not loading brooklyn-tosca platform: feature disabled");

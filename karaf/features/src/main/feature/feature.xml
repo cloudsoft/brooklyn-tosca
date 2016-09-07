@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.4.0" name="${project.groupId}-${project.version}">
+
+    <feature name="brooklyn-tosca" version="${project.version}">
+        <bundle>mvn:io.cloudsoft.brooklyn.tosca/brooklyn-tosca-karaf-init/${project.version}</bundle>
+        <bundle dependency="true">mvn:org.apache.brooklyn/brooklyn-launcher-common/${brooklyn.version}</bundle>
+    </feature>
+
+</features>

@@ -8,8 +8,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>_brooklyn-tosca-karaf-patches</artifactId>
-    <name>Brooklyn TOSCA Karaf Patched Jars (_ to place first on classpath)</name>
+    <artifactId>brooklyn-tosca-karaf-patches</artifactId>
+    <name>Brooklyn TOSCA Karaf Patched Jars</name>
 
     <dependencies>
         <dependency>

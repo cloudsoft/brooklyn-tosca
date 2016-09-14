@@ -52,6 +52,10 @@
                         </Embed-Dependency>
                         <Bundle-ClassPath>.,_brooklyn-tosca-karaf-patches-${project.version}.jar</Bundle-ClassPath>
             <Import-Package>org.apache.brooklyn.api.*</Import-Package>
+            <!--
+                Note: using DynamicImport-Package here to bring in packages as required. Worth mentioning that
+                another approach would be to use Require-Bundle, which can be seen in the git history for this file.
+            -->
             <DynamicImport-Package>*</DynamicImport-Package>
             <Export-Package>!*</Export-Package>
           </instructions>

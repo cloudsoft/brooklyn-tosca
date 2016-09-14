@@ -20,13 +20,16 @@ public class AlienPlatformFactoryOsgi implements AlienPlatformFactory {
         // TODO only do the above once, cache static
         
         ClassLoader oldCL = null;
-        oldCL = Thread.currentThread().getContextClassLoader(); 
-        Thread.currentThread().setContextClassLoader(rl.getClass().getClassLoader());
-        
-        ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt, rl);
-        ToscaPlatform result = applicationContext.getBean(ToscaPlatform.class);
-        
-        Thread.currentThread().setContextClassLoader(oldCL);
+        ToscaPlatform result;
+        try {
+            oldCL = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(rl.getClass().getClassLoader());
+
+            ApplicationContext applicationContext = Alien4CloudSpringContext.newApplicationContext(mgmt, rl);
+            result = applicationContext.getBean(ToscaPlatform.class);
+        } finally {
+            Thread.currentThread().setContextClassLoader(oldCL);
+        }
 
         return result;
     }

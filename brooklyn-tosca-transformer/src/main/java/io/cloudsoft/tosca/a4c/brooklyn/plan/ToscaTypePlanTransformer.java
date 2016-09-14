@@ -67,7 +67,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     }
 
     @Override
-    public void setManagementContext(ManagementContext managementContext) {
+    public synchronized void setManagementContext(ManagementContext managementContext) {
         if (!isEnabled()) {
             if (hasLoggedDisabled.compareAndSet(false, true)) {
                 log.info("Not loading brooklyn-tosca platform: feature disabled");
@@ -84,14 +84,12 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
     private void initialiseAlien() {
         try {
-            synchronized (ToscaTypePlanTransformer.class) {
-                platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
-                if (platform == null) {
-                    Alien4CloudToscaPlatform.grantAdminAuth();
-                    if (platformFactory==null) platformFactory = new AlienPlatformFactory.Default();
-                    platform = platformFactory.newPlatform(mgmt);
-                    ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
-                }
+            platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
+            if (platform == null) {
+                Alien4CloudToscaPlatform.grantAdminAuth();
+                if (platformFactory==null) platformFactory = new AlienPlatformFactory.Default();
+                platform = platformFactory.newPlatform(mgmt);
+                ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
             }
             alienInitialised.set(true);
         } catch (Exception e) {

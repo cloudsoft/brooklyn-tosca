@@ -11,15 +11,24 @@ public class ToscaEntitySpecResolver extends AbstractEntitySpecResolver {
 
     private static final String RESOLVER_NAME = "alien4cloud_deployment_topology";
 
+    private ToscaTypePlanTransformer toscaTypePlanTransformer;
+
     public ToscaEntitySpecResolver() {
         super(RESOLVER_NAME);
     }
 
     @Override
     public EntitySpec<?> resolve(String type, BrooklynClassLoadingContext loader, Set<String> encounteredTypes) {
-        ToscaTypePlanTransformer transformer = new ToscaTypePlanTransformer();
-        transformer.setManagementContext(mgmt);
+        if (null == toscaTypePlanTransformer) {
+            toscaTypePlanTransformer = new ToscaTypePlanTransformer();
+        }
+        toscaTypePlanTransformer.setManagementContext(mgmt);
 
-        return transformer.createApplicationSpecFromTopologyId(getLocalType(type));
+        return toscaTypePlanTransformer.createApplicationSpecFromTopologyId(getLocalType(type));
+    }
+
+    // Note this is used to inject the type plan transformer bean in the OSGI blueprint.xml context.
+    public void setToscaTypePlanTransformer(ToscaTypePlanTransformer toscaTypePlanTransformer) {
+        this.toscaTypePlanTransformer = toscaTypePlanTransformer;
     }
 }

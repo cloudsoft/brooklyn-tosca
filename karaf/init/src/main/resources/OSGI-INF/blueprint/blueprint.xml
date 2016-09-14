@@ -6,7 +6,7 @@
     <bean id="toscaPlatformFactory"
           class="io.cloudsoft.tosca.a4c.brooklyn.osgi.AlienPlatformFactoryOsgi"/>
 
-    <bean id="toscaTypePlanTransformer" scope="prototype"
+    <bean id="toscaTypePlanTransformer"
           class="io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer" >
         <property name="platformFactory" ref="toscaPlatformFactory"/>
     </bean>
@@ -18,5 +18,13 @@
 
     <service ref="toscaTypePlanTransformerOsgi"
              interface="org.apache.brooklyn.core.typereg.BrooklynTypePlanTransformer" />
+
+    <bean id="toscaEntitySpecResolver"
+          class="io.cloudsoft.tosca.a4c.brooklyn.ToscaEntitySpecResolver" >
+        <property name="toscaTypePlanTransformer" ref="toscaTypePlanTransformerOsgi" />
+    </bean>
+
+    <service ref="toscaEntitySpecResolver"
+             interface="org.apache.brooklyn.core.resolve.entity.EntitySpecResolver" />
 
 </blueprint>

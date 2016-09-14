@@ -1,6 +1,9 @@
 package io.cloudsoft.tosca.a4c.brooklyn.osgi;
 
 import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
+import org.apache.brooklyn.api.entity.Application;
+import org.apache.brooklyn.api.entity.EntitySpec;
+import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.api.typereg.RegisteredTypeLoadingContext;
@@ -16,8 +19,12 @@ import java.util.List;
  * using org.springframework.util.ClassUtils#getDefaultClassLoader() will find the
  * classloader for this bundle, rather than whatever may happen to be in place at the
  * point of call.
+ *
+ * Note that the subclassing of ToscaTypePlanTransformer is only required so that
+ * a bean of this type can be injected into the {@link io.cloudsoft.tosca.a4c.brooklyn.ToscaEntitySpecResolver},
+ * which needs the {@link #createApplicationSpecFromTopologyId}.
  */
-public class ToscaTypePlanTransformerClassloaderWrapper implements BrooklynTypePlanTransformer {
+public class ToscaTypePlanTransformerClassloaderWrapper extends ToscaTypePlanTransformer implements BrooklynTypePlanTransformer {
 
     ToscaTypePlanTransformer delegateTransformer;
 
@@ -115,6 +122,27 @@ public class ToscaTypePlanTransformerClassloaderWrapper implements BrooklynTypeP
         try {
             Thread.currentThread().setContextClassLoader(toscaClassLoader());
             delegateTransformer.setManagementContext(managementContext);
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+    }
+
+    @Override
+    public EntitySpec<? extends Application> createApplicationSpecFromTopologyId(String id) {
+        final ClassLoader original = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(toscaClassLoader());
+            return delegateTransformer.createApplicationSpecFromTopologyId(id);
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+    }
+
+    public AbstractBrooklynObjectSpec<?, ?> createSpec(RegisteredType type, RegisteredTypeLoadingContext context) throws Exception {
+        final ClassLoader original = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(toscaClassLoader());
+            return delegateTransformer.createSpec(type, context);
         } finally {
             Thread.currentThread().setContextClassLoader(original);
         }

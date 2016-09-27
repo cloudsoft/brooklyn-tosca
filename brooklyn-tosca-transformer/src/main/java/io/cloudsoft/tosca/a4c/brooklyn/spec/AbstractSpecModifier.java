@@ -3,7 +3,8 @@ package io.cloudsoft.tosca.a4c.brooklyn.spec;
 import java.util.Map;
 
 import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.camp.brooklyn.spi.creation.CampCatalogUtils;
+import org.apache.brooklyn.camp.CampPlatform;
+import org.apache.brooklyn.camp.brooklyn.BrooklynCampPlatform;
 import org.apache.brooklyn.util.core.flags.TypeCoercions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +36,14 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
         if (unresolvedValue == null) {
             return Optional.absent();
         }
+
+        CampPlatform platform = BrooklynCampPlatform.findPlatform(mgmt);
+        if (platform==null) {
+            throw new IllegalStateException("No CAMP Platform is registered with this Brooklyn management context.");
+        }
+
         // The 'dsl' key is arbitrary, but the interpreter requires a map
-        Map<String, Object> resolvedConfigMap = CampCatalogUtils.getCampPlatform(mgmt)
+        Map<String, Object> resolvedConfigMap = platform
                 .pdp()
                 .applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
         return Optional.of(desiredType.isPresent()

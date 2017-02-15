@@ -1,7 +1,6 @@
 package io.cloudsoft.tosca.a4c.brooklyn.plan;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -9,7 +8,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +32,6 @@ import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
-import org.apache.brooklyn.location.ssh.SshMachineLocation;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.stream.Streams;
@@ -55,11 +52,11 @@ import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
     private String DATABASE_DEPENDENCY_INJECTION = "$brooklyn:formatString(\"jdbc:" +
-            "%s%s?user=%s\\\\&password=%s\",$brooklyn:entity(\"mysql_server\")" +
-            ".attributeWhenReady(\"datastore.url\")," +
-            "visitors," +
-            "brooklyn," +
-            "br00k11n)";
+            "%s%s?user=%s\\\\&password=%s\", entity(\"mysql_server\")" +
+            ".attributeWhenReady(\"datastore.url\"), " +
+            "\"visitors\", " +
+            "\"brooklyn\", " +
+            "\"br00k11n\")";
 
     @Test
     public void testSimpleHostedTopologyParser() throws Exception {
@@ -344,7 +341,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         // Check that the inputs have been set as exports on the scripts
         String customize = mongo.getFlags().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName()).toString();
         assertConfigValueContains(customize, "DB_IP");
-        assertConfigValueContains(customize, "$brooklyn:entity(\"Compute\").attributeWhenReady(\"ip_address\")");
+        assertConfigValueContains(customize, "entity(\"Compute\").attributeWhenReady(\"ip_address\")");
     }
 
     // FIXME: Rework along with RuntimeEnvironmentModifier

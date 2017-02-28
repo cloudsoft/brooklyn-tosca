@@ -314,7 +314,7 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
                 }
                 Collection<TaskSummary> childSummaries;
                 try {
-                    childSummaries = brooklynApi.getActivityApi().children(taskSummary.getId());
+                    childSummaries = brooklynApi.getActivityApi().children(taskSummary.getId(), false);
                     addTasksAndDescendants(childSummaries, events, deploymentId, date, brooklynApi);
                 } catch (Exception ignored) {
                     // If we can't get the child tasks (usually because of a 404 if the task is transient), ignore

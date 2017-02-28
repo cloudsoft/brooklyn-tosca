@@ -3,6 +3,8 @@ language: java
 jdk:
   - oraclejdk7
 
+before_install: echo "MAVEN_OPTS='-Xmx1024m -Xms512m -XX:MaxPermSize=256m'" > ~/.mavenrc
+
 script: mvn clean install
 
 after_success:
@@ -12,6 +14,7 @@ env:
   global:
     - secure: "ZHAN9WNnj6gmUBSTxKq/J2wnYJBrBmtjDDZIsS3buq1NVEdOyqapIKo6bSJ4u5N1q1ajphb4OKWwg55qkPxzVTcq/b9z2cLdevfBp2CWRBcQ9ag3kpDSzIurVDTNm8yw4uxurhVEHxHmtWgN+bgae7TskX73ApWajddpz73sI7NFqumhAIE+2Bm1IUf/kpIMZ129lUNd/3+AZXiZim7T+Un8q5+JDw3s7tX9Va3gRskC6SgH9PMusO14N2EoFdrHf3iLRhY/2RWdGWUCDr6Pm8R8Absj1dj1Sz78uPnxNMNtLwEKq7nC2ZyI0y7EVmKwPKuBEXJTRauLbVDHsAa1KNzN6RXA4dwdLnlQc3r8G/nXqEAKaHU6RB2bcdcFV5cbh/Buk2pkJ28fHitCOObWlnotSnOqksVsvRL7m6YLEH/Qdt/PhyzqngoJBr2k7knrCMmbpolmQwzTGfYrA9C7q/2so1a1mD/Q7K2krR0d2i0HK/zVnNVwUM+8QWCVnwKHlZ5nUCW9sk3OQa3qTxeaahzzBSdzrFsLNGiidPkLbR0TK4z24dRnTYyUpff94pPG2qqWBgWO+iz44gJGbG2DT9XcOvIy4bVJZ05ujLdjMIbefCvjZTaHzu7JzZUxg4lU4wAsXeMI0CPwYe7SRQNEmJ5VhUm1y4FvoLeNOQOdmxE="
     - secure: "gqP9t3ggDqYVgEHyjZwZB+vh/zCLpAZbFOagGLV2eHXe+1Krbap/3aeNeihKJ7o88uYDgNmVN7u8zlSafUnwSXn1MenXde2MUAbGeXdMAbULBFnZI5JNGpa20tQbL8dkGBSqHqg7z7uT/hr2OcM8r0/NgI5jIqIgj2MRW+tjvOXJy4yi19xiol+DPT7++MnBxvPrNHU4TVAK5jjCx/L+016RVPTsUWqKYAlKObpTTE/TuTjQFE2/Eqw1GAGPdsF1js4pQkQhcgFSxnB2shjjruRaqYW/7I/zpjVeluuuwaYwm03wMFRIr+Kx/UiBeR9zT0xYnbAJaZreW4Ty1GzzXlBU1CNvhzwXfSkgKzcIEi3XI7B6jKLjw33jHmbEStlQcu/xovSCXQW5MaJ4uBKToOLajZmbImyYAlWWNka1Bww9XuIQ4mN6Sp8xM1Wm4VFjCp8PGqDqhKKPiM4VQ86GS8uoS9QzO7U4MRxpG/zUP6m6BAFs5kuLzsNNLupohEs1gCP6ky2Wc7e9AIiAsCLDs7OEWHxeEZbJ1RBSVB5h7RQ41GmQjrbDntTJqGDDYNt1yi5KjXP4Bd6Pe1X1Gwb58SJZ1gYEnu8WqpWFqVMIGfsI9Jkky+RaRLoIz5PwrTqiFj20b95MAhpC9neZzHhB1i1XwzalTQ6fnbRbz+2isQ0="
+    - MAVEN_OPTS: "-Xmx1024m -Xms512m -XX:MaxPermSize=256m"
 
 branches:
   except:

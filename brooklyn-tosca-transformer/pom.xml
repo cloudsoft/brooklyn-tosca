@@ -67,7 +67,11 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>stax</groupId>
+            <artifactId>stax</artifactId>
+            <version>1.2.0</version>
+        </dependency>
         <dependency>
             <groupId>alien4cloud</groupId>
             <artifactId>alien4cloud-core</artifactId>

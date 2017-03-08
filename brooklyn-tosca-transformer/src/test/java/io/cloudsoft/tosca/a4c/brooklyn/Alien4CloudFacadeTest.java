@@ -1,6 +1,7 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -12,6 +13,7 @@ import static org.testng.Assert.assertTrue;
 import java.util.List;
 import java.util.Map;
 
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -116,7 +118,7 @@ public class Alien4CloudFacadeTest {
         when(toscaApplication.getTopology()).thenReturn(topology);
         when(nodeTemplate.getType()).thenReturn("TestType");
         when(topology.getDependencies()).thenReturn(ImmutableSet.<CSARDependency>of());
-        when(icsarRepositorySearchService.getRequiredElementInDependencies(any(Class.class), anyString(), anySet())).thenReturn(indexedArtifactToscaElement);
+        when(icsarRepositorySearchService.getRequiredElementInDependencies(any(Class.class), anyString(), ArgumentMatchers.<CSARDependency>anyCollection())).thenReturn(indexedArtifactToscaElement);
         when(indexedArtifactToscaElement.getDerivedFrom()).thenReturn(ImmutableList.of(Alien4CloudFacade.COMPUTE_TYPE));
         boolean actual = alien4CloudFacade.isDerivedFrom("TestId", toscaApplication, Alien4CloudFacade.COMPUTE_TYPE);
         assertTrue(actual);

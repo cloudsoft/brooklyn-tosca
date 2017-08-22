@@ -23,7 +23,7 @@
   <parent>
     <groupId>io.cloudsoft.brooklyn.tosca</groupId>
     <artifactId>brooklyn-tosca-parent</artifactId>
-    <version>0.12.0-SNAPSHOT</version> <!-- BROOKLYN_TOSCA_VERSION -->
+    <version>0.12.0-20170822.0744</version> <!-- BROOKLYN_TOSCA_VERSION -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 

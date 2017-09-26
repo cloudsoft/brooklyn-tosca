@@ -2,27 +2,19 @@ package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
 import javax.inject.Inject;
 
-import org.apache.brooklyn.api.catalog.CatalogItem;
-import org.apache.brooklyn.api.entity.Entity;
-import org.apache.brooklyn.api.entity.EntitySpec;
-import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
-import org.apache.brooklyn.core.entity.Attributes;
-import org.apache.brooklyn.core.sensor.Sensors;
-import org.apache.brooklyn.enricher.stock.Enrichers;
-import org.apache.brooklyn.entity.software.base.SameServerEntity;
-import org.apache.brooklyn.entity.software.base.SoftwareProcess;
-import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
-import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Functions;
+import org.apache.brooklyn.api.entity.Entity;
+import org.apache.brooklyn.api.entity.EntitySpec;
+import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.api.typereg.RegisteredType;
+import org.apache.brooklyn.entity.software.base.SameServerEntity;
+import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 
 import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudFacade;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 @Component
@@ -46,11 +38,10 @@ public class Alien4CloudEntitySpecFactory implements EntitySpecFactory<Alien4Clo
 
         EntitySpec<?> spec;
         String type = toscaApplication.getNodeTemplate(nodeId).getType();
-        CatalogItem catalogItem = CatalogUtils.getCatalogItemOptionalVersion(mgmt, type);
-        if (catalogItem != null) {
-            LOG.info("Found Brooklyn catalog item that match node type: " + type);
-            spec = (EntitySpec<?>) mgmt.getCatalog().createSpec(catalogItem);
 
+        RegisteredType registeredType = mgmt.getTypeRegistry().get(type);
+        if(registeredType != null) {
+            spec = mgmt.getTypeRegistry().create(registeredType, null, null);
         } else if (isComputeType(nodeId, toscaApplication)) {
             spec = EntitySpec.create(SameServerEntity.class);
         } else {

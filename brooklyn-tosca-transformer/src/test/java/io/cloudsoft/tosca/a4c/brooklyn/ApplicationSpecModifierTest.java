@@ -30,7 +30,7 @@ public class ApplicationSpecModifierTest extends Alien4CloudToscaTest {
     private static final ConfigKey<String> CONFIG_KEY = ConfigKeys.newStringConfigKey("test.myconfigkey");
     private static final String CONFIG_VALUE = "hello, world";
 
-    private static class TestEntitySpecFactory implements EntitySpecFactory {
+    private static class TestEntitySpecFactory implements EntitySpecFactory<ToscaApplication> {
         @Override
         public EntitySpec<?> create(String nodeId, ToscaApplication toscaApplication) {
             return EntitySpec.create(TestEntity.class);
@@ -59,9 +59,9 @@ public class ApplicationSpecModifierTest extends Alien4CloudToscaTest {
 
     @Test
     public void testUsesSpecSelectorAndBuilders() {
-        EntitySpecFactory selector = new TestEntitySpecFactory();
+        EntitySpecFactory<ToscaApplication> selector = new TestEntitySpecFactory();
         EntitySpecModifier specModifier = new TestSpecModifier();
-        ApplicationSpecsBuilder specsBuilder = new Alien4CloudApplicationSpecsBuilder(mgmt, selector, ImmutableList.of(specModifier), alien4CloudFacade);
+        ApplicationSpecsBuilder<Alien4CloudApplication> specsBuilder = new Alien4CloudApplicationSpecsBuilder(mgmt, selector, ImmutableList.of(specModifier), alien4CloudFacade);
         when(toscaApplication.getNodeIds()).thenReturn(ImmutableList.of("node1"));
         when(toscaApplication.getNodeName(anyString())).thenReturn(Optional.of("Test"));
         Map<String, EntitySpec<?>> specs = specsBuilder.getSpecs(toscaApplication);

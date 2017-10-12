@@ -1,6 +1,5 @@
 package io.cloudsoft.tosca.a4c.platform;
 
-import java.io.Closeable;
 import java.nio.file.Path;
 
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;

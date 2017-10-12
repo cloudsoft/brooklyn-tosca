@@ -59,7 +59,7 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
             }
 
             // We know that formatString will return a BrooklynDslDeferredSupplier as the 2nd argument is not yet resolved
-            BrooklynDslDeferredSupplier deferredInstallDir = (BrooklynDslDeferredSupplier) BrooklynDslCommon.formatString("%s/%s/%s", BrooklynDslCommon.attributeWhenReady("install.dir"), directoryPrefix, artifactId);
+            BrooklynDslDeferredSupplier<String> deferredInstallDir = (BrooklynDslDeferredSupplier<String>) BrooklynDslCommon.formatString("%s/%s/%s", BrooklynDslCommon.attributeWhenReady("install.dir"), directoryPrefix, artifactId);
             entitySpec.configure(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactId), deferredInstallDir);
 
             // Copy all files in resource.

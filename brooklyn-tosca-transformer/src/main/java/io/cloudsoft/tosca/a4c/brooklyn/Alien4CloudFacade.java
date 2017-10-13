@@ -498,10 +498,10 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
                 Object oldPropertyValue = properties.get(newPropertyKey);
                 if ((oldPropertyValue instanceof Map)
                         && (newPropertyValue instanceof Map)) {
-                    ((Map) oldPropertyValue).putAll((Map) newPropertyValue);
+                    ((Map<Object, Object>) oldPropertyValue).putAll((Map<?,?>) newPropertyValue);
                 } else if ((oldPropertyValue instanceof List)
                         && (newPropertyValue instanceof List)) {
-                    ((List) oldPropertyValue).addAll((List) newPropertyValue);
+                    ((List<Object>) oldPropertyValue).addAll((List<?>) newPropertyValue);
                 } else {
                     LOG.debug("New Property type {} can not be classified in {}, " +
                                     "it should be a Map or a List",

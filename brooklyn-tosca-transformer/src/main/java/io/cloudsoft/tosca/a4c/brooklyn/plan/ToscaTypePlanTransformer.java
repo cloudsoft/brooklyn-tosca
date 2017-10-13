@@ -4,10 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.cloudsoft.tosca.a4c.brooklyn.AlienPlatformFactory;
-import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.internal.AbstractBrooklynObjectSpec;
@@ -23,20 +19,20 @@ import org.apache.brooklyn.core.typereg.AbstractFormatSpecificTypeImplementation
 import org.apache.brooklyn.core.typereg.AbstractTypePlanTransformer;
 import org.apache.brooklyn.core.typereg.BasicTypeImplementationPlan;
 import org.apache.brooklyn.core.typereg.RegisteredTypes;
+import org.apache.brooklyn.core.typereg.UnsupportedTypePlanException;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.util.exceptions.Exceptions;
 import org.apache.brooklyn.util.guava.Maybe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import io.cloudsoft.tosca.a4c.platform.Alien4CloudSpringContext;
+import io.cloudsoft.tosca.a4c.brooklyn.AlienPlatformFactory;
+import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import io.cloudsoft.tosca.a4c.platform.ToscaPlatform;
-
-import org.springframework.core.io.ResourceLoader;
 
 public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
@@ -126,7 +122,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
             Alien4CloudToscaPlatform.grantAdminAuth();
             return createApplicationSpec(platform.parse(planYaml));
         } catch (Exception e) {
-            if (e instanceof PlanNotRecognizedException) {
+            if (e instanceof PlanNotRecognizedException || e instanceof UnsupportedTypePlanException) {
                 if (log.isTraceEnabled())
                     log.trace("Failed to create entity from TOSCA spec:\n" + planYaml, e);
             } else {
@@ -147,9 +143,9 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
      */
     private void assertAvailable() {
         if (!BrooklynFeatureEnablement.isEnabled(FEATURE_TOSCA_ENABLED)) {
-            throw new PlanNotRecognizedException("Brooklyn TOSCA support is disabled");
+            throw new UnsupportedTypePlanException("Brooklyn TOSCA support is disabled");
         } else if (!alienInitialised.get()) {
-            throw new PlanNotRecognizedException("Alien4Cloud platform is uninitialised for " + this);
+            throw new UnsupportedTypePlanException("Alien4Cloud platform is uninitialised for " + this);
         }
     }
 

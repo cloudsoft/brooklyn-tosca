@@ -1,7 +1,7 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
@@ -10,7 +10,6 @@ import java.util.Map;
 
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
-import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.test.entity.TestEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.mockito.Mock;
@@ -19,15 +18,15 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
+
 import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
 import alien4cloud.model.components.DeploymentArtifact;
 import alien4cloud.model.topology.NodeTemplate;
 import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
-
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
 
 public class RuntimeEnvironmentModifierSpecTest extends Alien4CloudToscaTest {
 

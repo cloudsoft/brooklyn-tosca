@@ -14,13 +14,11 @@ import org.apache.brooklyn.util.text.Strings;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import alien4cloud.model.topology.AbstractPolicy;
-import alien4cloud.model.topology.Capability;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.NodeTemplate;
@@ -211,8 +209,8 @@ public class Alien4CloudApplication implements ToscaApplication {
             return false;
         }
 
-        Class clazz;
-        CatalogItem catalogItem = CatalogUtils.getCatalogItemOptionalVersion(mgmt, policyType.get());
+        Class<?> clazz;
+        CatalogItem<?, ?> catalogItem = CatalogUtils.getCatalogItemOptionalVersion(mgmt, policyType.get());
         if (catalogItem != null) {
             clazz = catalogItem.getCatalogItemJavaType();
         } else {

@@ -25,7 +25,7 @@ import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 public class NormativeTypesAttributesModifierTest extends Alien4CloudToscaTest {
 
     @Mock
-    private ToscaFacade alien4CloudFacade;
+    private ToscaFacade<?> alien4CloudFacade;
     @Mock
     private ToscaApplication toscaApplication;
     @Mock
@@ -52,8 +52,8 @@ public class NormativeTypesAttributesModifierTest extends Alien4CloudToscaTest {
             @Override
             public boolean apply(@Nullable EnricherSpec<?> enricherSpec) {
                 return enricherSpec.getType().equals(Transformer.class)
-                    && ((Sensor)((EnricherSpec) enricherSpec).getConfig().get(Transformer.TARGET_SENSOR)).getName().equals(publishingName)
-                    && ((EnricherSpec) enricherSpec).getConfig().get(Transformer.SOURCE_SENSOR).equals(sourceSensor);
+                    && ((Sensor<?>)enricherSpec.getConfig().get(Transformer.TARGET_SENSOR)).getName().equals(publishingName)
+                    && enricherSpec.getConfig().get(Transformer.SOURCE_SENSOR).equals(sourceSensor);
             }
         }).isPresent());
     }

@@ -3,13 +3,12 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
 
-import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.CampTypePlanTransformer;
 import org.apache.brooklyn.core.BrooklynFeatureEnablement;
-import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.typereg.RegisteredTypeLoadingContexts;
+import org.apache.brooklyn.core.typereg.UnsupportedTypePlanException;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
 import org.testng.annotations.Test;
@@ -17,10 +16,11 @@ import org.testng.annotations.Test;
 import com.google.common.base.Predicates;
 
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
+import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
 
 public class EnablementIntegrationTest extends Alien4CloudIntegrationTest {
 
-    @Test(expectedExceptions = {PlanNotRecognizedException.class})
+    @Test(expectedExceptions = {UnsupportedTypePlanException.class})
     public void testTransformerRejectsBlueprintWhenFeatureDisabled() throws Exception {
         BrooklynFeatureEnablement.disable(ToscaTypePlanTransformer.FEATURE_TOSCA_ENABLED);
         try {

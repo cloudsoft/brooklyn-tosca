@@ -30,13 +30,13 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         super(mgmt, alien4CloudFacade);
     }
 
-    protected void configureConfigKeysSpec(EntitySpec spec, ConfigBag bag) {
+    protected void configureConfigKeysSpec(EntitySpec<?> spec, ConfigBag bag) {
         Set<String> keyNamesUsed = new LinkedHashSet<>();
         configureWithAllRecords(findAllFlagsAndConfigKeys(spec, bag), spec, keyNamesUsed);
         setUnusedKeysAsAnonymousKeys(spec, keyNamesUsed, bag);
     }
 
-    private void configureWithAllRecords(Collection<FlagUtils.FlagConfigKeyAndValueRecord> records, EntitySpec spec, Set<String> keyNamesUsed) {
+    private void configureWithAllRecords(Collection<FlagUtils.FlagConfigKeyAndValueRecord> records, EntitySpec<?> spec, Set<String> keyNamesUsed) {
         for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
             if (r.getFlagMaybeValue().isPresent()) {
                 configureWithResolvedFlag(r, spec, keyNamesUsed);
@@ -47,7 +47,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         }
     }
 
-    private void configureWithResolvedFlag(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
+    private void configureWithResolvedFlag(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec<?> spec, Set<String> keyNamesUsed) {
         Optional<Object> resolvedValue = resolveValue(r.getFlagMaybeValue().get(), Optional.<TypeToken>absent());
         Optional<Object> oldValue = findFlagValue(spec, r);
 
@@ -99,9 +99,9 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
     protected Object joinOldAndNewValues(Object oldValue, Object newValue) {
         if ((oldValue instanceof Map) && (newValue instanceof Map)) {
-            return combineCurrentAndResolvedValueMaps((Map) oldValue, (Map) newValue);
+            return combineCurrentAndResolvedValueMaps((Map<?,?>) oldValue, (Map<?,?>) newValue);
         } else if ((oldValue instanceof List) && (newValue instanceof List)) {
-            return combineCurrentAndResolvedValueList((List) oldValue, (List) newValue);
+            return combineCurrentAndResolvedValueList((List<?>) oldValue, (List<?>) newValue);
         } else {
             LOG.debug("Types of oldValue {} and newValue {} are not the same, so {} is not able " +
                     "to join them. Then, new type will be returned ",
@@ -110,28 +110,28 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         }
     }
     
-    private Map combineCurrentAndResolvedValueMaps(Map currentValue, Map resolvedVaue) {
-        return MutableMap.copyOf(currentValue).add(resolvedVaue);
+    private Map combineCurrentAndResolvedValueMaps(Map<?,?> currentValue, Map<?,?> resolvedVaue) {
+        return MutableMap.<Object, Object>copyOf(currentValue).add(resolvedVaue);
     }
 
-    private List combineCurrentAndResolvedValueList(List currentValue, List resolvedVaue) {
-        MutableList result = MutableList.copyOf(currentValue);
+    private List combineCurrentAndResolvedValueList(List<?> currentValue, List<?> resolvedVaue) {
+        MutableList<Object> result = MutableList.<Object>copyOf(currentValue);
         result.addAll(resolvedVaue);
         return result;
     }
 
-    private Optional<Object> getConfigKeyValue(EntitySpec spec,
+    private Optional<Object> getConfigKeyValue(EntitySpec<?> spec,
                                                FlagUtils.FlagConfigKeyAndValueRecord r) {
         return Optional.fromNullable(spec.getConfig().get(r.getConfigKey()));
     }
 
-    private Optional<Object> findFlagValue(EntitySpec spec,
+    private Optional<Object> findFlagValue(EntitySpec<?> spec,
                                            FlagUtils.FlagConfigKeyAndValueRecord r) {
         return Optional.fromNullable(spec.getFlags().get(r.getFlagName()));
     }
 
 
-    private void setUnusedKeysAsAnonymousKeys(EntitySpec spec, Set<String> keyNamesUsed, ConfigBag bag) {
+    private void setUnusedKeysAsAnonymousKeys(EntitySpec<?> spec, Set<String> keyNamesUsed, ConfigBag bag) {
         // they aren't flags or known config keys, so must be passed as config keys in order for
         // EntitySpec to know what to do with them (as they are passed to the spec as flags)
         for (String key : MutableSet.copyOf(bag.getUnusedConfig().keySet())) {

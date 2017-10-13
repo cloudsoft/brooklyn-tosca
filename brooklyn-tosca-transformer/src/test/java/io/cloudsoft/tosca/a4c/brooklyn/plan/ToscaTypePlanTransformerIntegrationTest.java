@@ -13,14 +13,12 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
-import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.entity.EntityAsserts;
@@ -47,6 +45,7 @@ import alien4cloud.component.repository.exception.CSARVersionAlreadyExistsExcept
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.utils.FileUtil;
 import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
@@ -106,7 +105,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
 
-        Map javaSysProps = (Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS);
+        Map<?,?> javaSysProps = (Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS);
         assertEquals(javaSysProps.size(), 1);
         assertTrue(javaSysProps.get("brooklyn.example.db.url") instanceof BrooklynDslDeferredSupplier);
         assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
@@ -145,7 +144,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(configByon.get("user"), "brooklyn", "expected user=brooklyn in " + configStr);
         assertEquals(configByon.get("provider"), "byon", "expected provider=byon in " + configStr);
 
-        List<?> machineSpecs = (List) configByon.get("byon.machineSpecs");
+        List<?> machineSpecs = (List<?>) configByon.get("byon.machineSpecs");
         assertNotNull(machineSpecs, "expected byon.machineSpecs != null in " + configStr);
         assertEquals(machineSpecs.size(), 1, "machineSpecs=" + Iterables.toString(machineSpecs));
 
@@ -167,8 +166,8 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
 
         assertFlagValueContains(tomcatServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
@@ -195,9 +194,9 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
         
         
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("key1").toString(), "value1");
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("key1").toString(), "value1");
     }
 
     @Test(enabled = true)
@@ -212,10 +211,10 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getFlags().get("javaSysProps"));
-        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps")).size(), 2);
-        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps"))
+        assertEquals(((Map<?,?>) tomcatServer.getFlags().get("javaSysProps")).size(), 2);
+        assertEquals(((Map<?,?>) tomcatServer.getFlags().get("javaSysProps"))
                 .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
-        assertEquals(((Map) tomcatServer.getFlags().get("javaSysProps"))
+        assertEquals(((Map<?,?>) tomcatServer.getFlags().get("javaSysProps"))
                 .get("key1").toString(), "value1");
     }
 
@@ -247,9 +246,9 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("dbConnection1").toString(), "connection1");
-        assertEquals(((Map) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("dbConnection2").toString(), "connection2");
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("dbConnection1").toString(), "connection1");
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("dbConnection2").toString(), "connection2");
     }
 
     @Test
@@ -391,9 +390,9 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertTrue(appChild instanceof SameServerEntity, "Expected " + SameServerEntity.class.getName() + ", got " + appChild);
 
         assertEquals(appChild.getChildren().size(), 2);
-        assertEquals(Iterables.size(Entities.descendants(appChild, MySqlNode.class)), 1,
+        assertEquals(Iterables.size(Entities.descendantsAndSelf(appChild, MySqlNode.class)), 1,
                 "expected " + MySqlNode.class.getName() + " in " + appChild.getChildren());
-        assertEquals(Iterables.size(Entities.descendants(appChild, TomcatServer.class)), 1,
+        assertEquals(Iterables.size(Entities.descendantsAndSelf(appChild, TomcatServer.class)), 1,
                 "expected " + TomcatServer.class.getName() + " in " + appChild.getChildren());
     }
 
@@ -464,16 +463,6 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertConfigValueContains(haystack, needle);
     }
 
-    private void assertConfigValueContains(EntitySpec<?> entity, ConfigKey<String> key, String needle) {
-        String haystack = (String) entity.getConfig().get(key);
-        assertConfigValueContains(haystack, needle);
-    }
-
-    private void assertConfigValueContains(Entity entity, ConfigKey<String> key, String needle) {
-        String haystack = entity.config().get(key);
-        assertConfigValueContains(haystack, needle);
-    }
-
     private void assertConfigValueContains(String haystack, String needle) {
         if (needle == null || haystack == null) {
             throw new AssertionError("Expected non-null values: needle=" + needle + ", haystack=" + haystack);
@@ -505,13 +494,13 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "backend");
 
         assertNotNull(frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS));
-        assertEquals(((Map) frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
-        assertEquals(((Map) frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+        assertEquals(((Map<?,?>) frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
+        assertEquals(((Map<?,?>) frontend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("brooklyn.example.backend.endpoint").toString(), "$brooklyn:entity(\"backend\").attributeWhenReady(\"webapp.url\")");
 
         assertNotNull(backend.getConfig().get(TomcatServer.JAVA_SYSPROPS));
-        assertEquals(((Map) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
-        assertEquals(((Map) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
+        assertEquals(((Map<?,?>) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
+        assertEquals(((Map<?,?>) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
     }
 }

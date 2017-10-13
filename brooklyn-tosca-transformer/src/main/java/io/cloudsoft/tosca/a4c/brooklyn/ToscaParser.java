@@ -2,7 +2,7 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 
 import java.util.Map;
 
-import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
+import org.apache.brooklyn.core.typereg.UnsupportedTypePlanException;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
 import org.apache.brooklyn.util.exceptions.UserFacingException;
@@ -17,7 +17,6 @@ import alien4cloud.model.components.Csar;
 import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingResult;
-import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
 public class ToscaParser {
 
@@ -79,7 +78,7 @@ public class ToscaParser {
         PlanTypeChecker type = new PlanTypeChecker(plan);
         if (!type.isTosca) {
             if (type.csarLink == null) {
-                throw new PlanNotRecognizedException("Does not look like TOSCA");
+                throw new UnsupportedTypePlanException("Does not look like TOSCA");
             }
             tp = uploader.uploadArchive(new ResourceUtils(this).getResourceFromUrl(type.csarLink), "submitted-tosca-archive");
 

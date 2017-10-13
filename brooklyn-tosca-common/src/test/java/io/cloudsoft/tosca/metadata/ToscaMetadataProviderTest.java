@@ -4,8 +4,8 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
-import com.google.common.collect.ImmutableMap;
-import org.apache.brooklyn.entity.database.mysql.MySqlNode;
+import java.util.Collection;
+
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.rest.api.CatalogApi;
 import org.apache.brooklyn.rest.client.BrooklynApi;
@@ -18,8 +18,7 @@ import org.testng.annotations.Test;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-
-import java.util.Collection;
+import com.google.common.collect.ImmutableMap;
 
 public class ToscaMetadataProviderTest {
 

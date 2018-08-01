@@ -95,10 +95,10 @@
             </dependency>
 
             <dependency>
-                <!-- a4c uses a newer version of these than brooklyn supplies -->
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.3.2</version>
+                <!-- a4c uses an older version of these than brooklyn supplies -->
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>1.17</version>
             </dependency>
 
             <dependency>

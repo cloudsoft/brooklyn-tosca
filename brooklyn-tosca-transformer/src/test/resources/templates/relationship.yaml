@@ -46,6 +46,11 @@ node_types:
         required: false
         entry_schema:
           type: string
+      https.port:
+        type: list
+        required: false
+        entry_schema:
+          type: string
       java.sysprops:
         type: map
         required: false
@@ -75,6 +80,7 @@ topology_template:
       properties:
         wars.root: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
         http.port: "8080+"
+        https.port: $brooklyn:config("http.port")
       requirements:
         - dbConnection:
             node: mysql_server

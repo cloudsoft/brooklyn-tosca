@@ -162,10 +162,10 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     @Override
     protected double scoreForNullFormat(Object planData, RegisteredType type, RegisteredTypeLoadingContext context) {
         Maybe<Map<?, ?>> yamlMap = RegisteredTypes.getAsYamlMap(planData);
-        if (yamlMap.isAbsent() || !yamlMap.get().containsKey("tosca_definitions_version")) {
-            return 0;
-        }
-        return 1;
+        if (yamlMap.isAbsent()) return 0;
+        if (yamlMap.get().containsKey("tosca_definitions_version")) return 1;
+        if (yamlMap.get().containsKey("csar_link")) return 1;
+        return 0;
     }
 
     @Override

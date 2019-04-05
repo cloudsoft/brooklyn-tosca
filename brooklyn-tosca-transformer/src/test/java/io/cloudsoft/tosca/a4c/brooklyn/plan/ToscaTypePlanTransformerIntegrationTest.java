@@ -17,11 +17,13 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
+import org.apache.brooklyn.api.location.PortRange;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.entity.EntityAsserts;
+import org.apache.brooklyn.core.location.PortRanges;
 import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
@@ -166,9 +168,10 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 .findChildEntitySpecByPlanId(app, "tomcat_server");
 
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
+        Object dbUrl = ((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("brooklyn.example.db.url");
         assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
-        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS))
-                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(dbUrl.toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertTrue(dbUrl instanceof BrooklynDslDeferredSupplier, "dbUrl="+dbUrl+", type="+dbUrl.getClass());
 
         assertFlagValueContains(tomcatServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
                 "echo It works!");
@@ -177,6 +180,12 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
         assertFlagValueContains(mysqlServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
                 "echo This is the target");
+        
+        assertEquals(tomcatServer.getConfig().get(TomcatServer.HTTP_PORT.getConfigKey()), PortRanges.fromString("8080+"));
+        
+        Object httpsPort = tomcatServer.getConfig().get(TomcatServer.HTTPS_PORT.getConfigKey());
+        assertTrue(httpsPort instanceof BrooklynDslDeferredSupplier, "httpsPort="+httpsPort+", type="+httpsPort.getClass());
+        assertEquals(httpsPort.toString(), "$brooklyn:config(\"http.port\")");
     }
 
 

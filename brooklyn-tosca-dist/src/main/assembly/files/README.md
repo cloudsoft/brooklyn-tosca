@@ -1,4 +1,4 @@
-brooklyn-tosca
+brooklyn-tosca - graphical client dist
 ===
 
 ## Overview
@@ -7,24 +7,13 @@ This distribution provides support for [Apache Brooklyn](http://brooklyn.io)
 to understand [OASIS TOSCA](https://www.oasis-open.org/committees/tosca/) plans,
 using [Alien4Cloud](http://alien4cloud.github.io).
 
+This project builds the TOSCA (Alien4Cloud) graphical client configured for use with Apache Brooklyn.
 
-## Running
+To support TOSCA in Apache Brooklyn this client is not necessary; see the instructions at
+[the root of this project](https://github.com/cloudsoft/brooklyn-tosca/blob/master/README.md).
 
-### Quickstart: No Alien4Cloud UI
 
-In the unpacked archive, the simplest way to get started is to run with:
-
-    nohup ./brooklyn.sh launch &
-
-This will launch the Alien4Cloud core platform embedded, using `~/.brooklyn/alien4cloud/` as the repository.
-Brooklyn will be available on port 8081 by default.
-The process will be nohupped so you can exit the session (e.g. ssh on a remote machine).
-
-You can override the A4C config by modifying `conf/alien4cloud-config.yml`
-(and if you want to use a different alien4cloud config file, simply set
-the `alien4cloud-config.file` property in your `brooklyn.properties`.
-
-### Quickstart: With Alien4Cloud UI
+## Launching the Alien4Cloud UI
 
 To launch a standalone A4C instance, edit the config file in
 `alien4cloud-standalone/` as desired then run:
@@ -33,14 +22,16 @@ To launch a standalone A4C instance, edit the config file in
     
 Alien4Cloud will be running on port 8091, as set in that config.
 
-To override the `brooklyn` launch to use an existing A4C installation,
-set `client: false` and `hosts: <other-alien-es-backend-ip-port>` 
-in the `conf/alien4cloud-config.yml` used by this launch
-(or specify a different `alien4cloud-config.file` for brooklyn).
-For example if you want to run a local Brooklyn against a local but separate A4C,
-use:
+To configure the Apache Brooklyn with the TOSCA plugin to use this instance of the Alien4Cloud server,
+the `alien4cloud-config.yml` it uses must be changed:
 
-    nohup ./brooklyn.sh launch -Dalien4cloud-config.file=conf/alien4cloud-config.client-to-localhost.yml &
+* set `client: false` 
+* set `hosts: <other-alien-es-backend-ip-port>` 
+
+You can use a different config file but ensure the `system.properties` is updated to reflect that.
+A restart of Apache Brooklyn (or at least the TOSCA bundle) is then required.
+
+## Operations
 
 Note that A4C launches ES with no credentials required, 
 so the ES instance should be secured at the network level
@@ -49,14 +40,6 @@ so the ES instance should be secured at the network level
 Any ElasticSearch data stored by this instance will use default ES file locations.
 The recommended way to configure ES data is by launching a separate Alien4Cloud instance 
 configured as desired, with this instance pointing at that.
-
-### Quickstart: TOSCA disabled
-
-If you wish to start Brooklyn with TOSCA modules disabled then run:
-
-    nohup ./brooklyn.sh launch -Dbrooklyn.experimental.feature.tosca=false
-
-You may also set `brooklyn.experimental.feature.tosca` in your `brooklyn.properties` file.
 
 
 ## Supported TOSCA Syntax

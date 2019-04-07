@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import javax.inject.Inject;
 
+import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
@@ -40,7 +41,7 @@ public class Alien4CloudToscaPlatform implements ToscaPlatform {
 
     // Beans
     private final BeanFactory beanFactory;
-    private ToscaFacade alien4CloudFacade;
+    private ToscaFacade<?> alien4CloudFacade;
     private Uploader uploader;
 
     // State
@@ -53,7 +54,7 @@ public class Alien4CloudToscaPlatform implements ToscaPlatform {
     }
 
     @Inject
-    public Alien4CloudToscaPlatform(BeanFactory beanFactory, ToscaFacade alien4CloudFacade, Uploader uploader) {
+    public Alien4CloudToscaPlatform(BeanFactory beanFactory, ToscaFacade<?> alien4CloudFacade, Uploader uploader) {
         this.beanFactory = beanFactory;
         this.alien4CloudFacade = alien4CloudFacade;
         this.uploader = uploader;
@@ -72,7 +73,7 @@ public class Alien4CloudToscaPlatform implements ToscaPlatform {
                 loadTypesFromUrl(resource);
             }
         } catch (Exception e) {
-            throw Exceptions.propagate("Error loading default types " + Iterables.toString(defaultTypes), e);
+            throw Exceptions.propagateAnnotated("Error loading default types " + Iterables.toString(defaultTypes), e);
         }
         final String brooklynTypes = "classpath://brooklyn/types/brooklyn-types.yaml";
         LOG.info("Loading types from " + brooklynTypes);
@@ -137,8 +138,8 @@ public class Alien4CloudToscaPlatform implements ToscaPlatform {
     }
 
     @Override
-    public ToscaApplication parse(String plan) {
-        return alien4CloudFacade.parsePlan(plan, uploader);
+    public ToscaApplication parse(String plan, BrooklynClassLoadingContext context) {
+        return alien4CloudFacade.parsePlan(plan, uploader, context);
     }
 
     @Override

@@ -1,4 +1,4 @@
 # A list of resources that contain TOSCA type definitions and that should be
 # loaded by the plugin on initialisation.
 defaultTypes:
-- https://github.com/alien4cloud/tosca-normative-types/archive/1.1.0-SM8.zip
+- classpath://brooklyn/types/tosca-normative-types-1.1.0-SM8.zip

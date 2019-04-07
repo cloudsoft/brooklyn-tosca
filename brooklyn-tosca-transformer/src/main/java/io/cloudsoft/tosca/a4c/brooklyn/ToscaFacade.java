@@ -3,6 +3,8 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import java.nio.file.Path;
 import java.util.Map;
 
+import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
+import org.apache.brooklyn.api.typereg.RegisteredTypeLoadingContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 
@@ -102,14 +104,16 @@ public interface ToscaFacade<A extends ToscaApplication> {
     /**
      * @param plan the Tosca plan to parse
      * @param uploader the Uploader object to use
+     * @param context 
      * @return a new ToscaApplication
      */
-    A parsePlan(String plan, Uploader uploader);
+    A parsePlan(String plan, Uploader uploader, BrooklynClassLoadingContext context);
 
     /**
      *
      * @param path the path to a CSAR archive
      * @param uploader the Uploader object to use
+     * @param context 
      * @return a new ToscaApplication
      */
     A parsePlan(Path path, Uploader uploader);

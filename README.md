@@ -9,7 +9,8 @@ This package provides support for [Apache Brooklyn](http://brooklyn.io)
 to understand [OASIS TOSCA](https://www.oasis-open.org/committees/tosca/) plans,
 using [Alien4Cloud](http://alien4cloud.github.io).
 
-It can be run as a standalone file, launching Brooklyn, or the JAR dropped in to your own Brooklyn.
+This builds a plugin JAR that installs in to Apache Brooklyn.
+This also builds a graphical TOSCA client that connects to Apache Brooklyn.
 
 
 ## Build Notes
@@ -22,18 +23,24 @@ compare with the version at [ahgittin/alien4cloud misc branch](https://github.co
 
 Then simply:
 
-    mvn clean install assembly:single
+    mvn clean install
 
 
 ## Running
 
-See the README.md file in the resulting archive (in `target`) for runtime instructions.
-You may also find that file [here](brooklyn-tosca-dist/src/main/assembly/files/README.md).
+Once the project is built:
+
+* To install TOSCA backend support into Apache Brooklyn, see the instructions in the [`karaf/init`](karaf/init/README.md) project
+that builds a plugin to Apache Brooklyn.
+
+* To build and run a graphical TOSCA client, unpack the `brooklyn-tosca-dist` archive (in the `tar.gz` in that project's `target/`),
+and consult the `README.md` there. You can also find that file [here](brooklyn-tosca-dist/src/main/assembly/files/README.md).
+Note this requires a different configuration for the plugin installed to Apache Brooklyn.
 
 
-## TODO Tasks
+## Roadmap
 
-### Very Soon
+### Backlog
 
 * add catalog items from TOSCA specs, one by one or by import
 

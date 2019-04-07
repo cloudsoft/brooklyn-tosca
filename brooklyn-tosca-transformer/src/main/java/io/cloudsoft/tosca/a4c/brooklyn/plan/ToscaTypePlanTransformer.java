@@ -12,9 +12,10 @@ import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.api.typereg.RegisteredTypeLoadingContext;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.BrooklynFeatureEnablement;
+import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.mgmt.classloading.JavaBrooklynClassLoadingContext;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
-import org.apache.brooklyn.core.plan.PlanNotRecognizedException;
 import org.apache.brooklyn.core.typereg.AbstractFormatSpecificTypeImplementationPlan;
 import org.apache.brooklyn.core.typereg.AbstractTypePlanTransformer;
 import org.apache.brooklyn.core.typereg.BasicTypeImplementationPlan;
@@ -57,6 +58,10 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     private final AtomicBoolean alienInitialised = new AtomicBoolean();
 
     public static final String FORMAT = "brooklyn-tosca";
+    // TODO support these -- more specific parsers (whereas this one autodetects between the first two and doesn't support the last one)
+//    public static final String FORMAT_SERVICE_TEMPLATE_YAML = "tosca-service-template-yaml";
+//    public static final String FORMAT_CSAR_LINK = "brooklyn-tosca-csar-link";
+//    public static final String FORMAT_CSAR_ZIP = "tosca-csar-zip";
 
     public ToscaTypePlanTransformer() {
         super(FORMAT, "OASIS TOSCA / Brooklyn", "The Apache Brooklyn implementation of the OASIS TOSCA blueprint plan format and extensions");
@@ -81,14 +86,17 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     private void initialiseAlien() {
         try {
             platform = mgmt.getConfig().getConfig(TOSCA_ALIEN_PLATFORM);
+            log.info("Initializing Alien4Cloud TOSCA for "+this+": "+platform);
             if (platform == null) {
                 Alien4CloudToscaPlatform.grantAdminAuth();
                 if (platformFactory==null) platformFactory = new AlienPlatformFactory.Default();
                 platform = platformFactory.newPlatform(mgmt);
                 ((LocalManagementContext) mgmt).getBrooklynProperties().put(TOSCA_ALIEN_PLATFORM, platform);
+                log.info("Initialized Alien4Cloud TOSCA for "+this+": "+platform);
             }
             alienInitialised.set(true);
         } catch (Exception e) {
+            log.error("Failure initializing Alien4Cloud TOSCA for "+this+" (rethrowing): "+e);
             throw Exceptions.propagate(e);
         }
     }
@@ -98,6 +106,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         return createApplicationSpec(platform.getToscaApplication(id));
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     protected EntitySpec<? extends Application> createApplicationSpec(ToscaApplication toscaApplication) {
         EntitySpec<BasicApplication> rootSpec = EntitySpec.create(BasicApplication.class)
                 .displayName(toscaApplication.getName())
@@ -120,9 +129,12 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         assertAvailable();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
-            return createApplicationSpec(platform.parse(planYaml));
+            ToscaApplication tApp = platform.parse(planYaml, CatalogUtils.newClassLoadingContext(mgmt, type, context!=null && context.getLoader()!=null ? context.getLoader() :
+                // deprecated pojo load used only for csar link integration test
+                JavaBrooklynClassLoadingContext.create(getClass().getClassLoader())));
+            return createApplicationSpec(tApp);
         } catch (Exception e) {
-            if (e instanceof PlanNotRecognizedException || e instanceof UnsupportedTypePlanException) {
+            if (e instanceof UnsupportedTypePlanException) {
                 if (log.isTraceEnabled())
                     log.trace("Failed to create entity from TOSCA spec:\n" + planYaml, e);
             } else {
@@ -158,14 +170,14 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     public List<RegisteredType> createFromTypeDefinition(String formatCode, Object catalogData) {
         throw new UnsupportedOperationException();
     }
-
+    
     @Override
     protected double scoreForNullFormat(Object planData, RegisteredType type, RegisteredTypeLoadingContext context) {
         Maybe<Map<?, ?>> yamlMap = RegisteredTypes.getAsYamlMap(planData);
-        if (yamlMap.isAbsent() || !yamlMap.get().containsKey("tosca_definitions_version")) {
-            return 0;
-        }
-        return 1;
+        if (yamlMap.isAbsent()) return 0;
+        if (yamlMap.get().containsKey("tosca_definitions_version")) return 1;
+        if (yamlMap.get().containsKey("csar_link")) return 1;
+        return 0;
     }
 
     @Override
@@ -175,7 +187,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
 
     @Override
     protected Object createBean(RegisteredType type, RegisteredTypeLoadingContext context) throws Exception {
-        return null;
+        throw new IllegalStateException("beans not supported here");
     }
 
     public static class ToscaTypeImplementationPlan extends AbstractFormatSpecificTypeImplementationPlan<String> {

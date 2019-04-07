@@ -1,4 +1,4 @@
-brooklyn-tosca
+brooklyn-tosca - graphical client dist
 ===
 
 ## Overview
@@ -7,56 +7,50 @@ This distribution provides support for [Apache Brooklyn](http://brooklyn.io)
 to understand [OASIS TOSCA](https://www.oasis-open.org/committees/tosca/) plans,
 using [Alien4Cloud](http://alien4cloud.github.io).
 
+This project builds the TOSCA (Alien4Cloud) graphical client configured for use with Apache Brooklyn.
 
-## Running
+To support TOSCA in Apache Brooklyn this client is not necessary; see the instructions at
+[the root of this project](https://github.com/cloudsoft/brooklyn-tosca/blob/master/README.md).
 
-### Quickstart: No Alien4Cloud UI
 
-In the unpacked archive, the simplest way to get started is to run with:
+## Launching the Alien4Cloud UI
 
-    nohup ./brooklyn.sh launch &
+To launch a standalone A4C instance, edit the config file in `alien4cloud-standalone/` as desired.
 
-This will launch the Alien4Cloud core platform embedded, using `~/.brooklyn/alien4cloud/` as the repository.
-Brooklyn will be available on port 8081 by default.
-The process will be nohupped so you can exit the session (e.g. ssh on a remote machine).
-
-You can override the A4C config by modifying `conf/alien4cloud-config.yml`
-(and if you want to use a different alien4cloud config file, simply set
-the `alien4cloud-config.file` property in your `brooklyn.properties`.
-
-### Quickstart: With Alien4Cloud UI
-
-To launch a standalone A4C instance, edit the config file in
-`alien4cloud-standalone/` as desired then run:
+Next ensure Apache Brooklyn is stopped, and run:
 
     nohup alien4cloud-standalone/alien4cloud.sh &
     
-Alien4Cloud will be running on port 8091, as set in that config.
+Alien4Cloud will be running on port 8091 (UI), 9200 and 9300, as set in that config.
 
-To override the `brooklyn` launch to use an existing A4C installation,
-set `client: false` and `hosts: <other-alien-es-backend-ip-port>` 
-in the `conf/alien4cloud-config.yml` used by this launch
-(or specify a different `alien4cloud-config.file` for brooklyn).
-For example if you want to run a local Brooklyn against a local but separate A4C,
-use:
+To configure the Apache Brooklyn with the TOSCA plugin to use this instance of the Alien4Cloud server,
+the `alien4cloud-config.yml` it uses must be changed:  where the line `client: false` appears,
+replace it with the following lines:
 
-    nohup ./brooklyn.sh launch -Dalien4cloud-config.file=conf/alien4cloud-config.client-to-localhost.yml &
+```
+  client: true
+  transportClient: true
+  hosts: localhost:9300
+```
 
-Note that A4C launches ES with no credentials required, 
-so the ES instance should be secured at the network level
-(which they are in this configuration as it is only bound to localhost).
+The `hosts` value should point to at least one server and port where the alien4cloud ElasticSearch 
+backend has been launched (in this configuration it is launched as part of the A4C UI, so with both 
+on the same server, the value above is correct.)
 
-Any ElasticSearch data stored by this instance will use default ES file locations.
-The recommended way to configure ES data is by launching a separate Alien4Cloud instance 
-configured as desired, with this instance pointing at that.
+Restart Apache Brooklyn, and when both are fully initialized, connect to the UIs at:
 
-### Quickstart: TOSCA disabled
+* Apache Brooklyn:  http://localhost:8081/
+* TOSCA Graphical Alien4Cloud Client (admin/admin):  http://localhost:8091/
 
-If you wish to start Brooklyn with TOSCA modules disabled then run:
 
-    nohup ./brooklyn.sh launch -Dbrooklyn.experimental.feature.tosca=false
+## Operations
 
-You may also set `brooklyn.experimental.feature.tosca` in your `brooklyn.properties` file.
+Note that A4C launches with the default UI credentials and _no_ credentials at the ES layer,
+so everything should be secured at the network level
+(which they are in this configuration as things are only bound to localhost).
+
+Other ES configurations are supported for production usage, with multiple Apache Brooklyn
+and TOSCA Graphical A4C servers pointed at the A4C ES backend.
 
 
 ## Supported TOSCA Syntax

@@ -1,7 +1,9 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
+import java.io.InputStream;
 import java.util.Map;
 
+import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.core.typereg.UnsupportedTypePlanException;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
@@ -73,14 +75,25 @@ public class ToscaParser {
         this.uploader = uploader;
     }
 
-    public ParsingResult<Csar> parse(String plan) {
+    public ParsingResult<Csar> parse(String plan, BrooklynClassLoadingContext context) {
         ParsingResult<Csar> tp;
         PlanTypeChecker type = new PlanTypeChecker(plan);
         if (!type.isTosca) {
             if (type.csarLink == null) {
                 throw new UnsupportedTypePlanException("Does not look like TOSCA");
             }
-            tp = uploader.uploadArchive(new ResourceUtils(this).getResourceFromUrl(type.csarLink), "submitted-tosca-archive");
+            ResourceUtils resLoader = context!=null ? new ResourceUtils(context) : new ResourceUtils(this); 
+            InputStream resourceFromUrl;
+            try {
+                resourceFromUrl = resLoader.getResourceFromUrl(type.csarLink);
+            } catch (Exception e) {
+                if (type.csarLink.startsWith("classpath:")) {
+                    throw Exceptions.propagateAnnotated("Could not load "+type.csarLink+" relative to context "+context, e);
+                } else {
+                    throw Exceptions.propagate(e);
+                }
+            }
+            tp = uploader.uploadArchive(resourceFromUrl, "submitted-tosca-archive");
 
         } else {
             tp = uploader.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");

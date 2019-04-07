@@ -512,4 +512,12 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(((Map<?,?>) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
                 .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
     }
+    
+    @Test
+    public void testCsarLink() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/csar-link-1.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+    }
+
 }

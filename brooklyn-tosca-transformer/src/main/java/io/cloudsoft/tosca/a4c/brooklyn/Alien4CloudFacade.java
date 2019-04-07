@@ -10,6 +10,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
@@ -557,8 +558,8 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     }
 
     @Override
-    public Alien4CloudApplication parsePlan(String plan, Uploader uploader) {
-        ParsingResult<Csar> tp = new ToscaParser(uploader).parse(plan);
+    public Alien4CloudApplication parsePlan(String plan, Uploader uploader, BrooklynClassLoadingContext context) {
+        ParsingResult<Csar> tp = new ToscaParser(uploader).parse(plan, context);
         Csar csar = tp.getResult();
         return newToscaApplication(csar);
     }

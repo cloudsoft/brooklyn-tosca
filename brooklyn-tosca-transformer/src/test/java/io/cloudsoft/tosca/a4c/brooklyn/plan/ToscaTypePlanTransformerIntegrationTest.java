@@ -520,4 +520,10 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(app.getChildren().size(), 1);
     }
 
+    @Test
+    public void testCsarLinkWithEmbeddedResources() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/csar-link-cp.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+    }
 }

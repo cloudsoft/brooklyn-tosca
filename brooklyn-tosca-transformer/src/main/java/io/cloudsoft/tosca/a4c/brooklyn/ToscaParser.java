@@ -93,6 +93,8 @@ public class ToscaParser {
                     throw Exceptions.propagate(e);
                 }
             }
+            // TODO either we need to be able to look up the CSAR ZIP after upload, or
+            // we have to annotate it with context and csarLink of this file
             tp = uploader.uploadArchive(resourceFromUrl, "submitted-tosca-archive");
 
         } else {

@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import alien4cloud.model.components.Csar;
 import alien4cloud.model.topology.AbstractPolicy;
 import alien4cloud.model.topology.GenericPolicy;
 import alien4cloud.model.topology.NodeGroup;
@@ -31,11 +32,15 @@ public class Alien4CloudApplication implements ToscaApplication {
     private final String name;
     private final Topology deploymentTopology;
     private final String deploymentId;
+    // the class ArchivePostProcessor does not correctly set impl artifact on things in topologies (eg interfaces);
+    // so let's _us_ maintain it as well
+    private final Csar archive;
 
-    public Alien4CloudApplication(String name, Topology deploymentTopology, String deploymentId) {
+    public Alien4CloudApplication(String name, Topology deploymentTopology, String deploymentId, Csar archive) {
         this.name = name;
         this.deploymentTopology = deploymentTopology;
         this.deploymentId = deploymentId;
+        this.archive = archive;
     }
 
     @Override
@@ -62,6 +67,10 @@ public class Alien4CloudApplication implements ToscaApplication {
         return deploymentTopology;
     }
 
+    public Csar getArchive() {
+        return archive;
+    }
+    
     private Map<String, NodeTemplate> getNodeTemplates(){
         return ImmutableMap.copyOf(getTopology().getNodeTemplates());
     }

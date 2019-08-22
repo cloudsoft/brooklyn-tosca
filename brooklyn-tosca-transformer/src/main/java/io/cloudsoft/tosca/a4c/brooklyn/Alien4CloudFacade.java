@@ -18,6 +18,7 @@ import org.apache.brooklyn.util.collections.MutableList;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
+import org.apache.brooklyn.util.net.Urls;
 import org.apache.brooklyn.util.os.Os;
 import org.apache.brooklyn.util.text.Strings;
 import org.slf4j.Logger;
@@ -547,14 +548,15 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     }
 
     private Alien4CloudApplication newToscaApplication(Csar csar) {
-        return new Alien4CloudApplication(csar.getName(), getTopologyOfCsar(csar), "");
+        return new Alien4CloudApplication(csar.getName(), getTopologyOfCsar(csar), "", csar);
     }
 
     @Override
     public Alien4CloudApplication newToscaApplication(String id) {
         DeploymentTopology deploymentTopology = deploymentTopologyService.getOrFail(id);
         Application application = applicationService.getOrFail(deploymentTopology.getDelegateId());
-        return new Alien4CloudApplication(application.getName(), deploymentTopology, id);
+        return new Alien4CloudApplication(application.getName(), deploymentTopology, id,
+            null /* TODO is there a way to find the containing CSAR; will things in topologies in here break without it? */);
     }
 
     @Override
@@ -616,11 +618,43 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             // Trying to get the CSAR file based on the artifact reference. If it fails, then we try to get the
             // content of the script from any resources
             String artifactRef = artifact.getArtifactRef();
-            Optional<Path> csarPath = getCsarPath(artifact.getArchiveName(), artifact.getArchiveVersion());
-            if(!csarPath.isPresent()) {
-                return new ResourceUtils(this).getResourceAsString(artifactRef);
+            String proto = Urls.getProtocol(artifactRef);
+            if ("classpath".equals(proto)) {
+                proto = null;
+                artifactRef = Strings.removeAllFromStart(artifactRef, "classpath:", "/");
+                // recast classpath URLs as things within the CSAR
             }
-            return new ResourceUtils(this).getResourceAsString(csarPath.get().getParent().toString() + expandedFolder + artifactRef);
+            Optional<Path> csarPath = Optional.absent();
+            
+            if (proto==null) {
+                // not a URL; look in archive
+                
+                csarPath = getCsarPath(artifact.getArchiveName(), artifact.getArchiveVersion());
+                if (!csarPath.isPresent() && toscaApplication.getArchive()!=null) {
+                    // archive name / version are null in some cases, because the ArchivePostProcessor doesn't
+                    // properly initialize ImplArts _inside_ topologies. we record the archive on the app 
+                    // but in _some_ call paths only
+                    csarPath = getCsarPath(toscaApplication.getArchive().getName(), toscaApplication.getArchive().getVersion());
+                }
+                if (csarPath.isPresent()) {
+                    if (new File(csarPath.get().getParent().toString() + expandedFolder + artifactRef).exists()) {
+                        return new ResourceUtils(this).getResourceAsString(csarPath.get().getParent().toString() + expandedFolder + artifactRef);
+                    }
+                }
+            }
+            // the brooklyn entity's bundle may also be a valid search path;
+            // ideally build up a search path including the folder above if found
+            // (if reading a tosca yaml then it would be valid not to have one however, 
+            // so could remove the above error eg if it's a tosca yaml in a brooklyn bundle),
+            // and in the call below use that search sequence
+            try {
+                return new ResourceUtils(this).getResourceAsString(artifactRef);
+            } catch (RuntimeException e) {
+                LOG.warn("Could not find "+artifactRef+" (rethrowing); "+
+                        (csarPath.isPresent() ? "csar found as "+csarPath : proto==null ? "csar not found" : "context not set")
+                        +": "+e);
+                throw e;
+            }
         }
 
         protected Optional<Object> buildExportStatements(Operation op, String script) {

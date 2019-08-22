@@ -27,7 +27,7 @@ public class Alien4CloudApplicationTest {
     @BeforeMethod(alwaysRun = true)
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        alien4CloudApplication = new Alien4CloudApplication("TestApplication", deploymentTopology, "testDeployment");
+        alien4CloudApplication = new Alien4CloudApplication("TestApplication", deploymentTopology, "testDeployment", null);
     }
 
     @Test

@@ -17,7 +17,6 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
-import org.apache.brooklyn.api.location.PortRange;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.core.config.ConfigKeys;
@@ -515,15 +514,23 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     
     @Test
     public void testCsarLink() throws Exception {
-        EntitySpec<? extends Application> app = create("classpath://templates/csar-link-1.yaml");
+        EntitySpec<? extends Application> app = create("classpath://templates/csar-link-external-url.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
     }
 
     @Test
-    public void testCsarLinkWithEmbeddedResources() throws Exception {
-        EntitySpec<? extends Application> app = create("classpath://templates/csar-link-cp.yaml");
+    public void testCsarLinkWithEmbeddedResourcesUsingClasspathUrl() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/csar-link-classpath-url.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
     }
+    
+    @Test
+    public void testCsarLinkWithEmbeddedResourcesAsPaths() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/csar-link-path.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+    }
+
 }

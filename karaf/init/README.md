@@ -30,7 +30,7 @@ Once the project is built:
 
 ```
 brooklyn.experimental.feature.tosca=true
-alien4cloud-config.file=${karaf.etc}/alien4cloud-config.yml
+alien4cloud-config.file=file:///${karaf.etc}/alien4cloud-config.yml
 ```
 
 4. Start (or restart) Apache Brooklyn. The Tosca code bundle initializes only when necessary, so visit the Brooklyn server in a browser to trigger ahead of time. Initialization may take a couple minutes.

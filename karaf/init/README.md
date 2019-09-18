@@ -21,6 +21,9 @@ Consult the instructions in the root ancestor project for build instructions.
 
 Once the project is built:
 
+**Note:** As the Alien4Cloud code uses AWT, the full JRE or JDK is required as `headless` distributions
+do not include AWT classes.
+
 1. Install the `jar` bundle from the `target/` of this project to the Apache Brooklyn Karaf server
 
 2. Add the [Alien4Cloud configuration file](../../brooklyn-tosca-dist/src/main/assembly/files/conf/alien4cloud-config.yml) 

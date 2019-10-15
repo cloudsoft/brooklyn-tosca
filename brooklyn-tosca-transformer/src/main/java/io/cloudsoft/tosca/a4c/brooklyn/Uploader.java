@@ -42,7 +42,7 @@ public class Uploader {
     }
 
     public void upload(Path zip) throws ParsingException, CSARVersionAlreadyExistsException {
-        LOG.debug("Uploading type: " + zip);
+        LOG.error("Uploading type: " + zip);
         ParsingResult<Csar> types = archiveUploadService.upload(zip);
         if (ArchiveUploadService.hasError(types, ParsingErrorLevel.ERROR)) {
             throw new UserFacingException("Errors parsing types:\n" + Strings.join(types.getContext().getParsingErrors(), "\n  "));

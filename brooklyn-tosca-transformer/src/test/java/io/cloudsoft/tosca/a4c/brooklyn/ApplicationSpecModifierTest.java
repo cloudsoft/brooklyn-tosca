@@ -1,12 +1,12 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
-import static org.apache.brooklyn.test.Asserts.assertTrue;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-
-import java.util.Map;
-
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.spec.EntitySpecFactory;
+import io.cloudsoft.tosca.a4c.brooklyn.spec.EntitySpecModifier;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.config.ConfigKeys;
@@ -16,14 +16,12 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
+import java.util.Map;
 
-import alien4cloud.model.topology.NodeTemplate;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
-import io.cloudsoft.tosca.a4c.brooklyn.spec.EntitySpecFactory;
-import io.cloudsoft.tosca.a4c.brooklyn.spec.EntitySpecModifier;
+import static org.apache.brooklyn.test.Asserts.assertTrue;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
 
 public class ApplicationSpecModifierTest extends Alien4CloudToscaTest {
 

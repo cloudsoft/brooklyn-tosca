@@ -1,13 +1,12 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-
-import java.nio.file.Paths;
-import java.util.Map;
-
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.core.test.entity.TestEntity;
@@ -18,15 +17,13 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
+import java.nio.file.Paths;
+import java.util.Map;
 
-import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
-import alien4cloud.model.components.DeploymentArtifact;
-import alien4cloud.model.topology.NodeTemplate;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
 
 public class RuntimeEnvironmentModifierSpecTest extends Alien4CloudToscaTest {
 
@@ -49,7 +46,7 @@ public class RuntimeEnvironmentModifierSpecTest extends Alien4CloudToscaTest {
     }
 
     @Test
-    public void testArtifactLocationsAreConfiguredAsShellVariables() throws CSARVersionNotFoundException {
+    public void testArtifactLocationsAreConfiguredAsShellVariables() {
         final String artifactName = "artifactName";
         final String artifactKey  = "artifactKey";
 

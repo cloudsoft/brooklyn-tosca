@@ -28,11 +28,6 @@ public interface ToscaApplication {
     String getId();
 
     /**
-     * @return The Delegate ID
-     */
-    String getDelegateId();
-
-    /**
      * @param id the id of the node
      * @return the node name for the given id
      */

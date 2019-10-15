@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 
+import alien4cloud.paas.exception.PluginConfigurationException;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import org.apache.brooklyn.rest.domain.LocationSummary;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -55,7 +57,7 @@ public class BrooklynOrchestrator extends BrooklynProvider implements IOrchestra
     }
 
     @Override
-    public void launchWorkflow(PaaSDeploymentContext paaSDeploymentContext, String s, Map<String, Object> map, IPaaSCallback<?> iPaaSCallback) {
+    public void launchWorkflow(PaaSDeploymentContext paaSDeploymentContext, String s, Map<String, Object> map, IPaaSCallback<String> iPaaSCallback) {
         // TODO: Determine whether or not this is required, and implement if required, otherwise no-op
         throw new UnsupportedOperationException("launchWorkflow is not currently supported");
     }

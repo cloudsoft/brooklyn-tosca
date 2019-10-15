@@ -49,11 +49,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Configuration> {
@@ -121,10 +117,10 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     }
 
     @Override
-    public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
+    public Set<String> init(Map<String, String> activeDeployments) {
         useLocalContextClassLoader();
         try {
-            log.info("INIT: " + activeDeployments);
+            //log.info("INIT: " + activeDeployments);
             // TODO synchronise locations
             catalogMapper.addBaseTypes();
 
@@ -147,6 +143,8 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
         } finally {
             revertContextClassLoader();
         }
+        //TODO return here a set of really active passDeploymentIds (those that are effectively known as not undeployed)
+        return  new HashSet<>();
     }
 
     @Override
@@ -461,9 +459,14 @@ public abstract class BrooklynProvider implements IConfigurablePaaSProvider<Conf
     }
 
     @Override
-    public void setConfiguration(Configuration configuration) throws PluginConfigurationException {
+    public void setConfiguration(String s, Configuration configuration) throws PluginConfigurationException {
         log.info("Setting configuration: " + configuration);
         this.configuration = configuration;
+    }
+
+    @Override
+    public void update(PaaSTopologyDeploymentContext paaSTopologyDeploymentContext, IPaaSCallback<?> iPaaSCallback) {
+        // TODO: Determine whether or not this is required, and implement if required, otherwise no-op
     }
 
     protected BrooklynApi getNewBrooklynApi() {

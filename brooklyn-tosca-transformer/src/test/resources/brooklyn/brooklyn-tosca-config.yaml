@@ -1,4 +1,4 @@
 # Overrides version in src/main to include samples.
 defaultTypes:
-- classpath://brooklyn/types/tosca-normative-types-1.1.0-SM8.zip
-- classpath://brooklyn/types/tosca-a4c-samples-1.1.0-SM8.zip
+- classpath://brooklyn/types/tosca-normative-types-2.2.0-SM9.zip
+- classpath://brooklyn/types/tosca-a4c-samples-2.0.0.zip

@@ -1,18 +1,14 @@
 package io.cloudsoft.tosca.a4c.brooklyn.plan;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nullable;
-
+import alien4cloud.utils.FileUtil;
+import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
+import com.google.common.io.Files;
+import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
@@ -36,18 +32,15 @@ import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.stream.Streams;
 import org.testng.annotations.Test;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
-import com.google.common.io.Files;
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
-import alien4cloud.component.repository.exception.CSARVersionAlreadyExistsException;
-import alien4cloud.tosca.parser.ParsingException;
-import alien4cloud.utils.FileUtil;
-import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
+import static org.testng.Assert.*;
 
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
@@ -155,7 +148,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     }
 
     @Test
-    public void testRelation() throws ParsingException, CSARVersionAlreadyExistsException, IOException {
+    public void testRelation() throws IOException {
         Path outputPath = makeOutputPath("relationship.yaml", "relation", "test.sh", "target.sh");
         ToscaApplication toscaApplication = platform.parse(outputPath);
         EntitySpec<? extends Application> app = transformer.createApplicationSpec(toscaApplication);

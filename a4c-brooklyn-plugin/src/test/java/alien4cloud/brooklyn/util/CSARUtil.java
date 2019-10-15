@@ -6,8 +6,10 @@ import java.nio.file.Paths;
 
 import javax.annotation.Resource;
 
+import alien4cloud.model.components.CSARSource;
 import lombok.extern.slf4j.Slf4j;
 
+import org.alien4cloud.tosca.catalog.ArchiveUploadService;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,7 +17,6 @@ import org.springframework.stereotype.Component;
 
 import alien4cloud.git.RepositoryManager;
 import alien4cloud.security.model.Role;
-import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.utils.FileUtil;
 
 @Component
@@ -50,7 +51,7 @@ public class CSARUtil {
         FileUtil.zip(path, zipPath);
         Authentication auth = new TestingAuthenticationToken(Role.ADMIN, "", Role.ADMIN.name());
         SecurityContextHolder.getContext().setAuthentication(auth);
-        archiveUploadService.upload(zipPath);
+        archiveUploadService.upload(zipPath, CSARSource.OTHER, "/Users/iulianacosmina/tmp");
     }
 
     public void uploadNormativeTypes() throws Exception {

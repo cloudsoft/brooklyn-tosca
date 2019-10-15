@@ -7,12 +7,12 @@ import io.cloudsoft.tosca.metadata.BrooklynToscaTypeProvider;
 import io.cloudsoft.tosca.metadata.DefaultToscaTypeProvider;
 import lombok.extern.slf4j.Slf4j;
 
+import org.alien4cloud.tosca.model.definitions.PropertyDefinition;
 import org.apache.brooklyn.util.collections.MutableList;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.model.orchestrators.ArtifactSupport;
 import alien4cloud.model.orchestrators.locations.LocationSupport;
 import alien4cloud.orchestrators.plugin.IOrchestratorPluginFactory;
@@ -27,10 +27,20 @@ public class BrooklynOrchestratorFactory implements IOrchestratorPluginFactory<B
     private BeanFactory beanFactory;
 
     @Override
-    public BrooklynOrchestrator newInstance() {
+    public BrooklynOrchestrator newInstance(Configuration configuration) {
         BrooklynOrchestrator instance = beanFactory.getBean(BrooklynOrchestrator.class);
         log.info("Init brooklyn provider and beanFactory is {}", beanFactory);
         return instance;
+    }
+
+    /**
+     * Get the type of orchestrator this factory provides. ex: cloudify3
+     * TODO make sure the type is ok.
+     * @return
+     */
+    @Override
+    public String getType() {
+        return "brooklyn";
     }
 
     @Override

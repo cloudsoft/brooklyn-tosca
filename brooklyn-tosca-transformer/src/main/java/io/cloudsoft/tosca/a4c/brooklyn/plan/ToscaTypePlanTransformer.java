@@ -111,7 +111,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         EntitySpec<BasicApplication> rootSpec = EntitySpec.create(BasicApplication.class)
                 .displayName(toscaApplication.getName())
                 .configure(TOSCA_ID, toscaApplication.getId())
-                .configure(TOSCA_DELEGATE_ID, toscaApplication.getDelegateId())
+                //.configure(TOSCA_DELEGATE_ID, toscaApplication.getDelegateId())
                 .configure(TOSCA_DEPLOYMENT_ID, toscaApplication.getDeploymentId());
 
         ApplicationSpecsBuilder specsBuilder = platform.getBean(ApplicationSpecsBuilder.class);

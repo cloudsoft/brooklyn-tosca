@@ -1,24 +1,19 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
-import java.io.InputStream;
-import java.util.Map;
-
+import alien4cloud.tosca.parser.ParsingResult;
+import org.alien4cloud.tosca.model.Csar;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.core.typereg.UnsupportedTypePlanException;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
-import org.apache.brooklyn.util.exceptions.UserFacingException;
 import org.apache.brooklyn.util.net.Urls;
 import org.apache.brooklyn.util.stream.Streams;
-import org.apache.brooklyn.util.text.Strings;
 import org.apache.brooklyn.util.yaml.Yamls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import alien4cloud.model.components.Csar;
-import alien4cloud.tosca.ArchiveUploadService;
-import alien4cloud.tosca.parser.ParsingErrorLevel;
-import alien4cloud.tosca.parser.ParsingResult;
+import java.io.InputStream;
+import java.util.Map;
 
 public class ToscaParser {
 
@@ -101,10 +96,10 @@ public class ToscaParser {
             tp = uploader.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
         }
 
-        if (ArchiveUploadService.hasError(tp, ParsingErrorLevel.ERROR)) {
+       /* if (ArchiveUploadService.hasError(tp, ParsingErrorLevel.ERROR)) {
             throw new UserFacingException("Could not parse TOSCA plan: "
                     + Strings.join(tp.getContext().getParsingErrors(), "\n  "));
-        }
+        }*/
 
         return tp;
     }

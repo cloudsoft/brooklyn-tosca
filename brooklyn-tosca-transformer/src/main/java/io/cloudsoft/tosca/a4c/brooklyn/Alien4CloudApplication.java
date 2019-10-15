@@ -6,6 +6,9 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.templates.*;
+import org.alien4cloud.tosca.normative.constants.NormativeRelationshipConstants;
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.policy.Policy;
@@ -17,15 +20,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-
-import alien4cloud.model.components.Csar;
-import alien4cloud.model.topology.AbstractPolicy;
-import alien4cloud.model.topology.GenericPolicy;
-import alien4cloud.model.topology.NodeGroup;
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.RelationshipTemplate;
-import alien4cloud.model.topology.Topology;
-import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 
 public class Alien4CloudApplication implements ToscaApplication {
 
@@ -56,11 +50,6 @@ public class Alien4CloudApplication implements ToscaApplication {
     @Override
     public String getId() {
         return deploymentTopology.getId();
-    }
-
-    @Override
-    public String getDelegateId() {
-        return deploymentTopology.getDelegateId();
     }
 
     public Topology getTopology() {

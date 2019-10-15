@@ -1,11 +1,10 @@
 package io.cloudsoft.tosca.a4c.brooklyn.util;
 
+import org.alien4cloud.tosca.model.definitions.Interface;
+
 import java.util.List;
 import java.util.Map;
-
-import com.google.common.base.Optional;
-
-import alien4cloud.model.components.Interface;
+import java.util.Optional;
 
 public class NodeTemplates {
 
@@ -17,7 +16,7 @@ public class NodeTemplates {
      * @return
      */
     public static Optional<Interface> findInterfaceOfNodeTemplate(Map<String, Interface> nodeTemplateInterfaces,
-            List<String> validInterfaceNames) {
+                                                                  List<String> validInterfaceNames) {
         if (nodeTemplateInterfaces != null) {
             for (String interfaceName : validInterfaceNames) {
                 if (nodeTemplateInterfaces.containsKey(interfaceName)) {
@@ -25,6 +24,6 @@ public class NodeTemplates {
                 }
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 }

@@ -1,7 +1,10 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import static org.testng.Assert.assertEquals;
-
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.apache.brooklyn.config.ConfigKey;
 import org.apache.brooklyn.core.test.entity.TestEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
@@ -13,11 +16,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import alien4cloud.model.topology.NodeTemplate;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
-import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import static org.testng.Assert.assertEquals;
 
 public class ProvisioningPropertiesModifierTest extends Alien4CloudToscaTest {
 

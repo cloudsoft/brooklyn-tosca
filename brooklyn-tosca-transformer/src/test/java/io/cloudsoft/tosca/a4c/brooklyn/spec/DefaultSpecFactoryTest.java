@@ -1,8 +1,8 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-
+import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.apache.brooklyn.core.test.BrooklynAppUnitTestSupport;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
@@ -12,9 +12,8 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import alien4cloud.model.topology.NodeTemplate;
-import io.cloudsoft.tosca.a4c.brooklyn.Alien4CloudApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
 
 public class DefaultSpecFactoryTest extends BrooklynAppUnitTestSupport {
 

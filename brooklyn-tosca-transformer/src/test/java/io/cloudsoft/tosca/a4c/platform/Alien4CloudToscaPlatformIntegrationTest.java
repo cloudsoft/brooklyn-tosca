@@ -1,7 +1,14 @@
 package io.cloudsoft.tosca.a4c.platform;
 
-import java.util.Set;
-
+import alien4cloud.tosca.model.ArchiveRoot;
+import alien4cloud.tosca.parser.ParsingResult;
+import alien4cloud.tosca.parser.ToscaParser;
+import alien4cloud.tosca.repository.LocalRepositoryImpl;
+import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
+import io.cloudsoft.tosca.a4c.brooklyn.Uploader;
+import org.alien4cloud.tosca.model.CSARDependency;
+import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.types.NodeType;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.util.collections.MutableSet;
 import org.apache.brooklyn.util.core.ResourceUtils;
@@ -9,15 +16,7 @@ import org.springframework.context.ApplicationContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import alien4cloud.component.CSARRepositorySearchService;
-import alien4cloud.model.components.CSARDependency;
-import alien4cloud.model.components.Csar;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.tosca.model.ArchiveRoot;
-import alien4cloud.tosca.parser.ParsingResult;
-import alien4cloud.tosca.parser.ToscaParser;
-import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
-import io.cloudsoft.tosca.a4c.brooklyn.Uploader;
+import java.util.Set;
 
 public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrationTest {
 
@@ -46,8 +45,8 @@ public class Alien4CloudToscaPlatformIntegrationTest extends Alien4CloudIntegrat
         System.out.println(cs);
 
         Set<CSARDependency> deps = MutableSet.<CSARDependency>builder().addAll(cs.getDependencies()).add(new CSARDependency(cs.getName(), cs.getVersion())).build();
-        IndexedNodeType hello = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "my.Hello", deps);
-        IndexedNodeType dbms = platform.getBean(CSARRepositorySearchService.class).getElementInDependencies(IndexedNodeType.class, "tosca.nodes.DBMS", deps);
+        NodeType hello = platform.getBean(LocalRepositoryImpl.class).getElementInDependencies(NodeType.class, "my.Hello", deps);
+        NodeType dbms = platform.getBean(LocalRepositoryImpl.class).getElementInDependencies(NodeType.class, "tosca.nodes.DBMS", deps);
     }
 
     public ParsingResult<ArchiveRoot> sampleParseTosca(Alien4CloudToscaPlatform platform) throws Exception {

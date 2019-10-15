@@ -27,7 +27,7 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <alien.version>1.1.0-SM8</alien.version>
+        <alien.version>2.2.0-SM6</alien.version>
         <spring.version>4.1.4.RELEASE</spring.version>
         <mockito-core.version>2.7.12</mockito-core.version>
         <brooklyn.version>1.0.0-SNAPSHOT</brooklyn.version>  <!-- BROOKLYN_VERSION -->

@@ -1,9 +1,11 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
+import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.apache.brooklyn.core.test.entity.TestEntity;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -11,13 +13,9 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
-
-import alien4cloud.model.topology.NodeTemplate;
-import io.cloudsoft.tosca.a4c.Alien4CloudToscaTest;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
 
 public class PropertiesConfigKeyModifierTest extends Alien4CloudToscaTest {
 

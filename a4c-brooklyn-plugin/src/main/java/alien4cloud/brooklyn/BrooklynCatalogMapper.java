@@ -1,10 +1,20 @@
 package alien4cloud.brooklyn;
 
+import java.io.File;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import alien4cloud.component.repository.exception.CSARUsedInActiveDeployment;
+import alien4cloud.component.repository.exception.ToscaTypeAlreadyDefinedInOtherCSAR;
+import alien4cloud.model.components.CSARSource;
+import org.alien4cloud.tosca.catalog.ArchiveParser;
+import org.alien4cloud.tosca.catalog.index.ArchiveIndexer;
+import org.alien4cloud.tosca.catalog.index.CsarService;
+import org.alien4cloud.tosca.model.CSARDependency;
+import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.definitions.*;
+import org.alien4cloud.tosca.model.types.NodeType;
+import org.alien4cloud.tosca.normative.types.ToscaTypes;
 import org.apache.brooklyn.api.catalog.BrooklynCatalog;
 import org.apache.brooklyn.rest.client.BrooklynApi;
 import org.apache.brooklyn.rest.domain.CatalogEntitySummary;
@@ -21,22 +31,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import alien4cloud.csar.services.CsarService;
-import alien4cloud.model.components.AttributeDefinition;
-import alien4cloud.model.components.CSARDependency;
-import alien4cloud.model.components.CapabilityDefinition;
-import alien4cloud.model.components.Csar;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.PropertyDefinition;
-import alien4cloud.model.components.RequirementDefinition;
 import alien4cloud.plugin.model.ManagedPlugin;
-import alien4cloud.tosca.ArchiveIndexer;
-import alien4cloud.tosca.ArchiveParser;
+
 import alien4cloud.tosca.model.ArchiveRoot;
-import alien4cloud.tosca.normative.ToscaType;
+
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import io.cloudsoft.tosca.metadata.ToscaMetadataProvider;
@@ -53,15 +51,15 @@ public class BrooklynCatalogMapper {
     private final static Map<String, String> TYPE_MAPPING = Maps.newHashMap();
 
     static {
-        TYPE_MAPPING.put(Boolean.class.getName(), ToscaType.BOOLEAN);
-        TYPE_MAPPING.put(String.class.getName(), ToscaType.STRING);
-        TYPE_MAPPING.put(Integer.class.getName(), ToscaType.INTEGER);
-        TYPE_MAPPING.put(Long.class.getName(), ToscaType.INTEGER);
-        TYPE_MAPPING.put(Float.class.getName(), ToscaType.FLOAT);
-        TYPE_MAPPING.put(Double.class.getName(), ToscaType.FLOAT);
-        TYPE_MAPPING.put(Duration.class.getName(), ToscaType.TIME);
-        TYPE_MAPPING.put(List.class.getName(), ToscaType.LIST);
-        TYPE_MAPPING.put(Map.class.getName(), ToscaType.MAP);
+        TYPE_MAPPING.put(Boolean.class.getName(), ToscaTypes.BOOLEAN);
+        TYPE_MAPPING.put(String.class.getName(), ToscaTypes.STRING);
+        TYPE_MAPPING.put(Integer.class.getName(), ToscaTypes.INTEGER);
+        TYPE_MAPPING.put(Long.class.getName(), ToscaTypes.INTEGER);
+        TYPE_MAPPING.put(Float.class.getName(), ToscaTypes.FLOAT);
+        TYPE_MAPPING.put(Double.class.getName(), ToscaTypes.FLOAT);
+        TYPE_MAPPING.put(Duration.class.getName(), ToscaTypes.TIME);
+        TYPE_MAPPING.put(List.class.getName(), ToscaTypes.LIST);
+        TYPE_MAPPING.put(Map.class.getName(), ToscaTypes.MAP);
     }
 
     private ArchiveIndexer archiveIndexer;
@@ -83,14 +81,17 @@ public class BrooklynCatalogMapper {
         Path archivePath = selfContext.getPluginPath().resolve("brooklyn/types");
         // Parse the archives
         try {
-            ParsingResult<ArchiveRoot> result = archiveParser.parseDir(archivePath);
+            ParsingResult<ArchiveRoot> result = archiveParser.parseDir(archivePath, "/Users/iulianacosmina/tmp");
             ArchiveRoot root = result.getResult();
             Csar csar = root.getArchive();
             csarService.save(csar);
-            archiveIndexer.indexArchive(csar.getName(), csar.getVersion(), root, true);
-
+            archiveIndexer.importArchive(root, CSARSource.OTHER, archivePath, new ArrayList<>());
         } catch(ParsingException e) {
             log.error("Failed to parse archive", e);
+        } catch (CSARUsedInActiveDeployment csarUsedInActiveDeployment) {
+            csarUsedInActiveDeployment.printStackTrace();
+        } catch (ToscaTypeAlreadyDefinedInOtherCSAR toscaTypeAlreadyDefinedInOtherCSAR) {
+            toscaTypeAlreadyDefinedInOtherCSAR.printStackTrace();
         }
     }
 
@@ -124,13 +125,20 @@ public class BrooklynCatalogMapper {
 //        archiveRepository.storeCSAR(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), Path);
         // manage images before archive storage in the repository
 //        imageLoader.importImages(path, parsingResult);
-        
-        archiveIndexer.indexArchive(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), archiveRoot, true);
+
+        //archiveIndexer.indexArchive(archiveRoot.getArchive().getName(), archiveRoot.getArchive().getVersion(), archiveRoot, true);
+        try {
+            archiveIndexer.importArchive(archiveRoot, CSARSource.OTHER,  new File(archiveRoot.getArchive().getYamlFilePath()).toPath(), new ArrayList<>());
+        } catch (CSARUsedInActiveDeployment csarUsedInActiveDeployment) {
+            csarUsedInActiveDeployment.printStackTrace();
+        } catch (ToscaTypeAlreadyDefinedInOtherCSAR toscaTypeAlreadyDefinedInOtherCSAR) {
+            toscaTypeAlreadyDefinedInOtherCSAR.printStackTrace();
+        }
     }
 
     public void mapBrooklynEntity(BrooklynApi brooklynApi, ArchiveRoot archiveRoot, String entityName, String entityVersion, ToscaMetadataProvider metadataProvider) {
         try {
-            IndexedNodeType toscaType = new IndexedNodeType();
+            NodeType toscaType = new NodeType();
             CatalogEntitySummary brooklynEntity = loadEntity(brooklynApi, entityName);
 
             // TODO use icon
@@ -167,7 +175,7 @@ public class BrooklynCatalogMapper {
         return brooklynApi.getCatalogApi().getEntity(entityName, BrooklynCatalog.DEFAULT_VERSION);
     }
 
-    private void addPropertyDefinitions(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+    private void addPropertyDefinitions(CatalogEntitySummary brooklynEntity, NodeType toscaType) {
         Set<EntityConfigSummary> entityConfigSummaries = brooklynEntity.getConfig(); // properties in TOSCA
         Map<String, PropertyDefinition> properties = Maps.newHashMap();
         toscaType.setProperties(properties);
@@ -183,16 +191,16 @@ public class BrooklynCatalogMapper {
                 propertyDefinition.setDescription(entityConfigSummary.getDescription());
                 propertyDefinition.setType(propertyType);
                 if (entityConfigSummary.getDefaultValue() != null) {
-                    if (propertyType.equals(ToscaType.TIME)) {
-                        propertyDefinition.setDefault(Duration.of(entityConfigSummary.getDefaultValue()).toSeconds() + " s");
+                    if (propertyType.equals(ToscaTypes.TIME)) {
+                        propertyDefinition.setDefault(new ScalarPropertyValue(Duration.of(entityConfigSummary.getDefaultValue()).toSeconds() + " s"));
                     } else {
-                        propertyDefinition.setDefault(entityConfigSummary.getDefaultValue().toString());
+                        propertyDefinition.setDefault(new ScalarPropertyValue(entityConfigSummary.getDefaultValue().toString()));
                     }
                 }
-                if (ToscaType.MAP.equals(propertyType)) {
+                if (ToscaTypes.MAP.equals(propertyType)) {
                     PropertyDefinition mapDefinition = new PropertyDefinition();
                     // TODO: More complex map types. Unfortunately the type is not available from EntityConfigSummary
-                    mapDefinition.setType(ToscaType.STRING);
+                    mapDefinition.setType(ToscaTypes.STRING);
                     propertyDefinition.setEntrySchema(mapDefinition);
                 }
                 propertyDefinition.setRequired(false);
@@ -201,7 +209,7 @@ public class BrooklynCatalogMapper {
         }
     }
 
-    private void addAttributeDefinitions(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+    private void addAttributeDefinitions(CatalogEntitySummary brooklynEntity, NodeType toscaType) {
         Set<SensorSummary> sensorSummaries = brooklynEntity.getSensors();
         Map<String, IValue> attributes = Maps.newHashMap();
         toscaType.setAttributes(attributes);
@@ -218,7 +226,7 @@ public class BrooklynCatalogMapper {
         }
     }
 
-    private void addInterfaces(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+    private void addInterfaces(CatalogEntitySummary brooklynEntity, NodeType toscaType) {
         Set<EffectorSummary> effectorSummaries = brooklynEntity.getEffectors();
 
         Interface interfaz = new Interface();
@@ -240,7 +248,7 @@ public class BrooklynCatalogMapper {
                     propertyDefinition.setType(parameterType);
                     propertyDefinition.setDescription(parameterSummary.getDescription());
                     if(parameterSummary.getDefaultValue()!=null) {
-                        propertyDefinition.setDefault(parameterSummary.getDefaultValue().toString());
+                        propertyDefinition.setDefault(new ScalarPropertyValue(parameterSummary.getDefaultValue().toString()));
                     }
                     operation.getInputParameters().put(parameterSummary.getName(), propertyDefinition);
                 }
@@ -255,7 +263,7 @@ public class BrooklynCatalogMapper {
         interfaces.put("brooklyn_management", interfaz);
     }
 
-    private void addRequirements(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+    private void addRequirements(CatalogEntitySummary brooklynEntity, NodeType toscaType) {
         for (Object tag : brooklynEntity.getTags()) {
             Map<String, ?> tagMap = (Map<String, ?>) tag;
             if (!tagMap.containsKey("tosca:requirements")) continue;
@@ -276,7 +284,7 @@ public class BrooklynCatalogMapper {
         }
     }
 
-    private void addCapabilities(CatalogEntitySummary brooklynEntity, IndexedNodeType toscaType) {
+    private void addCapabilities(CatalogEntitySummary brooklynEntity, NodeType toscaType) {
         for (Object tag : brooklynEntity.getTags()) {
             Map<String, ?> tagMap = (Map<String, ?>) tag;
             if (!tagMap.containsKey("tosca:capabilities")) continue;

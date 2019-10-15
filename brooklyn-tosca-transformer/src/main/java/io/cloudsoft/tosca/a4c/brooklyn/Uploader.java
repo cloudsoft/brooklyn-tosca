@@ -8,6 +8,11 @@ import java.nio.file.Paths;
 
 import javax.inject.Inject;
 
+import alien4cloud.component.repository.exception.CSARUsedInActiveDeployment;
+import alien4cloud.component.repository.exception.ToscaTypeAlreadyDefinedInOtherCSAR;
+import alien4cloud.tosca.parser.ParsingResult;
+import org.alien4cloud.tosca.catalog.ArchiveUploadService;
+import org.alien4cloud.tosca.model.Csar;
 import org.apache.brooklyn.util.core.file.ArchiveBuilder;
 import org.apache.brooklyn.util.exceptions.Exceptions;
 import org.apache.brooklyn.util.exceptions.UserFacingException;
@@ -20,12 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import alien4cloud.component.repository.exception.CSARVersionAlreadyExistsException;
-import alien4cloud.model.components.Csar;
-import alien4cloud.tosca.ArchiveUploadService;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingException;
-import alien4cloud.tosca.parser.ParsingResult;
 
 @Component
 public class Uploader {
@@ -41,12 +42,9 @@ public class Uploader {
         Os.deleteOnExitRecursively(tmpRoot);
     }
 
-    public void upload(Path zip) throws ParsingException, CSARVersionAlreadyExistsException {
+    public void upload(Path zip) throws ParsingException, CSARUsedInActiveDeployment, ToscaTypeAlreadyDefinedInOtherCSAR {
         LOG.debug("Uploading type: " + zip);
-        ParsingResult<Csar> types = archiveUploadService.upload(zip);
-        if (ArchiveUploadService.hasError(types, ParsingErrorLevel.ERROR)) {
-            throw new UserFacingException("Errors parsing types:\n" + Strings.join(types.getContext().getParsingErrors(), "\n  "));
-        }
+        ParsingResult<Csar> types = archiveUploadService.upload(zip, null, "/Users/iulianacosmina/tmp");
     }
 
     public ParsingResult<Csar> uploadArchive(InputStream resourceFromUrl, String callerReferenceName) {
@@ -63,16 +61,16 @@ public class Uploader {
     public ParsingResult<Csar> uploadArchive(File zipFile, String callerReferenceName) {
         try {
             String nameCleaned = Strings.makeValidFilename(callerReferenceName);
-            ParsingResult<Csar> result = archiveUploadService.upload(Paths.get(zipFile.toString()));
+            ParsingResult<Csar> result = archiveUploadService.upload(Paths.get(zipFile.toString()), null, "/Users/iulianacosmina/tmp");
 
-            if (ArchiveUploadService.hasError(result, null)) {
+          /*  if (ArchiveUploadService.hasError(result, null)) {
                 LOG.debug("A4C parse notes for " + nameCleaned + ":\n  " + Strings.join(result.getContext().getParsingErrors(), "\n  "));
             }
             if (ArchiveUploadService.hasError(result, ParsingErrorLevel.ERROR)) {
                 // archive will not be installed in this case, so we should throw
                 throw new UserFacingException("Could not parse " + callerReferenceName + " as TOSCA:\n  "
                         + Strings.join(result.getContext().getParsingErrors(), "\n  "));
-            }
+            }*/
 
             return result;
 

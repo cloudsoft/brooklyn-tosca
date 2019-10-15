@@ -9,12 +9,11 @@ import javax.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import org.alien4cloud.tosca.model.templates.Topology;
 import org.springframework.stereotype.Component;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.dao.ElasticSearchDAO;
-import alien4cloud.model.application.Application;
-import alien4cloud.model.topology.Topology;
 import alien4cloud.utils.YamlParserUtil;
 
 @Component
@@ -32,9 +31,7 @@ public class ApplicationUtil {
     @SneakyThrows
     public Topology createAlienApplication(String applicationName, String topologyFileName) {
         Topology topology = parseYamlTopology(topologyFileName);
-        String applicationId = applicationService.create("alien", applicationName, null, null);
-        topology.setDelegateId(applicationId);
-        topology.setDelegateType(Application.class.getSimpleName().toLowerCase());
+        applicationService.create("alien", null, applicationName, null, topology);
         alienDAO.save(topology);
         return topology;
     }

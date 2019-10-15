@@ -1,15 +1,36 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-
+import alien4cloud.application.ApplicationService;
+import alien4cloud.component.ICSARRepositorySearchService;
+import alien4cloud.deployment.DeploymentTopologyService;
+import alien4cloud.model.application.Application;
+import alien4cloud.model.deployment.DeploymentTopology;
+import alien4cloud.paas.IPaaSTemplate;
+import alien4cloud.paas.function.FunctionEvaluator;
+import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.model.PaaSRelationshipTemplate;
+import alien4cloud.paas.model.PaaSTopology;
+import alien4cloud.paas.plan.TopologyTreeBuilderService;
+import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import alien4cloud.paas.plan.ToscaRelationshipLifecycleConstants;
+import alien4cloud.topology.TopologyServiceCore;
+import alien4cloud.tosca.parser.ParsingResult;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import io.cloudsoft.tosca.a4c.brooklyn.util.NodeTemplates;
+import org.alien4cloud.tosca.catalog.repository.ICsarRepositry;
+import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.definitions.*;
+import org.alien4cloud.tosca.model.templates.*;
+import org.alien4cloud.tosca.model.types.AbstractInheritableToscaType;
+import org.alien4cloud.tosca.model.types.AbstractInstantiableToscaType;
+import org.alien4cloud.tosca.model.types.RelationshipType;
+import org.alien4cloud.tosca.normative.constants.NormativeComputeConstants;
+import org.alien4cloud.tosca.normative.constants.ToscaFunctionConstants;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.config.ConfigKey;
@@ -25,55 +46,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-
-import alien4cloud.application.ApplicationService;
-import alien4cloud.component.ICSARRepositorySearchService;
-import alien4cloud.component.repository.ICsarRepositry;
-import alien4cloud.deployment.DeploymentTopologyService;
-import alien4cloud.model.application.Application;
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.AttributeDefinition;
-import alien4cloud.model.components.ComplexPropertyValue;
-import alien4cloud.model.components.ConcatPropertyValue;
-import alien4cloud.model.components.Csar;
-import alien4cloud.model.components.DeploymentArtifact;
-import alien4cloud.model.components.FunctionPropertyValue;
-import alien4cloud.model.components.IValue;
-import alien4cloud.model.components.ImplementationArtifact;
-import alien4cloud.model.components.IndexedArtifactToscaElement;
-import alien4cloud.model.components.IndexedInheritableToscaElement;
-import alien4cloud.model.components.IndexedRelationshipType;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.Operation;
-import alien4cloud.model.components.ScalarPropertyValue;
-import alien4cloud.model.deployment.DeploymentTopology;
-import alien4cloud.model.templates.TopologyTemplate;
-import alien4cloud.model.templates.TopologyTemplateVersion;
-import alien4cloud.model.topology.AbstractTemplate;
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.RelationshipTemplate;
-import alien4cloud.model.topology.Requirement;
-import alien4cloud.model.topology.Topology;
-import alien4cloud.paas.IPaaSTemplate;
-import alien4cloud.paas.function.FunctionEvaluator;
-import alien4cloud.paas.model.PaaSNodeTemplate;
-import alien4cloud.paas.model.PaaSRelationshipTemplate;
-import alien4cloud.paas.model.PaaSTopology;
-import alien4cloud.paas.plan.TopologyTreeBuilderService;
-import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
-import alien4cloud.paas.plan.ToscaRelationshipLifecycleConstants;
-import alien4cloud.topology.TopologyServiceCore;
-import alien4cloud.topology.TopologyTemplateVersionService;
-import alien4cloud.tosca.normative.NormativeComputeConstants;
-import alien4cloud.tosca.normative.ToscaFunctionConstants;
-import alien4cloud.tosca.parser.ParsingResult;
-import io.cloudsoft.tosca.a4c.brooklyn.util.NodeTemplates;
+import javax.inject.Inject;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
@@ -96,19 +76,19 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private TopologyTreeBuilderService treeBuilder;
     private ICsarRepositry csarFileRepository;
     private TopologyServiceCore topologyService;
-    private TopologyTemplateVersionService topologyTemplateVersionService;
+    //private TopologyTemplateVersionService topologyTemplateVersionService;
     private DeploymentTopologyService deploymentTopologyService;
     private ApplicationService applicationService;
 
     private final File tmpRoot;
 
     @Inject
-    public Alien4CloudFacade(ICSARRepositorySearchService repositorySearchService, TopologyTreeBuilderService treeBuilder, ICsarRepositry csarFileRepository, TopologyServiceCore topologyService, TopologyTemplateVersionService topologyTemplateVersionService, DeploymentTopologyService deploymentTopologyService, ApplicationService applicationService) {
+    public Alien4CloudFacade(ICSARRepositorySearchService repositorySearchService, TopologyTreeBuilderService treeBuilder, ICsarRepositry csarFileRepository, TopologyServiceCore topologyService,  DeploymentTopologyService deploymentTopologyService, ApplicationService applicationService) {
         this.repositorySearchService = repositorySearchService;
         this.treeBuilder = treeBuilder;
         this.csarFileRepository = csarFileRepository;
         this.topologyService = topologyService;
-        this.topologyTemplateVersionService = topologyTemplateVersionService;
+        //this.topologyTemplateVersionService = topologyTemplateVersionService;
         this.deploymentTopologyService = deploymentTopologyService;
         this.applicationService = applicationService;
 
@@ -117,11 +97,11 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     }
 
     private Topology getTopologyOfCsar(Csar cs) {
-        TopologyTemplate tt = topologyService.searchTopologyTemplateByName(cs.getName());
+       /* TopologyTemplate tt = topologyService.searchTopologyTemplateByName(cs.getName());
         if (tt == null) return null;
         TopologyTemplateVersion[] ttv = topologyTemplateVersionService.getByDelegateId(tt.getId());
-        if (ttv == null || ttv.length == 0) return null;
-        return topologyService.getTopology(ttv[0].getTopologyId());
+        if (ttv == null || ttv.length == 0) return null;*/
+        return topologyService.getOrFail(cs.getId());
     }
 
     /**
@@ -159,19 +139,20 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return (String) parentId.orNull();
     }
 
-    private IndexedArtifactToscaElement getIndexedNodeTemplate(String nodeId, Alien4CloudApplication toscaApplication) {
+    private AbstractInstantiableToscaType getIndexedNodeTemplate(String nodeId, Alien4CloudApplication toscaApplication) {
         return repositorySearchService.getRequiredElementInDependencies(
-                IndexedArtifactToscaElement.class,
+                AbstractInstantiableToscaType.class,
                 toscaApplication.getNodeTemplate(nodeId).getType(),
                 toscaApplication.getTopology().getDependencies());
     }
 
-    private Optional<IndexedArtifactToscaElement> getIndexedRelationshipTemplate(String nodeId, Alien4CloudApplication toscaApplication, String requirementId) {
+    private Optional<AbstractInstantiableToscaType> getIndexedRelationshipTemplate(String nodeId, Alien4CloudApplication toscaApplication, String requirementId) {
         Optional<RelationshipTemplate> optionalRelationshipTemplate = findRelationshipRequirement(nodeId, toscaApplication, requirementId);
         if(optionalRelationshipTemplate.isPresent()) {
             RelationshipTemplate relationshipTemplate = optionalRelationshipTemplate.get();
-            return Optional.<IndexedArtifactToscaElement>of(repositorySearchService.getRequiredElementInDependencies(
-                    IndexedRelationshipType.class,
+            return Optional.of(repositorySearchService
+                    .getRequiredElementInDependencies(
+                    RelationshipType.class,
                     relationshipTemplate.getType(),
                     toscaApplication.getTopology().getDependencies()
             ));
@@ -236,7 +217,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return resolve(v);
     }
 
-    private Optional<Object> resolve(IValue v,  IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+    private Optional<Object> resolve(IValue v, IPaaSTemplate<? extends AbstractInheritableToscaType> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
         Optional<Object> value = resolve(v);
         if (!value.isPresent()) {
             if (v instanceof FunctionPropertyValue) {
@@ -244,10 +225,10 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
                 String node = Optional.fromNullable(keywordMap.get(functionPropertyValue.getTemplateName())).or(functionPropertyValue.getTemplateName());
                 switch (functionPropertyValue.getFunction()) {
                     case ToscaFunctionConstants.GET_PROPERTY:
-                        value = Optional.<Object>fromNullable(FunctionEvaluator.evaluateGetPropertyFunction(functionPropertyValue, template, builtPaaSNodeTemplates));
+                        value = Optional.fromNullable(FunctionEvaluator.evaluateGetPropertyFunction(functionPropertyValue, template, builtPaaSNodeTemplates));
                         break;
                     case ToscaFunctionConstants.GET_ATTRIBUTE:
-                        value = Optional.<Object>fromNullable(BrooklynDslCommon.entity(node).attributeWhenReady(functionPropertyValue.getElementNameToFetch()));
+                        value = Optional.fromNullable(BrooklynDslCommon.entity(node).attributeWhenReady(functionPropertyValue.getElementNameToFetch()));
                         break;
                     case ToscaFunctionConstants.GET_INPUT:
                     case ToscaFunctionConstants.GET_OPERATION_OUTPUT:
@@ -259,7 +240,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return value;
     }
 
-    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key, IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key, IPaaSTemplate<? extends AbstractInheritableToscaType> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
         IValue v = props.get(key);
         if (v == null) {
             LOG.warn("No value available for {}", key);
@@ -305,24 +286,22 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private Map<String, Operation> getStandardInterfaceOperationsMap(String nodeId, Alien4CloudApplication toscaApplication) {
         Map<String, Operation> operations = MutableMap.of();
         NodeTemplate nodeTemplate = toscaApplication.getNodeTemplate(nodeId);
-        IndexedArtifactToscaElement indexedNodeTemplate = getIndexedNodeTemplate(nodeId, toscaApplication);
+        AbstractInstantiableToscaType indexedNodeTemplate = getIndexedNodeTemplate(nodeId, toscaApplication);
         List<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
         operations.putAll(getInterfaceOperationsMap(indexedNodeTemplate, validInterfaceNames));
 
-        Optional<Interface> optionalNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
+        java.util.Optional<Interface> optionalNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
                 nodeTemplate.getInterfaces(), validInterfaceNames);
 
-        if (optionalNodeTemplateInterface.isPresent()) {
-            operations.putAll(optionalNodeTemplateInterface.get().getOperations());
-        }
+        optionalNodeTemplateInterface.ifPresent(anInterface -> operations.putAll(anInterface.getOperations()));
         return operations;
     }
 
     private Map<String, Operation> getConfigureInterfaceOperationsMap(Alien4CloudApplication toscaApplication, ToscaApplication.Relationship relationship) {
         Map<String, Operation> operations = MutableMap.of();
 
-        Optional<IndexedArtifactToscaElement> indexedRelationshipTemplate = Optional.<IndexedArtifactToscaElement>of(repositorySearchService.getRequiredElementInDependencies(
-                IndexedRelationshipType.class,
+        java.util.Optional<AbstractInstantiableToscaType> indexedRelationshipTemplate = java.util.Optional.of(repositorySearchService.getRequiredElementInDependencies(
+                RelationshipType.class,
                 relationship.getRelationshipType(),
                 toscaApplication.getTopology().getDependencies()
         ));
@@ -334,9 +313,9 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return getInterfaceOperationsMap(indexedRelationshipTemplate.get(), validInterfaceNames);
     }
 
-    private Map<String, Operation> getInterfaceOperationsMap(IndexedArtifactToscaElement indexedRelationshipTemplate, List<String> validInterfaceNames) {
+    private Map<String, Operation> getInterfaceOperationsMap(AbstractInstantiableToscaType indexedRelationshipTemplate, List<String> validInterfaceNames) {
         Map<String, Operation> operations = MutableMap.of();
-        Optional<Interface> optionalIndexedNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
+        java.util.Optional<Interface> optionalIndexedNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
                 indexedRelationshipTemplate.getInterfaces(),
                 validInterfaceNames
         );
@@ -553,8 +532,8 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
 
     @Override
     public Alien4CloudApplication newToscaApplication(String id) {
-        DeploymentTopology deploymentTopology = deploymentTopologyService.getOrFail(id);
-        Application application = applicationService.getOrFail(deploymentTopology.getDelegateId());
+        Topology deploymentTopology = topologyService.getOrFail(id);
+        Application application = applicationService.getOrFail(deploymentTopology.getId());
         return new Alien4CloudApplication(application.getName(), deploymentTopology, id,
             null /* TODO is there a way to find the containing CSAR; will things in topologies in here break without it? */);
     }
@@ -563,6 +542,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     public Alien4CloudApplication parsePlan(String plan, Uploader uploader, BrooklynClassLoadingContext context) {
         ParsingResult<Csar> tp = new ToscaParser(uploader).parse(plan, context);
         Csar csar = tp.getResult();
+
         return newToscaApplication(csar);
     }
 

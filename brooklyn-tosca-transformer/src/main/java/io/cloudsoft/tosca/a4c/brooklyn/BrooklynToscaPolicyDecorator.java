@@ -20,10 +20,10 @@ import com.google.common.collect.ImmutableMap;
 
 import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
-public class BrooklynToscaPolicyDecorator extends AbstractToscaPolicyDecorator{
+public class BrooklynToscaPolicyDecorator extends AbstractToscaPolicyDecorator {
 
-    private EntitySpec<? extends Application> rootSpec;
-    private ManagementContext mgmt;
+    protected EntitySpec<? extends Application> rootSpec;
+    protected ManagementContext mgmt;
 
     BrooklynToscaPolicyDecorator(EntitySpec<? extends Application> rootSpec, ManagementContext mgmt) {
         this.rootSpec = rootSpec;
@@ -34,11 +34,11 @@ public class BrooklynToscaPolicyDecorator extends AbstractToscaPolicyDecorator{
         if (!type.isPresent()) {
             throw new IllegalStateException("Type was not found for policy " + policyName);
         }
-        ConfigBag policyDefinition = getPolicyDefinition(type.get(), policyData);
+        ConfigBag policyDefinition = getDefinition(type.get(), policyData);
         decorateEntityBrooklynWithPolicies(rootSpec, groupMembers, policyDefinition, policyName);
     }
 
-    private ConfigBag getPolicyDefinition(String type, Map<String, ?> policyData) {
+    protected ConfigBag getDefinition(String type, Map<String, ?> policyData) {
         List<?> policies = ImmutableList.of(ImmutableMap.of(
                 "policyType", type,
                 BrooklynCampReservedKeys.BROOKLYN_CONFIG, getPolicyProperties(policyData)
@@ -53,7 +53,7 @@ public class BrooklynToscaPolicyDecorator extends AbstractToscaPolicyDecorator{
         BrooklynYamlTypeInstantiator.Factory yamlLoader = new BrooklynYamlTypeInstantiator.Factory(loader, this);
 
         if (groupMembers.isEmpty()) {
-            decorateWithPolicy(yamlLoader, appSpec, policyDefinition);
+            decorateWithSpec(yamlLoader, appSpec, policyDefinition);
             return;
         }
 
@@ -61,13 +61,13 @@ public class BrooklynToscaPolicyDecorator extends AbstractToscaPolicyDecorator{
             EntitySpec<?> spec = EntitySpecs.findChildEntitySpecByPlanId(appSpec, specId);
             if (spec == null) {
                 throw new IllegalStateException("Error: NodeTemplate " + specId +
-                        " defined by policy " + policyName + " was not found");
+                        " defined by policy/enricher " + policyName + " was not found");
             }
-            decorateWithPolicy(yamlLoader, spec, policyDefinition);
+            decorateWithSpec(yamlLoader, spec, policyDefinition);
         }
     }
 
-    private void decorateWithPolicy(BrooklynYamlTypeInstantiator.Factory yamlLoader, EntitySpec<?> spec, ConfigBag policyDefinition) {
+    protected void decorateWithSpec(BrooklynYamlTypeInstantiator.Factory yamlLoader, EntitySpec<?> spec, ConfigBag policyDefinition) {
         new BrooklynEntityDecorationResolver.PolicySpecResolver(yamlLoader).decorate(spec, policyDefinition, null);
     }
 }

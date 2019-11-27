@@ -12,6 +12,7 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
+import org.apache.brooklyn.api.sensor.EnricherSpec;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.util.collections.MutableMap;
@@ -149,9 +150,11 @@ public class Alien4CloudApplicationSpecsBuilder implements ApplicationSpecsBuild
 
         LocationToscaPolicyDecorator locationPolicyDecorator = new LocationToscaPolicyDecorator(specs, mgmt);
         BrooklynToscaPolicyDecorator brooklynPolicyDecorator = new BrooklynToscaPolicyDecorator(rootSpec, mgmt);
+        BrooklynToscaEnricherDecorator brooklynEnricherDecorator = new BrooklynToscaEnricherDecorator(rootSpec, mgmt);
         for (String groupId : nodeGroups) {
             toscaApplication.addLocationPolicies(groupId, locationPolicyDecorator);
             toscaApplication.addBrooklynPolicies(groupId, brooklynPolicyDecorator, mgmt);
+            toscaApplication.addBrooklynEnrichers(groupId, brooklynEnricherDecorator, mgmt);
         }
     }
 }

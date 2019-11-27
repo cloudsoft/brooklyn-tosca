@@ -18,6 +18,7 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.policy.PolicySpec;
+import org.apache.brooklyn.api.sensor.EnricherSpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.entity.Entities;
@@ -25,6 +26,7 @@ import org.apache.brooklyn.core.entity.EntityAsserts;
 import org.apache.brooklyn.core.location.PortRanges;
 import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
+import org.apache.brooklyn.enricher.stock.Transformer;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
@@ -302,6 +304,29 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(testPolicyFlags.get("test.confFromFunction"),
                 "$brooklyn:formatString(\"%s: is a fun place\", \"$brooklyn\")");
     }
+
+    @Test
+    public void testAddingEnrichersAsPolicies() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/simple.application-enrichers.tosca.yaml");
+        assertNotNull(app);
+
+        assertEquals(app.getPolicySpecs().size(), 1);
+        assertEquals(TestPolicy.class, app.getPolicySpecs().get(0).getType());
+
+        assertEquals(app.getEnricherSpecs().size(), 1);
+        assertEquals(Transformer.class, app.getEnricherSpecs().get(0).getType());
+
+        EnricherSpec<?> enricher = app.getEnricherSpecs().get(0);
+        assertNotNull(enricher.getFlags());
+        System.out.println("--->" + enricher.getType());
+        System.out.println("--->" + enricher.getConfig());
+        System.out.println("--->" + enricher.getFlags());
+        System.out.println("--->" + enricher.getDisplayName());
+        System.out.println("--->" + enricher.getCatalogItemId());
+        System.out.println("--->" + enricher.getTags());
+        System.out.println("--->" + enricher.getCatalogItemIdSearchPath());
+    }
+
 
     @Test
     public void testMysqlTopology() throws Exception {

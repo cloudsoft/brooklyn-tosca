@@ -1,0 +1,43 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.simple-autoscaler-policy
+template_version: 1.0.0-SNAPSHOT
+
+description: Dynamic cluster with an AutoScalerPolicy
+
+node_types:
+  org.apache.brooklyn.entity.webapp.DynamicWebAppCluster:
+    derived_from: tosca.nodes.Root
+    description: >
+      A simple Dynamic Cluster
+
+topology_template:
+  description: Dynamic Cluster and a autoscaling policy
+  node_templates:
+    cluster:
+      type: org.apache.brooklyn.entity.webapp.DynamicWebAppCluster
+
+  # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
+  # it can also be done with camp, referencing this topology template.
+  groups:
+    add_brooklyn_location:
+      members: [ ]
+      policies:
+        - test-policy:
+            type: org.apache.brooklyn.core.test.policy.TestPolicy
+            policyLiteralValue1: Hello
+            policyLiteralValue2: World
+
+    add_main_url:
+      members: [ ]
+      policies:
+        - url.generator:
+            type: org.apache.brooklyn.enricher.stock.Transformer
+            uniqueTag: url-generator
+            enricher.sourceSensor: host.name
+            # use the definition from Attributes class, as it has a RendererHint so GUI makes it a link
+            enricher.targetSensor: $brooklyn:sensor("org.apache.brooklyn.core.entity.Attributes", "main.uri")
+            enricher.targetValue: $brooklyn:formatString("http://%s:%s", $brooklyn:attributeWhenReady("host.name"), $brooklyn:config("app.port")))

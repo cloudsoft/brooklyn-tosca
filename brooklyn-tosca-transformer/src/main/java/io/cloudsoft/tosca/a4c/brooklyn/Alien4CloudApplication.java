@@ -6,6 +6,10 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import org.apache.brooklyn.api.objs.BrooklynObjectType;
+import org.apache.brooklyn.core.typereg.RegisteredTypeLoadingContexts;
+import org.apache.brooklyn.enricher.stock.Transformer;
+
 import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.policy.Policy;
@@ -198,19 +202,30 @@ public class Alien4CloudApplication implements ToscaApplication {
 
     private Set<String> getGroupMembers(String groupId) {
         NodeGroup g = getTopology().getGroups().get(groupId);
-        return (g.getMembers() == null || g.getMembers().isEmpty())
-                ? Collections.<String>emptySet() : g.getMembers();
+        return (g.getMembers() == null || g.getMembers().isEmpty()) ? Collections.emptySet() : g.getMembers();
     }
 
-    private Iterable<AbstractPolicy> getBrooklynPolicies(String groupId, final ManagementContext mgmt) {
+    private Iterable<AbstractPolicy> getBrooklynEntities(String groupId, final ManagementContext mgmt, BrooklynObjectType expectedType) {
         return getPoliciesWithFilter(groupId, new Predicate<AbstractPolicy>() {
             @Override
             public boolean apply(@Nullable AbstractPolicy abstractPolicy) {
                 GenericPolicy policy = (GenericPolicy) abstractPolicy;
                 Optional<String> type = getPolicyType(Optional.fromNullable(policy.getType()), policy.getData());
-                return isABrooklynPolicy(type, mgmt);
+                return isABrooklynObjectOfType(type, mgmt, expectedType);
             }
         });
+    }
+
+    /**
+     * Tests if {@code type} is a Policy or Enricher type
+     */
+    private boolean isABrooklynObjectOfType(Optional<String> type, ManagementContext mgmt, BrooklynObjectType expectedType){
+        if(!type.isPresent()) {
+            return false;
+        }
+
+        //BrooklynObjectType expectedType = BrooklynObjectType.ENRICHER;
+        return mgmt.getTypeRegistry().get(type.get(), RegisteredTypeLoadingContexts.withSpecSuperType(null, expectedType.getSpecType())) != null;
     }
 
     private boolean isABrooklynPolicy(Optional<String> policyType, ManagementContext mgmt){
@@ -258,7 +273,12 @@ public class Alien4CloudApplication implements ToscaApplication {
 
     @Override
     public void addBrooklynPolicies(String groupId, BrooklynToscaPolicyDecorator brooklynPolicyDecorator, ManagementContext mgmt) {
-        addPolicies(groupId, brooklynPolicyDecorator, getBrooklynPolicies(groupId, mgmt));
+        addPolicies(groupId, brooklynPolicyDecorator, getBrooklynEntities(groupId, mgmt, BrooklynObjectType.POLICY));
+    }
+
+    @Override
+    public void addBrooklynEnrichers(String groupId, BrooklynToscaEnricherDecorator brooklynEnricherDecorator, ManagementContext mgmt) {
+        addPolicies(groupId, brooklynEnricherDecorator, getBrooklynEntities(groupId, mgmt, BrooklynObjectType.ENRICHER));
     }
 
 }

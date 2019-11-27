@@ -131,4 +131,11 @@ public interface ToscaApplication {
      */
     void addBrooklynPolicies(String groupId, BrooklynToscaPolicyDecorator brooklynPolicyDecorator, ManagementContext mgmt);
 
+    /**
+     * Uses the given brooklynEnricherDecorator to decorate an EntitySpec with brooklyn enrichers
+     * @param groupId the id of the group
+     * @param brooklynEnricherDecorator the BrooklynToscaEnricherDecorator to use
+     * @param mgmt the Brooklyn ManagementContext
+     */
+    void addBrooklynEnrichers(String groupId, BrooklynToscaEnricherDecorator brooklynEnricherDecorator, ManagementContext mgmt);
 }

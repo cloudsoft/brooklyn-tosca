@@ -17,11 +17,11 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
-import org.apache.brooklyn.api.policy.Policy;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.api.sensor.Enricher;
 import org.apache.brooklyn.api.sensor.EnricherSpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
+import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.core.config.ConfigKeys;
 import org.apache.brooklyn.core.entity.Dumper;
 import org.apache.brooklyn.core.entity.Entities;
@@ -41,10 +41,12 @@ import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.stream.Streams;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.io.Files;
@@ -285,9 +287,13 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(autoScalerPolicyFlags.get("metricUpperBound"), "100");
         assertEquals(autoScalerPolicyFlags.get("minPoolSize"), "1");
         assertEquals(autoScalerPolicyFlags.get("maxPoolSize"), "5");
-        assertEquals(autoScalerPolicyFlags.get("metric"), "$brooklyn:sensor(" +
-                "\"org.apache.brooklyn.entity.webapp.DynamicWebAppCluster\"," +
-                " \"webapp.reqs.perSec.windowed.perNode\")");
+        assertEquals(autoScalerPolicyFlags.get("metric"),
+            BrooklynDslCommon.sensor("org.apache.brooklyn.entity.webapp.DynamicWebAppCluster", "webapp.reqs.perSec.windowed.perNode")
+            // DSL is evaluated:
+//            "$brooklyn:sensor(" +
+//                "\"org.apache.brooklyn.entity.webapp.DynamicWebAppCluster\"," +
+//                " \"webapp.reqs.perSec.windowed.perNode\")"
+                );
     }
 
     @Test
@@ -295,19 +301,17 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         EntitySpec<? extends Application> app = create("classpath://templates/simple.application-policies.tosca.yaml");
         assertNotNull(app);
 
-        assertEquals(app.getPolicySpecs().size(), 1);
-        assertTrue(app.getPolicySpecs().get(0).getType().equals(TestPolicy.class));
-
-        PolicySpec<?> testPolicy = app.getPolicySpecs().get(0);
-        assertNotNull(testPolicy.getFlags());
+        PolicySpec<?> testPolicy = Iterables.getOnlyElement(app.getPolicySpecs());
+        assertTrue(testPolicy.getType().equals(TestPolicy.class));
 
         Map<String, ?> testPolicyFlags = testPolicy.getFlags();
+        assertNotNull(testPolicyFlags);
         assertEquals(testPolicyFlags.size(), 4);
         assertEquals(testPolicyFlags.get("policyLiteralValue1"), "Hello");
         assertEquals(testPolicyFlags.get("policyLiteralValue2"), "World");
         assertEquals(testPolicyFlags.get("test.confName"), "Name from YAML");
-        assertEquals(testPolicyFlags.get("test.confFromFunction"),
-                "$brooklyn:formatString(\"%s: is a fun place\", \"$brooklyn\")");
+        Object confFromFunction = testPolicyFlags.get("test.confFromFunction");
+        assertEquals(testPolicyFlags.get("test.confFromFunction"), "$brooklyn: is a fun place");
     }
 
     @Test
@@ -315,15 +319,15 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         EntitySpec<? extends Application> appSpec = create("classpath://templates/simple.application-enrichers.tosca.yaml");
         assertNotNull(appSpec);
 
-        assertEquals(appSpec.getPolicySpecs().size(), 1);
-        assertEquals(TestPolicy.class, appSpec.getPolicySpecs().get(0).getType());
-
         assertEquals(appSpec.getEnricherSpecs().size(), 1);
         assertEquals(Transformer.class, appSpec.getEnricherSpecs().get(0).getType());
 
-        EnricherSpec<?> enricher = appSpec.getEnricherSpecs().get(0);
-        assertNotNull(enricher.getType());
-        assertNotNull(enricher.getFlags());
+        EnricherSpec<?> testEnricher = Iterables.getOnlyElement(appSpec.getEnricherSpecs());
+        assertTrue(testEnricher.getType().equals(Transformer.class));
+        Map<String, ?> testEnricherFlags = testEnricher.getFlags();
+        assertNotNull(testEnricherFlags);
+        assertNotNull(testEnricherFlags.get("enricher.targetValue"));
+        Assert.assertTrue(testEnricherFlags.get("enricher.targetValue") instanceof Supplier, "actually: "+testEnricherFlags+" / "+testEnricherFlags.get("enricher.targetValue").getClass());
 
         CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
         Application app = appCreation.blockUntilComplete().get();

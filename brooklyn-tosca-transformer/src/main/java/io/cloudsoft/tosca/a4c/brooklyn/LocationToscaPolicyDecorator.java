@@ -38,7 +38,7 @@ public class LocationToscaPolicyDecorator extends AbstractToscaPolicyDecorator {
     private List<LocationSpec<?>> getLocationSpecs(Map<String, ?> policyData) {
         Object data = policyData.containsKey(GroupPolicyParser.VALUE)
                 ? policyData.get(GroupPolicyParser.VALUE)
-                : getPolicyProperties(policyData);
+                : getPolicyProperties(mgmt, policyData);
         return resolveLocationSpecs(ImmutableMap.of("location", data));
     }
 

@@ -23,13 +23,6 @@ topology_template:
   # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
   # it can also be done with camp, referencing this topology template.
   groups:
-    add_brooklyn_location:
-      members: [ ]
-      policies:
-        - test-policy:
-            type: org.apache.brooklyn.core.test.policy.TestPolicy
-            policyLiteralValue1: Hello
-            policyLiteralValue2: World
 
     add_main_url:
       members: [ ]
@@ -41,4 +34,4 @@ topology_template:
               enricher.sourceSensor: host.name
               # use the definition from Attributes class, as it has a RendererHint so GUI makes it a link
               enricher.targetSensor: $brooklyn:sensor("org.apache.brooklyn.core.entity.Attributes", "main.uri")
-              enricher.targetValue: $brooklyn:formatString("http://%s:%s", $brooklyn:attributeWhenReady("host.name"), $brooklyn:config("app.port")))
+              enricher.targetValue: $brooklyn:formatString("http://%s:%s", $brooklyn:attributeWhenReady("host.name"), $brooklyn:config("app.port"))

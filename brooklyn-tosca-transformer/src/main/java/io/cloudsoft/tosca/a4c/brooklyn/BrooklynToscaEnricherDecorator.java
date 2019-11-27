@@ -23,23 +23,10 @@ public class BrooklynToscaEnricherDecorator extends  BrooklynToscaPolicyDecorato
     }
 
     @Override
-    public Map<String, ?> getPolicyProperties(Map<String, ?> policyData){
-        Map<String, ?> data = MutableMap.copyOf(policyData);
-        data.remove(POLICY_FLAG_NAME);
-        data.remove(POLICY_FLAG_TYPE);
-        // Had to drop the generics, because conversion was a pain
-        Map props = (Map)data.remove("properties");
-        if (props!=null)  {
-            data.putAll(props);
-        }
-        return data;
-    }
-
-    @Override
     protected ConfigBag getDefinition(String type, Map<String, ?> enricherData) {
         List<?> enrichers = ImmutableList.of(ImmutableMap.of(
                 "enricherType", type,
-                BrooklynCampReservedKeys.BROOKLYN_CONFIG, getPolicyProperties(enricherData)
+                BrooklynCampReservedKeys.BROOKLYN_CONFIG, getPolicyProperties(mgmt, enricherData)
                 )
         );
         Map<?, ?> enricherDefinition = ImmutableMap.of(BrooklynCampReservedKeys.BROOKLYN_ENRICHERS, enrichers);

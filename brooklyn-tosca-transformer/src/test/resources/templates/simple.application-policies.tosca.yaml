@@ -23,7 +23,7 @@ topology_template:
   # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
   # it can also be done with camp, referencing this topology template.
   groups:
-    add_brooklyn_location:
+    test_policy:
       members: [ ]
       policies:
         - test-policy:

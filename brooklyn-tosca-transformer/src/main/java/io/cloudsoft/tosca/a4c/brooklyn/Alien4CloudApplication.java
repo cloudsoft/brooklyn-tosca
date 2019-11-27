@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nullable;
-
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.objs.BrooklynObjectType;
 import org.apache.brooklyn.api.typereg.RegisteredType;
@@ -116,13 +114,14 @@ public class Alien4CloudApplication implements ToscaApplication {
 
     private Optional<RelationshipTemplate> findHostedOn(NodeTemplate nodeTemplate) {
         if (nodeTemplate.getRelationships() == null) return Optional.absent();
-        return Iterables.tryFind(nodeTemplate.getRelationships().values(), new Predicate<RelationshipTemplate>() {
+        final Optional<RelationshipTemplate> relationshipTemplateOptional = Iterables.tryFind(nodeTemplate.getRelationships().values(), new Predicate<RelationshipTemplate>() {
             @Override
             public boolean apply(RelationshipTemplate relationshipTemplate) {
                 // TODO derives from
                 return relationshipTemplate.getType().equals(NormativeRelationshipConstants.HOSTED_ON);
             }
         });
+        return relationshipTemplateOptional;
     }
 
     public Map<String, String> getKeywordMap(NodeTemplate nodeTemplate, RelationshipTemplate relationshipTemplate) {
@@ -188,12 +187,7 @@ public class Alien4CloudApplication implements ToscaApplication {
     }
 
     private Iterable<AbstractPolicy> getLocationPolicies(String groupId) {
-        return getPoliciesWithFilter(groupId, new Predicate<AbstractPolicy>() {
-            @Override
-            public boolean apply(@Nullable AbstractPolicy abstractPolicy) {
-                return "brooklyn.location".equals(abstractPolicy.getName());
-            }
-        });
+        return getPoliciesWithFilter(groupId, abstractPolicy -> "brooklyn.location".equals(abstractPolicy.getName()));
     }
 
     private Set<String> getGroupMembers(String groupId) {
@@ -202,13 +196,10 @@ public class Alien4CloudApplication implements ToscaApplication {
     }
 
     private Iterable<AbstractPolicy> getBrooklynEntities(String groupId, final ManagementContext mgmt, BrooklynObjectType expectedType) {
-        return getPoliciesWithFilter(groupId, new Predicate<AbstractPolicy>() {
-            @Override
-            public boolean apply(@Nullable AbstractPolicy abstractPolicy) {
-                GenericPolicy policy = (GenericPolicy) abstractPolicy;
-                Optional<String> type = getPolicyType(Optional.fromNullable(policy.getType()), policy.getData());
-                return isABrooklynObjectOfType(type, mgmt, expectedType);
-            }
+        return getPoliciesWithFilter(groupId, abstractPolicy -> {
+            GenericPolicy policy = (GenericPolicy) abstractPolicy;
+            Optional<String> type = getPolicyType(Optional.fromNullable(policy.getType()), policy.getData());
+            return isABrooklynObjectOfType(type, mgmt, expectedType);
         });
     }
 
@@ -224,9 +215,9 @@ public class Alien4CloudApplication implements ToscaApplication {
         if (match!=null) {
             return true;
         }
-        // legacy check, for tests
+
         try {
-            Class<?> clazz = Class.forName(type.get());   // should only be used for testing
+            Class<?> clazz = Class.forName(type.get());   // legacy check, should only be used for testing
             return expectedType.getInterfaceType().isAssignableFrom(clazz);
         } catch (ClassNotFoundException e) {
             return false;

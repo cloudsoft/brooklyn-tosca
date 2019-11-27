@@ -8,6 +8,7 @@ import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampReservedKeys;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationResolver;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynYamlTypeInstantiator;
+import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.core.config.ConfigBag;
 
 import java.util.*;
@@ -19,6 +20,19 @@ public class BrooklynToscaEnricherDecorator extends  BrooklynToscaPolicyDecorato
 
     BrooklynToscaEnricherDecorator(EntitySpec<? extends Application> rootSpec, ManagementContext mgmt) {
        super(rootSpec,mgmt);
+    }
+
+    @Override
+    public Map<String, ?> getPolicyProperties(Map<String, ?> policyData){
+        Map<String, ?> data = MutableMap.copyOf(policyData);
+        data.remove(POLICY_FLAG_NAME);
+        data.remove(POLICY_FLAG_TYPE);
+        // Had to drop the generics, because conversion was a pain
+        Map props = (Map)data.remove("properties");
+        if (props!=null)  {
+            data.putAll(props);
+        }
+        return data;
     }
 
     @Override

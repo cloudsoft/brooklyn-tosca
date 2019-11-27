@@ -36,8 +36,9 @@ topology_template:
       policies:
         - url.generator:
             type: org.apache.brooklyn.enricher.stock.Transformer
-            uniqueTag: url-generator
-            enricher.sourceSensor: host.name
-            # use the definition from Attributes class, as it has a RendererHint so GUI makes it a link
-            enricher.targetSensor: $brooklyn:sensor("org.apache.brooklyn.core.entity.Attributes", "main.uri")
-            enricher.targetValue: $brooklyn:formatString("http://%s:%s", $brooklyn:attributeWhenReady("host.name"), $brooklyn:config("app.port")))
+            properties:
+              uniqueTag: url-generator
+              enricher.sourceSensor: host.name
+              # use the definition from Attributes class, as it has a RendererHint so GUI makes it a link
+              enricher.targetSensor: $brooklyn:sensor("org.apache.brooklyn.core.entity.Attributes", "main.uri")
+              enricher.targetValue: $brooklyn:formatString("http://%s:%s", $brooklyn:attributeWhenReady("host.name"), $brooklyn:config("app.port")))

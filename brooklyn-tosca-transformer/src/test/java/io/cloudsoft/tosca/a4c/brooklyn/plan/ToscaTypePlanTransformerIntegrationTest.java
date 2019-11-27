@@ -17,6 +17,7 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
+import org.apache.brooklyn.api.policy.Policy;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.api.sensor.Enricher;
 import org.apache.brooklyn.api.sensor.EnricherSpec;
@@ -322,26 +323,14 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
         EnricherSpec<?> enricher = appSpec.getEnricherSpecs().get(0);
         assertNotNull(enricher.getFlags());
-        System.out.println("--->" + enricher.getType());
-        System.out.println("--->" + enricher.getConfig());
-        System.out.println("--->" + enricher.getFlags());
-        System.out.println("--->" + enricher.getDisplayName());
-        System.out.println("--->" + enricher.getCatalogItemId());
-        System.out.println("--->" + enricher.getTags());
-        System.out.println("--->" + enricher.getCatalogItemIdSearchPath());
-        
+
         CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
         Application app = appCreation.blockUntilComplete().get();
-        Dumper.dumpInfo(app);
         Enricher transformerEnricher = app.getChildren().iterator().next().enrichers().asList().stream()
             .filter(e -> e instanceof Transformer).findFirst().get();
-        Dumper.dumpInfo(transformerEnricher);
-        System.out.println("--->" + transformerEnricher.getClass());
-        System.out.println("--->" + transformerEnricher.config());
-        System.out.println("--->" + transformerEnricher.getDisplayName());
-        System.out.println("--->" + transformerEnricher.getCatalogItemId());
-        System.out.println("--->" + transformerEnricher.tags());
-        System.out.println("--->" + transformerEnricher.getCatalogItemIdSearchPath());
+        //Dumper.dumpInfo(transformerEnricher);
+        assertEquals(Transformer.class, transformerEnricher.getClass());
+        assertEquals("org.apache.brooklyn.enricher.stock.Transformer", transformerEnricher.getDisplayName());
     }
 
 

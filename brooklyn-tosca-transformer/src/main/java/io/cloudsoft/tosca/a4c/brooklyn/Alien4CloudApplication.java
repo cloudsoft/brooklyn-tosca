@@ -6,14 +6,10 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import org.apache.brooklyn.api.objs.BrooklynObjectType;
-import org.apache.brooklyn.core.typereg.RegisteredTypeLoadingContexts;
-import org.apache.brooklyn.enricher.stock.Transformer;
-
-import org.apache.brooklyn.api.catalog.CatalogItem;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.api.policy.Policy;
-import org.apache.brooklyn.core.catalog.internal.CatalogUtils;
+import org.apache.brooklyn.api.objs.BrooklynObjectType;
+import org.apache.brooklyn.api.typereg.RegisteredType;
+import org.apache.brooklyn.core.typereg.RegisteredTypeLoadingContexts;
 import org.apache.brooklyn.util.text.Strings;
 
 import com.google.common.base.Optional;
@@ -224,27 +220,17 @@ public class Alien4CloudApplication implements ToscaApplication {
             return false;
         }
 
-        //BrooklynObjectType expectedType = BrooklynObjectType.ENRICHER;
-        return mgmt.getTypeRegistry().get(type.get(), RegisteredTypeLoadingContexts.withSpecSuperType(null, expectedType.getSpecType())) != null;
-    }
-
-    private boolean isABrooklynPolicy(Optional<String> policyType, ManagementContext mgmt){
-        if(!policyType.isPresent()) {
+        RegisteredType match = mgmt.getTypeRegistry().get(type.get(), RegisteredTypeLoadingContexts.withSpecSuperType(null, expectedType.getSpecType()));
+        if (match!=null) {
+            return true;
+        }
+        // legacy check, for tests
+        try {
+            Class<?> clazz = Class.forName(type.get());   // should only be used for testing
+            return expectedType.getInterfaceType().isAssignableFrom(clazz);
+        } catch (ClassNotFoundException e) {
             return false;
         }
-
-        Class<?> clazz;
-        CatalogItem<?, ?> catalogItem = CatalogUtils.getCatalogItemOptionalVersion(mgmt, policyType.get());
-        if (catalogItem != null) {
-            clazz = catalogItem.getCatalogItemJavaType();
-        } else {
-            try {
-                clazz = Class.forName(policyType.get());
-            } catch (ClassNotFoundException e) {
-                return false;
-            }
-        }
-        return Policy.class.isAssignableFrom(clazz);
     }
 
     private Optional<String> getPolicyType(Optional<String> policyType, Map<String, ?> policyData){

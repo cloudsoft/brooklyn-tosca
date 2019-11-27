@@ -18,12 +18,16 @@ import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.policy.PolicySpec;
+import org.apache.brooklyn.api.sensor.Enricher;
 import org.apache.brooklyn.api.sensor.EnricherSpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.entity.Dumper;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.entity.EntityAsserts;
 import org.apache.brooklyn.core.location.PortRanges;
+import org.apache.brooklyn.core.mgmt.EntityManagementUtils;
+import org.apache.brooklyn.core.mgmt.EntityManagementUtils.CreationResult;
 import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
 import org.apache.brooklyn.enricher.stock.Transformer;
@@ -307,16 +311,16 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
     @Test
     public void testAddingEnrichersAsPolicies() throws Exception {
-        EntitySpec<? extends Application> app = create("classpath://templates/simple.application-enrichers.tosca.yaml");
-        assertNotNull(app);
+        EntitySpec<? extends Application> appSpec = create("classpath://templates/simple.application-enrichers.tosca.yaml");
+        assertNotNull(appSpec);
 
-        assertEquals(app.getPolicySpecs().size(), 1);
-        assertEquals(TestPolicy.class, app.getPolicySpecs().get(0).getType());
+        assertEquals(appSpec.getPolicySpecs().size(), 1);
+        assertEquals(TestPolicy.class, appSpec.getPolicySpecs().get(0).getType());
 
-        assertEquals(app.getEnricherSpecs().size(), 1);
-        assertEquals(Transformer.class, app.getEnricherSpecs().get(0).getType());
+        assertEquals(appSpec.getEnricherSpecs().size(), 1);
+        assertEquals(Transformer.class, appSpec.getEnricherSpecs().get(0).getType());
 
-        EnricherSpec<?> enricher = app.getEnricherSpecs().get(0);
+        EnricherSpec<?> enricher = appSpec.getEnricherSpecs().get(0);
         assertNotNull(enricher.getFlags());
         System.out.println("--->" + enricher.getType());
         System.out.println("--->" + enricher.getConfig());
@@ -325,6 +329,19 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         System.out.println("--->" + enricher.getCatalogItemId());
         System.out.println("--->" + enricher.getTags());
         System.out.println("--->" + enricher.getCatalogItemIdSearchPath());
+        
+        CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
+        Application app = appCreation.blockUntilComplete().get();
+        Dumper.dumpInfo(app);
+        Enricher transformerEnricher = app.getChildren().iterator().next().enrichers().asList().stream()
+            .filter(e -> e instanceof Transformer).findFirst().get();
+        Dumper.dumpInfo(transformerEnricher);
+        System.out.println("--->" + transformerEnricher.getClass());
+        System.out.println("--->" + transformerEnricher.config());
+        System.out.println("--->" + transformerEnricher.getDisplayName());
+        System.out.println("--->" + transformerEnricher.getCatalogItemId());
+        System.out.println("--->" + transformerEnricher.tags());
+        System.out.println("--->" + transformerEnricher.getCatalogItemIdSearchPath());
     }
 
 

@@ -19,8 +19,8 @@ import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 
-import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
 import io.cloudsoft.tosca.a4c.brooklyn.Uploader;
+import io.cloudsoft.tosca.a4c.brooklyn.plan.ToscaTypePlanTransformer;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 
 /**
@@ -80,4 +80,9 @@ public class Alien4CloudIntegrationTest extends AbstractTestNGSpringContextTests
         RegisteredType registeredType = RegisteredTypes.spec("test", "1.0", toscaTypeImplementationPlan, null);
         return (EntitySpec<? extends Application>) transformer.createSpec(registeredType, null);
     }
+    
+    protected void addCatalogItems(String catalogYaml) {
+        mgmt.getCatalog().addItems(catalogYaml, true, false);
+    }
+
 }

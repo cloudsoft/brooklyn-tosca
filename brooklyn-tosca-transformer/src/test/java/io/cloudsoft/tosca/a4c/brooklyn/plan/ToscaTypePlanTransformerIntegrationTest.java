@@ -60,12 +60,15 @@ import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
-    private String DATABASE_DEPENDENCY_INJECTION = "$brooklyn:formatString(\"jdbc:" +
+    private static String DATABASE_DEPENDENCY_INJECTION(boolean resolveExternal) {
+        return "$brooklyn:formatString(\"jdbc:" +
             "%s%s?user=%s\\\\&password=%s\", entity(\"mysql_server\")" +
             ".attributeWhenReady(\"datastore.url\"), " +
             "\"visitors\", " +
             "\"brooklyn\", " +
-            "\"br00k11n\")";
+            (resolveExternal ? "br00klyn" : "external(\"brooklyn-demo-sample\", \"hidden-brooklyn-password\")")
+            + ")";
+    }
 
     @Test
     public void testSimpleHostedTopologyParser() throws Exception {
@@ -113,12 +116,43 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
                         "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
                         "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
-        assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
 
         Map<?,?> javaSysProps = (Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS);
+        assertNotNull(javaSysProps);
         assertEquals(javaSysProps.size(), 1);
         assertTrue(javaSysProps.get("brooklyn.example.db.url") instanceof BrooklynDslDeferredSupplier);
-        assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION(false));
+
+        javaSysProps = (Map<?,?>) tomcatServer.getConfig().get(ConfigKeys.newConfigKey(Map.class, TomcatServer.JAVA_SYSPROPS.getName()));
+        assertNotNull(javaSysProps);
+        assertEquals(javaSysProps.size(), 1);
+        assertTrue(javaSysProps.get("brooklyn.example.db.url") instanceof BrooklynDslDeferredSupplier);
+        assertEquals(javaSysProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION(false));
+        
+        assertEquals(tomcatServer.getLocationSpecs().size(), 1, "Expected one LocationSpec");
+        assertTrue(tomcatServer.getLocationSpecs().get(0) instanceof LocationSpec);
+    }
+    
+    @Test
+    public void testDslInChatApplicationYamlBaseType() throws Exception {
+        addCatalogItems(ResourceUtils.create(this).getResourceAsString("classpath://templates/tomcat-node/tomcat-node.bom"));
+        EntitySpec<? extends Application> app = create("classpath://templates/tomcat-node/helloworld-sql.tosca.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 2);
+
+        EntitySpec<?> tomcatServer = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
+        assertEquals(tomcatServer.getConfig().get(ConfigKeys.newStringConfigKey("root.war")),
+                "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
+                        "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
+                        "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
+
+        Map<?,?> catalinaProps = (Map<?,?>) tomcatServer.getConfig().get(ConfigKeys.newConfigKey(Map.class, "catalina.properties"));
+        assertNotNull(catalinaProps);
+        assertEquals(catalinaProps.size(), 1);
+        assertTrue(catalinaProps.get("brooklyn.example.db.url") instanceof BrooklynDslDeferredSupplier,
+            "Expected supplier, got "+catalinaProps.get("brooklyn.example.db.url"));
+        assertEquals(catalinaProps.get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION(false));
 
         assertEquals(tomcatServer.getLocationSpecs().size(), 1, "Expected one LocationSpec");
         assertTrue(tomcatServer.getLocationSpecs().get(0) instanceof LocationSpec);
@@ -178,7 +212,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertNotNull(tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS));
         Object dbUrl = ((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("brooklyn.example.db.url");
         assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
-        assertEquals(dbUrl.toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(dbUrl.toString(), DATABASE_DEPENDENCY_INJECTION(false));
         assertTrue(dbUrl instanceof BrooklynDslDeferredSupplier, "dbUrl="+dbUrl+", type="+dbUrl.getClass());
 
         assertFlagValueContains(tomcatServer, VanillaSoftwareProcess.PRE_CUSTOMIZE_COMMAND.getName(),
@@ -212,7 +246,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         
         
         assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 2);
-        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+        assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION(false));
         assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("key1").toString(), "value1");
     }
 
@@ -230,7 +264,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertNotNull(tomcatServer.getFlags().get("javaSysProps"));
         assertEquals(((Map<?,?>) tomcatServer.getFlags().get("javaSysProps")).size(), 2);
         assertEquals(((Map<?,?>) tomcatServer.getFlags().get("javaSysProps"))
-                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION(false));
         assertEquals(((Map<?,?>) tomcatServer.getFlags().get("javaSysProps"))
                 .get("key1").toString(), "value1");
     }
@@ -311,7 +345,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(testPolicyFlags.get("policyLiteralValue2"), "World");
         assertEquals(testPolicyFlags.get("test.confName"), "Name from YAML");
         Object confFromFunction = testPolicyFlags.get("test.confFromFunction");
-        assertEquals(testPolicyFlags.get("test.confFromFunction"), "$brooklyn: is a fun place");
+        assertEquals(confFromFunction, "$brooklyn: is a fun place");
     }
 
     @Test
@@ -545,7 +579,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertNotNull(backend.getConfig().get(TomcatServer.JAVA_SYSPROPS));
         assertEquals(((Map<?,?>) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS)).size(), 1);
         assertEquals(((Map<?,?>) backend.getConfig().get(TomcatServer.JAVA_SYSPROPS))
-                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION);
+                .get("brooklyn.example.db.url").toString(), DATABASE_DEPENDENCY_INJECTION(false));
     }
     
     @Test

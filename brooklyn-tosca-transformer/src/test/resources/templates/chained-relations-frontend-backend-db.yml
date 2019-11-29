@@ -89,7 +89,7 @@ topology_template:
             properties:
               prop.collection: java.sysprops
               prop.name: brooklyn.example.db.url
-              prop.value: $brooklyn:formatString("jdbc:%s%s?user=%s\\&password=%s", $brooklyn:component("mysql_server").attributeWhenReady("datastore.url"), "visitors", "brooklyn", "br00k11n")
+              prop.value: $brooklyn:formatString("jdbc:%s%s?user=%s\\&password=%s", component("mysql_server").attributeWhenReady("datastore.url"), "visitors", "brooklyn", $brooklyn:external("brooklyn-demo-sample", "hidden-brooklyn-password"))
 
     mysql_server:
       type: org.apache.brooklyn.entity.database.mysql.MySqlNode

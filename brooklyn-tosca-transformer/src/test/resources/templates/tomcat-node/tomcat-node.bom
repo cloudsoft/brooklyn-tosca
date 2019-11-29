@@ -1,0 +1,125 @@
+brooklyn.catalog:
+  bundle: tomcat-node
+  version: 0.1.0-SNAPSHOT
+  items:
+    - id: tomcat-node
+      name: Tomcat Node
+      item:
+        name: Tomcat
+        type: org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess
+
+        brooklyn.parameters:
+          - name: root.war
+            type: string
+            label: WAR URL
+            default: ""
+            description: |
+              Publicly accessible URL of WAR to install as the root application. 
+              If this is not supplied, callers should typically set files.customize to install,
+              including multiple WARs and WARs bundled with the blueprint.
+            pinned: true
+          - name: catalina.properties
+            label: Java system properties
+            type: java.util.Map
+            default: {}
+            
+          - name: install.command
+            pinned: false
+          - name: customize.command
+            pinned: false
+          - name: launch.command
+            pinned: false
+          - name: checkRunning.command
+            pinned: false
+          - name: stop.command
+            pinned: false
+    
+        brooklyn.config:
+          dontRequireTtyForSudo: true
+          start.timeout: 20m
+          sshMonitoring.enabled: false
+          app.port: 8080
+          
+          shell.env:
+            APP_PORT: $brooklyn:config("app.port")
+            ROOT_WAR: $brooklyn:config("root.war")
+            DATASTORE_URL: $brooklyn:config("datastore.url")
+            DATASTORE_DRIVER: $brooklyn:config("datastore.driver")
+            CATALINA_PROPERTIES: $brooklyn:config("catalina.properties")
+
+          install.command: |
+            which curl || sudo apt --assume-yes install curl
+
+            # Install java if needed
+            if ( which java ) ; then
+              echo "Java already installed."
+            else
+              echo "Trying to install java."
+              sudo apt --assume-yes install openjdk-8-jdk-headless
+              sudo apt --assume-yes install openjdk-8-jre-headless
+            fi
+
+            # Install jq so we can set vars
+            if ( which jq ) ; then
+              echo "jq already installed."
+            else
+              echo "Trying to install jq."
+              sudo apt --assume-yes install jq
+            fi
+            
+            # Install Apache Tomcat
+            if [ -f /usr/local/tomcat/bin/startup.sh ] ; then
+              echo "Tomcat already installed."
+            else
+              mkdir tomcat
+              curl -L -o tomcat.tar.gz http://apache.spinellicreations.com/tomcat/tomcat-8/v8.5.32/bin/apache-tomcat-8.5.32.tar.gz
+              tar xf tomcat.tar.gz -C tomcat --strip-components=1
+              sudo sed --in-place 's#<Connector port="8080" protocol="HTTP/1.1"#\0 address="0.0.0.0"#g' tomcat/conf/server.xml
+              sudo chmod 750 tomcat/bin
+              sudo mv tomcat /usr/local/
+            fi
+ 
+#          # if sub-types do this, the entity will install it         
+#          files.customize:
+#            classpath://fchat.war: ROOT.war
+#            classpath://another.war: another.war
+
+          customize.command: |
+            sudo find /usr/local/tomcat/webapps -mindepth 1 -delete
+            cd ${INSTALL_DIR}
+            if [ ! -z "${ROOT_WAR}" ] ; then
+               curl -L -k -f -o ROOT.war "${ROOT_WAR}"
+            fi
+            if ( ls *.war ) ; then
+                sudo mv *.war /usr/local/tomcat/webapps/
+            fi
+            echo "${CATALINA_PROPERTIES}" | jq -r 'to_entries[]|"\(.key)=\(.value)"' | sudo tee -a /usr/local/tomcat/conf/catalina.properties
+
+          launch.command: |
+            sudo /usr/local/tomcat/bin/startup.sh
+
+          stop.command: |
+            sudo /usr/local/tomcat/bin/shutdown.sh
+
+          checkRunning.command:
+            curl -f -k http://localhost:${APP_PORT}/
+
+        brooklyn.initializers:
+          - type: org.apache.brooklyn.core.sensor.ssh.SshCommandSensor
+            brooklyn.config:
+              name: cpu
+              period: 15s
+              # take read after 5s to ensure it stabilises (really only needed immediately post-deploy)
+              command: |
+                top -b -d 2 -n 5 -p 1 | grep "%Cpu" | tail -1 | cut -d , -f 4 | awk '{print (100-$1)/100.0}'
+
+        brooklyn.enrichers:
+          - type: org.apache.brooklyn.enricher.stock.Transformer
+            brooklyn.config:
+              enricher.sourceSensor: $brooklyn:sensor("host.name")
+              enricher.targetSensor: $brooklyn:sensor("main.uri")
+              enricher.targetValue:
+                $brooklyn:formatString:
+                  - "http://%s:%s"
+                  - $brooklyn:attributeWhenReady("host.name")
+                  - $brooklyn:config("app.port")

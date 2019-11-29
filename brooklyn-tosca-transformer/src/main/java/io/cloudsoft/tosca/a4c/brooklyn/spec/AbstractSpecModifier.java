@@ -33,6 +33,10 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
     }
 
     protected Optional<Object> resolveValue(Object unresolvedValue, Optional<TypeToken> desiredType) {
+        return resolveValue(mgmt, unresolvedValue, desiredType);
+    }
+    
+    public static Optional<Object> resolveValue(ManagementContext mgmt, Object unresolvedValue, Optional<TypeToken> desiredType) {
         if (unresolvedValue == null) {
             return Optional.absent();
         }

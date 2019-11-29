@@ -9,25 +9,19 @@ template_version: 1.0.0-SNAPSHOT
 description: Brooklyn HelloWorld application. (ChatApplication)
 
 node_types:
-  org.apache.brooklyn.entity.webapp.tomcat.TomcatServer:
+  tomcat-node:
     derived_from: tosca.nodes.Root
     description: >
-      A simple Tomcat server
+      The Tomcat Server
     properties:
-      wars.root:
+      root.war:
         type: string
         required: false
-      http.port:
-        type: list
-        required: false
-        entry_schema:
-          type: string
-      java.sysprops:
+      catalina.properties:
         type: map
         required: false
         entry_schema:
           type: string
-
 
   org.apache.brooklyn.entity.database.mysql.MySqlNode:
     derived_from: tosca.nodes.Root
@@ -43,11 +37,10 @@ topology_template:
   description: Web Server Sample with Script
   node_templates:
     tomcat_server:
-      type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
+      type: tomcat-node
       properties:
-        wars.root: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
-        http.port: "8080+"
-        java.sysprops:
+        root.war: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
+        catalina.properties:
           brooklyn.example.db.url: $brooklyn:formatString("jdbc:%s%s?user=%s\\&password=%s", component("mysql_server").attributeWhenReady("datastore.url"), "visitors", "brooklyn", $brooklyn:external("brooklyn-demo-sample", "hidden-brooklyn-password"))
 
     mysql_server:

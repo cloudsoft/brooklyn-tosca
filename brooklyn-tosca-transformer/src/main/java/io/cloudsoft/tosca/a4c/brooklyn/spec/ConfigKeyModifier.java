@@ -38,6 +38,8 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
     private void configureWithAllRecords(Collection<FlagUtils.FlagConfigKeyAndValueRecord> records, EntitySpec<?> spec, Set<String> keyNamesUsed) {
         for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
+            LOG.info("XXX RESOLVING: "+r.getFlagName()+"/"+r.getConfigKey()+" - "+r.getFlagMaybeValue()+"/"+r.getConfigKeyMaybeValue());
+            
             if (r.getFlagMaybeValue().isPresent()) {
                 configureWithResolvedFlag(r, spec, keyNamesUsed);
             }
@@ -138,8 +140,13 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
             // we don't let a flag with the same name as a config key override the config key
             // (that's why we check whether it is used)
             if (!keyNamesUsed.contains(key)) {
+                Object v = bag.getStringKey(key);
+                Optional<Object> vr = resolveValue(v, Optional.<TypeToken>absent());
+                if (vr.isPresent()) {
+                    v = vr.get();
+                }
                 //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(bag.getStringKey(key));
-                spec.configure(ConfigKeys.newConfigKey(Object.class, key.toString()), bag.getStringKey(key));
+                spec.configure(ConfigKeys.newConfigKey(Object.class, key.toString()), v);
             }
         }
     }

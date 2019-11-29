@@ -38,8 +38,6 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
     private void configureWithAllRecords(Collection<FlagUtils.FlagConfigKeyAndValueRecord> records, EntitySpec<?> spec, Set<String> keyNamesUsed) {
         for (FlagUtils.FlagConfigKeyAndValueRecord r : records) {
-            LOG.info("XXX RESOLVING: "+r.getFlagName()+"/"+r.getConfigKey()+" - "+r.getFlagMaybeValue()+"/"+r.getConfigKeyMaybeValue());
-            
             if (r.getFlagMaybeValue().isPresent()) {
                 configureWithResolvedFlag(r, spec, keyNamesUsed);
             }

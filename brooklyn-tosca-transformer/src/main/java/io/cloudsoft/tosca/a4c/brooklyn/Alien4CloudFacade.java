@@ -141,6 +141,12 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     @Override
     public String getParentId(String nodeId, Alien4CloudApplication toscaApplication) {
         NodeTemplate nodeTemplate = toscaApplication.getNodeTemplate(nodeId);
+        
+        Optional<Object> parentIdExplicit = resolve(nodeTemplate.getProperties(), "parent");
+        if (parentIdExplicit.isPresent()) {
+            return (String) parentIdExplicit.get();
+        }
+        
         Requirement host = nodeTemplate.getRequirements() != null ? nodeTemplate.getRequirements().get("host") : null;
         if (host != null) {
             for (RelationshipTemplate r : nodeTemplate.getRelationships().values()) {

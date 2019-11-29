@@ -1,0 +1,35 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.simple-autoscaler-policy
+template_version: 1.0.0-SNAPSHOT
+
+description: Dynamic cluster with an AutoScalerPolicy
+
+node_types:
+  org.apache.brooklyn.entity.webapp.DynamicWebAppCluster:
+    derived_from: tosca.nodes.Root
+    description: >
+      A simple Dynamic Cluster
+    properties:
+      x:
+        type: string
+        required: false
+      parent:
+        type: string
+        required: false
+
+topology_template:
+  description: Dynamic Cluster and a autoscaling policy
+  node_templates:
+    P:
+      type: org.apache.brooklyn.entity.webapp.DynamicWebAppCluster
+      properties:
+        x: 1
+    child:
+      type: org.apache.brooklyn.entity.webapp.DynamicWebAppCluster
+      properties:
+        parent: P
+        x: 2

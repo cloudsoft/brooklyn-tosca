@@ -105,6 +105,18 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     }
 
     @Test
+    public void testParentChild() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/parent-child.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+
+        EntitySpec<?> p = Iterables.getOnlyElement( app.getChildren() );
+        EntitySpec<?> c = Iterables.getOnlyElement( p.getChildren() );
+        assertEquals(p.getConfig().get(ConfigKeys.newStringConfigKey("x")), "1");
+        assertEquals(c.getConfig().get(ConfigKeys.newStringConfigKey("x")), "2");
+    }
+
+    @Test
     public void testDslInChatApplication() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/helloworld-sql.tosca.yaml");
         assertNotNull(app);
@@ -157,7 +169,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(tomcatServer.getLocationSpecs().size(), 1, "Expected one LocationSpec");
         assertTrue(tomcatServer.getLocationSpecs().get(0) instanceof LocationSpec);
     }
-
+    
     @Test
     public void testFullJcloudsLocationDescription() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/full-location.jclouds.tosca.yaml");
@@ -602,5 +614,4 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
     }
-
 }

@@ -682,7 +682,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
                 Optional<Object> value = resolveIncludingToscaFunctions(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates);
                 if (value.isPresent() && !Strings.isBlank(entry.getKey())) {
                     Object v = value.get();
-                    v = AbstractSpecModifier.resolveBrooklynDslValue(mgmt, v, Optional.absent()).orNull();
+                    v = AbstractSpecModifier.resolveBrooklynDslValue(v, Optional.absent(), mgmt, null).orNull();
                     dsls.add(BrooklynDslCommon.formatString("export %s=\"%s\"", entry.getKey(), value.get()));
                 }
             }

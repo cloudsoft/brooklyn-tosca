@@ -23,6 +23,7 @@ import org.apache.brooklyn.api.sensor.EnricherSpec;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.core.config.ConfigKeys;
+import org.apache.brooklyn.core.entity.Attributes;
 import org.apache.brooklyn.core.entity.Dumper;
 import org.apache.brooklyn.core.entity.Entities;
 import org.apache.brooklyn.core.entity.EntityAsserts;
@@ -33,6 +34,7 @@ import org.apache.brooklyn.core.sensor.Sensors;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
 import org.apache.brooklyn.enricher.stock.Transformer;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
+import org.apache.brooklyn.entity.group.DynamicCluster;
 import org.apache.brooklyn.entity.software.base.SameServerEntity;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
@@ -370,6 +372,17 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 //                "\"org.apache.brooklyn.entity.webapp.DynamicWebAppCluster\"," +
 //                " \"webapp.reqs.perSec.windowed.perNode\")"
                 );
+    }
+
+    @Test
+    public void testClusterInstantiatedWithAutoscaling() throws Exception {
+        EntitySpec<? extends Application> appSpec = create("classpath://templates/cluster.instantiated.tosca.yaml");
+        CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
+        Application app = appCreation.blockUntilComplete().get();
+        Dumper.dumpInfo(app);
+        Entity cluster = Iterables.getOnlyElement( app.getChildren() );
+        EntityAsserts.assertAttributeEquals(cluster, Attributes.SERVICE_UP, true);
+        Assert.assertEquals(((DynamicCluster)cluster).getMembers().size(), 3);
     }
 
     @Test

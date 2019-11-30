@@ -25,8 +25,6 @@ public class PropertiesConfigKeyModifierTest extends Alien4CloudToscaTest {
     private ToscaFacade alien4CloudFacade;
     @Mock
     private ToscaApplication toscaApplication;
-    @Mock
-    private NodeTemplate nodeTemplate;
 
     @BeforeClass
     public void initMocks() {

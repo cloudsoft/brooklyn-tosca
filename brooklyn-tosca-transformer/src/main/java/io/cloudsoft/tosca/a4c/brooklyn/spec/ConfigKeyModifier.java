@@ -1,9 +1,11 @@
 package io.cloudsoft.tosca.a4c.brooklyn.spec;
 
-import com.google.common.base.Optional;
-import com.google.common.reflect.TypeToken;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
-import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
@@ -16,11 +18,11 @@ import org.apache.brooklyn.util.core.flags.FlagUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.base.Optional;
+import com.google.common.reflect.TypeToken;
+
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
@@ -48,9 +50,10 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
     }
 
     private void configureWithResolvedFlag(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec<?> spec, Set<String> keyNamesUsed) {
-        Optional<Object> resolvedValue = resolveBrooklynDslValue(r.getFlagMaybeValue().get(), Optional.<TypeToken>absent());
+        Optional<Object> resolvedValue = resolveBrooklynDslValue(r.getFlagMaybeValue().get(), Optional.absent(), spec);
         Optional<Object> oldValue = findFlagValue(spec, r);
 
+        // TODO when do we need to join?  ideally use camp parser logic which is more sophisticated re inheritance. 
         Optional<Object> joinedValues = joinOldAndNewSpecConfigValues(oldValue, resolvedValue);
 
         if (joinedValues.isPresent()) {
@@ -62,8 +65,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
     private void configureWithResolvedConfigKey(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
         try {
-            Optional<Object> resolvedValue = resolveBrooklynDslValue(r.getConfigKeyMaybeValue().get(),
-                    Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
+            Optional<Object> resolvedValue = resolveBrooklynDslValue(r.getConfigKeyMaybeValue().get(), Optional.of(r.getConfigKey().getTypeToken()), spec);
             Optional<Object> oldValue = getConfigKeyValue(spec, r);
 
             Optional<Object> joinedValues = joinOldAndNewSpecConfigValues(oldValue, resolvedValue);
@@ -139,11 +141,11 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
             // (that's why we check whether it is used)
             if (!keyNamesUsed.contains(key)) {
                 Object v = bag.getStringKey(key);
-                Optional<Object> vr = resolveBrooklynDslValue(v, Optional.<TypeToken>absent());
+                Optional<Object> vr = resolveBrooklynDslValue(v, Optional.<TypeToken>absent(), spec);
                 if (vr.isPresent()) {
                     v = vr.get();
                 }
-                //Object transformed = new BrooklynComponentTemplateResolver.SpecialFlagsTransformer(loader).apply(bag.getStringKey(key));
+                
                 spec.configure(ConfigKeys.newConfigKey(Object.class, key.toString()), v);
             }
         }

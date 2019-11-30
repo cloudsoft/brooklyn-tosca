@@ -48,7 +48,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
     }
 
     private void configureWithResolvedFlag(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec<?> spec, Set<String> keyNamesUsed) {
-        Optional<Object> resolvedValue = resolveValue(r.getFlagMaybeValue().get(), Optional.<TypeToken>absent());
+        Optional<Object> resolvedValue = resolveBrooklynDslValue(r.getFlagMaybeValue().get(), Optional.<TypeToken>absent());
         Optional<Object> oldValue = findFlagValue(spec, r);
 
         Optional<Object> joinedValues = joinOldAndNewSpecConfigValues(oldValue, resolvedValue);
@@ -62,7 +62,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
 
     private void configureWithResolvedConfigKey(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
         try {
-            Optional<Object> resolvedValue = resolveValue(r.getConfigKeyMaybeValue().get(),
+            Optional<Object> resolvedValue = resolveBrooklynDslValue(r.getConfigKeyMaybeValue().get(),
                     Optional.<TypeToken>of(r.getConfigKey().getTypeToken()));
             Optional<Object> oldValue = getConfigKeyValue(spec, r);
 
@@ -139,7 +139,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
             // (that's why we check whether it is used)
             if (!keyNamesUsed.contains(key)) {
                 Object v = bag.getStringKey(key);
-                Optional<Object> vr = resolveValue(v, Optional.<TypeToken>absent());
+                Optional<Object> vr = resolveBrooklynDslValue(v, Optional.<TypeToken>absent());
                 if (vr.isPresent()) {
                     v = vr.get();
                 }

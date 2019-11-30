@@ -3,6 +3,9 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import java.nio.file.Path;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
+import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.api.typereg.RegisteredTypeLoadingContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
@@ -70,7 +73,7 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * of a String if all input values have been resolved, otherwise a  {@link
      * BrooklynDslDeferredSupplier}
      */
-    Optional<Object> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder);
+    Optional<Object> getScript(String opKey, String nodeId, A toscaApplication, String computeName, String expandedFolder, @Nullable ManagementContext mgmt);
 
     /**
      * @param nodeId the node id
@@ -132,6 +135,6 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @param expandedFolder the name of the expanded CSAR folder
      * @return the script to be run as part of the relationship is present, Optional.absent() otherwise
      */
-    Optional<Object> getRelationshipScript(String opKey, A toscaApplication, ToscaApplication.Relationship relationship, String computeName, String expandedFolder);
+    Optional<Object> getRelationshipScript(String opKey, A toscaApplication, ToscaApplication.Relationship relationship, String computeName, String expandedFolder, @Nullable ManagementContext mgmt);
 
 }

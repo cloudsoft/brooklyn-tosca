@@ -47,7 +47,7 @@ public class StandardInterfaceLifecycleModifier extends AbstractSpecModifier {
         final Iterable<String> operations = getToscaFacade().getInterfaceOperations(nodeId, toscaApplication);
         for (String opKey : operations) {
             String computeName = toscaApplication.getNodeName(nodeId).or(String.valueOf(entitySpec.getFlags().get(ApplicationSpecsBuilder.TOSCA_TEMPLATE_ID)));
-            final Optional<Object> script = getToscaFacade().getScript(opKey, nodeId, toscaApplication, computeName, EXPANDED_FOLDER);
+            final Optional<Object> script = getToscaFacade().getScript(opKey, nodeId, toscaApplication, computeName, EXPANDED_FOLDER, mgmt);
             if (script.isPresent()) {
                 entitySpec.configure(getToscaFacade().getLifeCycle(opKey).getName(), script.get());
             }

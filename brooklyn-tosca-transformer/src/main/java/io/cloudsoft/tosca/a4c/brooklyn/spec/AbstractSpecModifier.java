@@ -20,7 +20,7 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSpecModifier.class);
 
-    private final ManagementContext mgmt;
+    protected final ManagementContext mgmt;
     private ToscaFacade<? extends ToscaApplication> alien4CloudFacade;
 
     protected AbstractSpecModifier(ManagementContext mgmt, ToscaFacade<? extends ToscaApplication> alien4CloudFacade) {
@@ -28,27 +28,31 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
         this.alien4CloudFacade = alien4CloudFacade;
     }
 
+    @SuppressWarnings("unchecked")
     protected ToscaFacade<ToscaApplication> getToscaFacade() {
         return (ToscaFacade<ToscaApplication>) alien4CloudFacade;
     }
 
-    protected Optional<Object> resolveValue(Object unresolvedValue, Optional<TypeToken> desiredType) {
-        return resolveValue(mgmt, unresolvedValue, desiredType);
+    protected Optional<Object> resolveBrooklynDslValue(Object unresolvedValue, Optional<TypeToken> desiredType) {
+        return resolveBrooklynDslValue(mgmt, unresolvedValue, desiredType);
     }
     
-    public static Optional<Object> resolveValue(ManagementContext mgmt, Object unresolvedValue, Optional<TypeToken> desiredType) {
-        if (unresolvedValue == null) {
+    public static Optional<Object> resolveBrooklynDslValue(ManagementContext mgmt, Object originalValue, Optional<TypeToken> desiredType) {
+        if (originalValue == null) {
             return Optional.absent();
         }
-        // The 'dsl' key is arbitrary, but the interpreter requires a map
-        Map<String, Object> resolvedConfigMap = BrooklynCampPlatform.findPlatform(mgmt)
-                .pdp()
-                .applyInterpreters(ImmutableMap.of("dsl", unresolvedValue));
-        Object resolvedValue = resolvedConfigMap.get("dsl");
+        Object value = originalValue;
+        if (mgmt!=null) {
+            // The 'dsl' key is arbitrary, but the interpreter requires a map
+            Map<String, Object> resolvedConfigMap = BrooklynCampPlatform.findPlatform(mgmt)
+                    .pdp()
+                    .applyInterpreters(ImmutableMap.of("dsl", originalValue));
+            value = resolvedConfigMap.get("dsl");
+        }
         
-        if (resolvedValue instanceof DeferredSupplier) {
+        if (value instanceof DeferredSupplier) {
             // Don't cast - let Brooklyn evaluate it later (the value is a resolved DSL expression).
-            return Optional.of(resolvedValue);
+            return Optional.of(value);
         }
         
         if (desiredType.isPresent()) {
@@ -66,10 +70,10 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
             
             Class<?> desiredRawType = desiredType.get().getRawType();
 
-            return Optional.of(TypeCoercions.coerce(resolvedValue, desiredRawType));
+            return Optional.of(TypeCoercions.coerce(value, desiredRawType));
 
         } else {
-            return Optional.of(resolvedValue);
+            return Optional.of(value);
         }
     }
 }

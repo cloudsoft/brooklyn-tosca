@@ -44,7 +44,7 @@ public class RelationshipModifier extends ConfigKeyModifier {
             String computeName = toscaApplication.getNodeName(nodeId).or(getToscaTemplateId(entitySpec));
             Iterable<String> operations = getToscaFacade().getInterfaceOperationsByRelationship(toscaApplication, relationship);
             for (String opKey : operations) {
-                Optional<Object> script = getToscaFacade().getRelationshipScript(opKey, toscaApplication, relationship, computeName, StandardInterfaceLifecycleModifier.EXPANDED_FOLDER);
+                Optional<Object> script = getToscaFacade().getRelationshipScript(opKey, toscaApplication, relationship, computeName, StandardInterfaceLifecycleModifier.EXPANDED_FOLDER, mgmt);
                 if (script.isPresent()) {
                     String lifecycle = getToscaFacade().getLifeCycle(opKey).getName();
                     Object existingScript = entitySpec.getFlags().get(lifecycle);

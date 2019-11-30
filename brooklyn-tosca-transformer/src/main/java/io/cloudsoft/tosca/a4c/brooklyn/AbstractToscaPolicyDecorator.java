@@ -32,7 +32,7 @@ public abstract class AbstractToscaPolicyDecorator implements ToscaPolicyDecorat
         }
 
         // evaluate DSL
-        Optional<Object> resolved = AbstractSpecModifier.resolveValue(mgmt, data, Optional.absent());
+        Optional<Object> resolved = AbstractSpecModifier.resolveBrooklynDslValue(mgmt, data, Optional.absent());
         if (resolved.isPresent()) {
             return (Map<String, ?>) resolved.get();
         } else {

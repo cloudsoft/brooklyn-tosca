@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
+import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.config.ConfigKey;
@@ -73,6 +75,7 @@ import alien4cloud.topology.TopologyTemplateVersionService;
 import alien4cloud.tosca.normative.NormativeComputeConstants;
 import alien4cloud.tosca.normative.ToscaFunctionConstants;
 import alien4cloud.tosca.parser.ParsingResult;
+import io.cloudsoft.tosca.a4c.brooklyn.spec.AbstractSpecModifier;
 import io.cloudsoft.tosca.a4c.brooklyn.util.NodeTemplates;
 
 @Component
@@ -142,7 +145,11 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     public String getParentId(String nodeId, Alien4CloudApplication toscaApplication) {
         NodeTemplate nodeTemplate = toscaApplication.getNodeTemplate(nodeId);
         
-        Optional<Object> parentIdExplicit = resolve(nodeTemplate.getProperties(), "parent");
+        if (nodeTemplate==null) {
+            throw new IllegalArgumentException("Node '"+nodeId+"' is not in the application");
+        }
+        
+        Optional<Object> parentIdExplicit = resolveToscaScalarValueInMap(nodeTemplate.getProperties(), "parent");
         if (parentIdExplicit.isPresent()) {
             return (String) parentIdExplicit.get();
         }
@@ -158,7 +165,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
 
         // temporarily, fall back to looking for a *property* called 'host'
         // todo: why?
-        Optional<Object> parentId = resolve(nodeTemplate.getProperties(), "host");
+        Optional<Object> parentId = resolveToscaScalarValueInMap(nodeTemplate.getProperties(), "host");
         if (parentId.isPresent()) {
             LOG.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");
         }
@@ -214,12 +221,12 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private Map<String, Object> getPropertyObjects(Map<String, AbstractPropertyValue> propertyValueMap, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
         Map<String, Object> propertyMap = MutableMap.of();
         for (String propertyKey : ImmutableSet.copyOf(propertyValueMap.keySet())) {
-            propertyMap.put(propertyKey, resolve(propertyValueMap, propertyKey, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap).orNull());
+            propertyMap.put(propertyKey, resolveKeyIncludingToscaFunctions(propertyValueMap, propertyKey, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap).orNull());
         }
         return propertyMap;
     }
 
-    private Optional<Object> resolve(IValue v) {
+    private Optional<Object> resolveToscaScalarValue(IValue v) {
         if (v instanceof ScalarPropertyValue) {
             return Optional.<Object>fromNullable(((ScalarPropertyValue) v).getValue());
         }
@@ -232,18 +239,18 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return Optional.absent();
     }
 
-    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key) {
+    private Optional<Object> resolveToscaScalarValueInMap(Map<String, ? extends IValue> props, String key) {
         IValue v = props.get(key);
         if (v == null) {
             LOG.warn("No value available for {}", key);
             return Optional.absent();
         }
 
-        return resolve(v);
+        return resolveToscaScalarValue(v);
     }
 
-    private Optional<Object> resolve(IValue v,  IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
-        Optional<Object> value = resolve(v);
+    private Optional<Object> resolveIncludingToscaFunctions(IValue v,  IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+        Optional<Object> value = resolveToscaScalarValue(v);
         if (!value.isPresent()) {
             if (v instanceof FunctionPropertyValue) {
                 FunctionPropertyValue functionPropertyValue = (FunctionPropertyValue) v;
@@ -265,13 +272,13 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return value;
     }
 
-    private Optional<Object> resolve(Map<String, ? extends IValue> props, String key, IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
+    private Optional<Object> resolveKeyIncludingToscaFunctions(Map<String, ? extends IValue> props, String key, IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
         IValue v = props.get(key);
         if (v == null) {
             LOG.warn("No value available for {}", key);
             return Optional.absent();
         }
-        return resolve(v, template, builtPaaSNodeTemplates, keywordMap);
+        return resolveIncludingToscaFunctions(v, template, builtPaaSNodeTemplates, keywordMap);
     }
 
     private Optional<Path> getCsarPath(DeploymentArtifact artifact) {
@@ -421,7 +428,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         } else if (attributeValue instanceof ConcatPropertyValue) {
             return resolveConcat((ConcatPropertyValue) attributeValue, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
         } else if (attributeValue instanceof FunctionPropertyValue) {
-            Optional<Object> optionalResolvedAttribute = resolve(attributeValue, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
+            Optional<Object> optionalResolvedAttribute = resolveIncludingToscaFunctions(attributeValue, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
             return  optionalResolvedAttribute.orNull();
         } else {
             LOG.warn("Unable to resolve attribute {} of type {}", attribute.getKey(), attributeValue.getClass());
@@ -433,7 +440,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         Object[] vals = new Object[attributeValue.getParameters().size()];
         for (int i = 0; i < attributeValue.getParameters().size(); i++) {
             IValue param = attributeValue.getParameters().get(i);
-            Optional<Object> optionalResolvedAttribute = resolve(param, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap);
+            Optional<Object> optionalResolvedAttribute = resolveIncludingToscaFunctions(param, paasNodeTemplate, builtPaaSNodeTemplates, keywordMap);
             vals[i] = optionalResolvedAttribute.or("");
         }
 
@@ -444,17 +451,17 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     @Override
     public Object resolveProperty(String nodeId, Alien4CloudApplication toscaApplication, String key) {
         Map<String, AbstractPropertyValue> properties = toscaApplication.getNodeTemplate(nodeId).getProperties();
-        return resolve(properties, key).orNull();
+        return resolveToscaScalarValueInMap(properties, key).orNull();
     }
 
     @Override
-    public Optional<Object> getScript(String opKey, String nodeId, Alien4CloudApplication toscaApplication, String computeName, String expandedFolder) {
-        return new NodeScriptGenerator(opKey, nodeId, toscaApplication, computeName, expandedFolder).makeScript();
+    public Optional<Object> getScript(String opKey, String nodeId, Alien4CloudApplication toscaApplication, String computeName, String expandedFolder, @Nullable ManagementContext mgmt) {
+        return new NodeScriptGenerator(opKey, nodeId, toscaApplication, computeName, expandedFolder).makeScript(mgmt);
     }
 
     @Override
-    public Optional<Object> getRelationshipScript(String opKey, Alien4CloudApplication toscaApplication, ToscaApplication.Relationship relationship, String computeName, String expandedFolder) {
-        return new RelationshipScriptGenerator(opKey, toscaApplication, relationship, computeName, expandedFolder).makeScript();
+    public Optional<Object> getRelationshipScript(String opKey, Alien4CloudApplication toscaApplication, ToscaApplication.Relationship relationship, String computeName, String expandedFolder, @Nullable ManagementContext mgmt) {
+        return new RelationshipScriptGenerator(opKey, toscaApplication, relationship, computeName, expandedFolder).makeScript(mgmt);
     }
 
     @Override
@@ -595,7 +602,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             this.expandedFolder = expandedFolder;
         }
 
-        public Optional<Object> makeScript() {
+        public Optional<Object> makeScript(@Nullable ManagementContext mgmt) {
             if (!lifeCycleMapping.containsKey(opKey)) {
                 LOG.warn("Could not translate operation, {}, for node template, {}.", opKey, toscaApplication.getNodeName(nodeId).orNull());
                 return Optional.absent();
@@ -613,10 +620,10 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
                 LOG.warn("Unsupported operation implementation for " + op.getDescription() + ": " + artifact + " has no ref");
                 return Optional.absent();
             }
-            return Optional.of(getScript(artifact, op));
+            return Optional.of(getScript(artifact, op, mgmt));
         }
 
-        abstract Object getScript(ImplementationArtifact artifact, Operation op);
+        abstract Object getScript(ImplementationArtifact artifact, Operation op, @Nullable ManagementContext mgmt);
 
         abstract Operation getOperation();
 
@@ -663,7 +670,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             }
         }
 
-        protected Optional<Object> buildExportStatements(Operation op, String script) {
+        protected Optional<Object> buildExportStatements(Operation op, String script, @Nullable ManagementContext mgmt) {
             Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = getAllNodes(toscaApplication);
             PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(computeName);
             Map<String, IValue> inputParameters = op.getInputParameters();
@@ -672,8 +679,10 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             }
             List<Object> dsls = Lists.newArrayList();
             for (Map.Entry<String, IValue> entry : inputParameters.entrySet()) {
-                Optional<Object> value = resolve(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates);
+                Optional<Object> value = resolveIncludingToscaFunctions(inputParameters, entry.getKey(), paasNodeTemplate, builtPaaSNodeTemplates);
                 if (value.isPresent() && !Strings.isBlank(entry.getKey())) {
+                    Object v = value.get();
+                    v = AbstractSpecModifier.resolveBrooklynDslValue(mgmt, v, Optional.absent()).orNull();
                     dsls.add(BrooklynDslCommon.formatString("export %s=\"%s\"", entry.getKey(), value.get()));
                 }
             }
@@ -681,7 +690,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             return Optional.of(BrooklynDslCommon.formatString(Strings.repeat("%s\n", dsls.size()), dsls.toArray()));
         }
 
-        protected abstract Optional<Object> resolve(Map<String, IValue> inputParameters, String key, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates);
+        protected abstract Optional<Object> resolveIncludingToscaFunctions(Map<String, IValue> inputParameters, String key, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates);
 
     }
 
@@ -692,9 +701,9 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         }
 
         @Override
-        Object getScript(ImplementationArtifact artifact, Operation op) {
+        Object getScript(ImplementationArtifact artifact, Operation op, @Nullable ManagementContext mgmt) {
             String script = getScript(artifact);
-            return buildExportStatements(op, script).or(script);
+            return buildExportStatements(op, script, mgmt).or(script);
         }
 
         @Override
@@ -703,8 +712,8 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         }
 
         @Override
-        protected Optional<Object> resolve(Map<String, IValue> inputParameters, String key, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
-            return Alien4CloudFacade.this.resolve(inputParameters, key, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
+        protected Optional<Object> resolveIncludingToscaFunctions(Map<String, IValue> inputParameters, String key, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
+            return Alien4CloudFacade.this.resolveKeyIncludingToscaFunctions(inputParameters, key, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeId));
         }
     }
 
@@ -719,7 +728,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         }
 
         @Override
-        Object getScript(ImplementationArtifact artifact, Operation op) {
+        Object getScript(ImplementationArtifact artifact, Operation op, @Nullable ManagementContext mgmt) {
             Optional<RelationshipTemplate> optionalRelationshipTemplate = Optional.fromNullable(toscaApplication.getNodeTemplate(nodeId).getRelationships().get(relationship.getRelationshipId()));
             if (!optionalRelationshipTemplate.isPresent()) {
                 LOG.warn("Unsupported operation implementation for " + op.getDescription() + ": no relationship template");
@@ -728,7 +737,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             this.relationshipTemplate = optionalRelationshipTemplate.get();
 
             String script = getScript(artifact);
-            return buildExportStatements(op, script).or(script);
+            return buildExportStatements(op, script, mgmt).or(script);
         }
 
         @Override
@@ -737,10 +746,10 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         }
 
         @Override
-        protected Optional<Object> resolve(Map<String, IValue> inputParameters, String key, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
+        protected Optional<Object> resolveIncludingToscaFunctions(Map<String, IValue> inputParameters, String key, PaaSNodeTemplate paasNodeTemplate, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates) {
             PaaSRelationshipTemplate paaSRelationshipTemplate =  paasNodeTemplate.getRelationshipTemplate(relationship.getRelationshipId(), nodeId);
             Map<String, String> keywordMap = toscaApplication.getKeywordMap(toscaApplication.getNodeTemplate(nodeId), relationshipTemplate);
-            return Alien4CloudFacade.this.resolve(inputParameters, key, paaSRelationshipTemplate, builtPaaSNodeTemplates, keywordMap);
+            return Alien4CloudFacade.this.resolveKeyIncludingToscaFunctions(inputParameters, key, paaSRelationshipTemplate, builtPaaSNodeTemplates, keywordMap);
         }
     }
 }

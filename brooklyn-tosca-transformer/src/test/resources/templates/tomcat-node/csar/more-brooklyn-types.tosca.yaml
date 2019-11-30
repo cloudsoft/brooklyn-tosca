@@ -1,0 +1,31 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: more-brooklyn-types
+template_version: 1.0.0-SNAPSHOT
+
+node_types:
+  tomcat-node:
+    derived_from: tosca.nodes.Root
+    description: >
+      The Tomcat Server
+    properties:
+      root.war:
+        type: string
+        required: false
+      catalina.properties:
+        type: map
+        required: false
+        entry_schema:
+          type: string
+
+  org.apache.brooklyn.entity.database.mysql.MySqlNode:
+    derived_from: tosca.nodes.Root
+    description: >
+      A MySQL server
+    properties:
+      "datastore.creation.script.url":
+        type: string
+        required: false

@@ -1,0 +1,7 @@
+brooklyn.catalog:
+  bundle: load-more-brooklyn-types
+  version: 0.1.0-SNAPSHOT
+  items:
+    - id: ignore-load-more-brooklyn-types
+      itemType: template
+      item: classpath://templates/tomcat-node/csar/more-brooklyn-types.tosca.yaml

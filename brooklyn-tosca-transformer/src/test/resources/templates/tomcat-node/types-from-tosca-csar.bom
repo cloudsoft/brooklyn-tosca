@@ -1,0 +1,8 @@
+brooklyn.catalog:
+  bundle: load-more-brooklyn-types
+  version: 0.1.0-SNAPSHOT
+  items:
+    - id: load-more-brooklyn-types
+      itemType: template
+      item:
+        csar_link: classpath://templates/tomcat-node/more-brooklyn-types.csar

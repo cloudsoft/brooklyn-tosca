@@ -53,11 +53,13 @@ public class Alien4CloudApplication implements ToscaApplication {
 
     @Override
     public String getId() {
+        if (deploymentTopology==null) return null;
         return deploymentTopology.getId();
     }
 
     @Override
     public String getDelegateId() {
+        if (deploymentTopology==null) return null;
         return deploymentTopology.getDelegateId();
     }
 
@@ -70,6 +72,7 @@ public class Alien4CloudApplication implements ToscaApplication {
     }
     
     private Map<String, NodeTemplate> getNodeTemplates(){
+        if (getTopology()==null) return ImmutableMap.of();
         return ImmutableMap.copyOf(getTopology().getNodeTemplates());
     }
 
@@ -171,7 +174,7 @@ public class Alien4CloudApplication implements ToscaApplication {
 
     @Override
     public Iterable<String> getNodeGroups() {
-        Map<String, NodeGroup> groups = getTopology().getGroups();
+        Map<String, NodeGroup> groups = getTopology()==null ? null : getTopology().getGroups();
         if (groups == null) {
             return Collections.emptyList();
         }

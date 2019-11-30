@@ -1,0 +1,26 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+  - more-brooklyn-types:1.0.0-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.chatApplication
+template_version: 1.0.0-SNAPSHOT
+
+description: Brooklyn HelloWorld application. (ChatApplication)
+
+topology_template:
+  description: Web Server Sample with Script
+  node_templates:
+    tomcat_server:
+      type: tomcat-node
+      properties:
+        root.war: "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/brooklyn-example-hello-world-sql-webapp/0.6.0/brooklyn-example-hello-world-sql-webapp-0.6.0.war"
+
+  # if you want to tell brooklyn to assign a location at deploy time, as part of the template, this is the current way.
+  # it can also be done with camp, referencing this topology template.
+  groups:
+    add_brooklyn_location:
+      members: [ tomcat_server ]
+      policies:
+      - brooklyn.location: localhost

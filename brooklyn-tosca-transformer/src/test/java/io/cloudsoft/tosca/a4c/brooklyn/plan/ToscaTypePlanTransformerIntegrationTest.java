@@ -383,7 +383,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     }
 
     @Test
-    public void testClusterInstantiatedWithAutoscaling() throws Exception {
+    public void testClusterInstantiated() throws Exception {
         EntitySpec<? extends Application> appSpec = create("classpath://templates/cluster.instantiated.tosca.yaml");
         CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
         Application app = appCreation.blockUntilComplete().get();
@@ -392,6 +392,18 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         EntityAsserts.assertAttributeEquals(cluster, Attributes.SERVICE_UP, true);
         Assert.assertEquals(((DynamicCluster)cluster).getMembers().size(), 3);
     }
+
+//    // TODO won't work currently, as EntitySpecSupplier assumes CAMP spec
+//    @Test
+//    public void testClusterInstantiatedFromToscaEntitySpec() throws Exception {
+//        EntitySpec<? extends Application> appSpec = create("classpath://templates/cluster.instantiated.tosca.entity-spec-tosca.yaml");
+//        CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
+//        Application app = appCreation.blockUntilComplete().get();
+//        Dumper.dumpInfo(app);
+//        Entity cluster = Iterables.getOnlyElement( app.getChildren() );
+//        EntityAsserts.assertAttributeEquals(cluster, Attributes.SERVICE_UP, true);
+//        Assert.assertEquals(((DynamicCluster)cluster).getMembers().size(), 3);
+//    }
 
     @Test
     public void testAddingBrooklynPolicyToApplicationSpec() throws Exception {

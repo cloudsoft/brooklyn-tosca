@@ -1,0 +1,8 @@
+brooklyn.catalog:
+  bundle: csar-bom-bundle-same-zip
+  version: 1.0.0-SNAPSHOT
+  items:
+    - id: csar-bom-bundle-same-zip
+      itemType: template
+      item: 
+        csar_link: .

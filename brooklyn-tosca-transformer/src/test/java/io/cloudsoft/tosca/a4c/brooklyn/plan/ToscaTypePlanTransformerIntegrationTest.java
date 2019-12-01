@@ -20,6 +20,7 @@ import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.policy.PolicySpec;
 import org.apache.brooklyn.api.sensor.Enricher;
 import org.apache.brooklyn.api.sensor.EnricherSpec;
+import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.core.config.ConfigKeys;
@@ -30,8 +31,13 @@ import org.apache.brooklyn.core.entity.EntityAsserts;
 import org.apache.brooklyn.core.location.PortRanges;
 import org.apache.brooklyn.core.mgmt.EntityManagementUtils;
 import org.apache.brooklyn.core.mgmt.EntityManagementUtils.CreationResult;
+import org.apache.brooklyn.core.mgmt.ha.OsgiBundleInstallationResult;
+import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
+import org.apache.brooklyn.core.mgmt.internal.ManagementContextInternal;
 import org.apache.brooklyn.core.sensor.Sensors;
+import org.apache.brooklyn.core.test.entity.LocalManagementContextForTests;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
+import org.apache.brooklyn.core.typereg.RegisteredTypes;
 import org.apache.brooklyn.enricher.stock.Transformer;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
 import org.apache.brooklyn.entity.group.DynamicCluster;
@@ -41,6 +47,7 @@ import org.apache.brooklyn.entity.software.base.VanillaSoftwareProcess;
 import org.apache.brooklyn.entity.stock.BasicApplication;
 import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
+import org.apache.brooklyn.test.Asserts;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.stream.Streams;
 import org.testng.Assert;
@@ -656,5 +663,35 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         EntitySpec<? extends Application> app = create("classpath://templates/csar-link-path.yaml");
         assertNotNull(app);
         assertEquals(app.getChildren().size(), 1);
+    }
+    
+    protected LocalManagementContext newOsgiMgmt() {
+        LocalManagementContext osgiMgmt = LocalManagementContextForTests.builder(true)
+                .enableOsgiReusable()
+                .build();
+        ((ManagementContextInternal) osgiMgmt).getBrooklynProperties().put(ToscaTypePlanTransformer.TOSCA_ALIEN_PLATFORM, platform);
+        return osgiMgmt;
+    }
+    
+    @Test
+    public void testCsarBomBundleSameZip() throws Exception {
+        LocalManagementContext osgiMgmt = newOsgiMgmt();
+        OsgiBundleInstallationResult br = ((ManagementContextInternal)osgiMgmt).getOsgiManager().get().install(
+            ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-bom-bundle-same-zip.zip")).get();
+        
+        RegisteredType registeredType = osgiMgmt.getTypeRegistry().get("csar-bom-bundle-same-zip");
+
+        ToscaTypePlanTransformer osgiTransformer = new ToscaTypePlanTransformer();
+        osgiTransformer.setManagementContext(osgiMgmt);
+
+        EntitySpec<? extends Application> app = (EntitySpec<? extends Application>) osgiTransformer.createSpec(registeredType, null);
+        
+        EntitySpec<?> server = Iterables.getOnlyElement(app.getChildren());
+        Assert.assertEquals(server.getDisplayName(), "a_server");
+        EntitySpec<?> software = Iterables.getOnlyElement(server.getChildren());
+        Object installCommand = software.getFlags().get(VanillaSoftwareProcess.INSTALL_COMMAND.getName());
+        Asserts.assertStringContains(""+installCommand, "python", "apt");
+        
+        Entities.destroyAll(osgiMgmt);
     }
 }

@@ -164,7 +164,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         }
 
         // temporarily, fall back to looking for a *property* called 'host'
-        // todo: why?
+        // TODO: why?
         Optional<Object> parentId = resolveToscaScalarValueInMap(nodeTemplate.getProperties(), "host");
         if (parentId.isPresent()) {
             LOG.warn("Using legacy 'host' *property* to resolve host; use *requirement* instead.");

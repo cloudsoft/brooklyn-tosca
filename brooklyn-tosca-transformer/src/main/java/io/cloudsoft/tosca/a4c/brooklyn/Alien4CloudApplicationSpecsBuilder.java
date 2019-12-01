@@ -12,6 +12,7 @@ import javax.inject.Inject;
 
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
+import org.apache.brooklyn.api.entity.EntityInitializer;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.objs.BrooklynObjectType;
@@ -19,6 +20,7 @@ import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampReservedKeys;
 import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationResolver;
+import org.apache.brooklyn.core.typereg.RegisteredTypes;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
@@ -80,6 +82,7 @@ public class Alien4CloudApplicationSpecsBuilder implements ApplicationSpecsBuild
             parents.put(nodeId, parentId);
             children.put(parentId, nodeId);
         }
+        LOG.debug("TOSCA hierarchy inferred as: "+parents);
 
         // Build all specs in the tree.
         Set<String> visited = MutableSet.of();
@@ -184,13 +187,18 @@ public class Alien4CloudApplicationSpecsBuilder implements ApplicationSpecsBuild
                 clazzLegacyAndTest = null;
             }
             
-            Predicate<BrooklynObjectType> check = t -> 
-                match!=null ? match.getSuperTypes().contains(t.getSpecType()) : t.getInterfaceType().isAssignableFrom(clazzLegacyAndTest);
-            
-            if (check.test(BrooklynObjectType.POLICY)) {
+            Predicate<BrooklynObjectType> checkBrooklynObjectType = t -> 
+                match!=null ? RegisteredTypes.isSubtypeOf(match, t.getSpecType()) || RegisteredTypes.isSubtypeOf(match, t.getInterfaceType()) : t.getInterfaceType().isAssignableFrom(clazzLegacyAndTest);
+
+            Predicate<Class<?>> checkJavaType = t -> 
+                match!=null ? match.getSuperTypes().contains(t) : t.isAssignableFrom(clazzLegacyAndTest);
+
+            if (checkBrooklynObjectType.test(BrooklynObjectType.POLICY)) {
                 decorator = new BrooklynAdjunctToscaPolicyDecorator(rootSpec, mgmt, BrooklynCampReservedKeys.BROOKLYN_POLICIES, BrooklynEntityDecorationResolver.PolicySpecResolver::new);
-            } else if (check.test(BrooklynObjectType.ENRICHER)) {
+            } else if (checkBrooklynObjectType.test(BrooklynObjectType.ENRICHER)) {
                 decorator = new BrooklynAdjunctToscaPolicyDecorator(rootSpec, mgmt, BrooklynCampReservedKeys.BROOKLYN_ENRICHERS, BrooklynEntityDecorationResolver.EnricherSpecResolver::new);
+            } else if (checkJavaType.test(EntityInitializer.class)) {
+                decorator = new BrooklynAdjunctToscaPolicyDecorator(rootSpec, mgmt, BrooklynCampReservedKeys.BROOKLYN_INITIALIZERS, BrooklynEntityDecorationResolver.InitializerResolver::new);
             } else {
                 throw new IllegalStateException("TOSCA policy "+p.getName()+" type "+type.get()+" "+match+" not supported for adding to entities");
             }

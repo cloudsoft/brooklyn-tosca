@@ -1,0 +1,38 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+template_name: brooklyn.a4c.simple.simple-autoscaler-policy
+template_version: 1.0.0-SNAPSHOT
+
+description: Dynamic cluster with an AutoScalerPolicy
+
+node_types:
+  org.apache.brooklyn.core.test.entity.TestEntity:
+    derived_from: tosca.nodes.Root
+
+topology_template:
+  node_templates:
+    node:
+      type: org.apache.brooklyn.core.test.entity.TestEntity
+      
+  groups:
+
+    static_sensor_1:
+      members: [ ]
+      policies:
+        - bar:
+            type: org.apache.brooklyn.core.sensor.StaticSensor
+            properties:
+              name: foo
+              static.value: bar
+
+    static_sensor_2:
+      members: [ node ]
+      policies:
+        - baz:
+            type: org.apache.brooklyn.core.sensor.StaticSensor
+            properties:
+              name: foo
+              static.value: baz

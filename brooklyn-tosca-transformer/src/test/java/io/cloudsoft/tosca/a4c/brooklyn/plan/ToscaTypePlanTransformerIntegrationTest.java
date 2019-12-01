@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 
 import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
+import org.apache.brooklyn.api.entity.EntityInitializer;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.location.LocationSpec;
 import org.apache.brooklyn.api.policy.PolicySpec;
@@ -35,9 +36,9 @@ import org.apache.brooklyn.core.mgmt.ha.OsgiBundleInstallationResult;
 import org.apache.brooklyn.core.mgmt.internal.LocalManagementContext;
 import org.apache.brooklyn.core.mgmt.internal.ManagementContextInternal;
 import org.apache.brooklyn.core.sensor.Sensors;
+import org.apache.brooklyn.core.sensor.StaticSensor;
 import org.apache.brooklyn.core.test.entity.LocalManagementContextForTests;
 import org.apache.brooklyn.core.test.policy.TestPolicy;
-import org.apache.brooklyn.core.typereg.RegisteredTypes;
 import org.apache.brooklyn.enricher.stock.Transformer;
 import org.apache.brooklyn.entity.database.mysql.MySqlNode;
 import org.apache.brooklyn.entity.group.DynamicCluster;
@@ -434,6 +435,20 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals("org.apache.brooklyn.enricher.stock.Transformer", transformerEnricher.getDisplayName());
     }
 
+    @Test
+    public void testAddingBrooklynInitializerToApplicationSpec() throws Exception {
+        EntitySpec<? extends Application> appSpec = create("classpath://templates/simple.entity-initializers.tosca.yaml");
+        assertNotNull(appSpec);
+
+        EntityInitializer init = Iterables.getOnlyElement(appSpec.getInitializers());
+        assertTrue(init instanceof StaticSensor, "Wrong type: "+init);
+
+        CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
+        Application app = appCreation.blockUntilComplete().get();
+        Dumper.dumpInfo(app);
+        EntityAsserts.assertAttributeEqualsEventually(app, Sensors.newStringSensor("foo"), "bar");
+        EntityAsserts.assertAttributeEqualsEventually(Iterables.getOnlyElement(app.getChildren()), Sensors.newStringSensor("foo"), "baz");
+    }
 
     @Test
     public void testMysqlTopology() throws Exception {

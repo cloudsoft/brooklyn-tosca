@@ -1,13 +1,8 @@
 package io.cloudsoft.tosca.a4c.brooklyn;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.api.objs.BrooklynObjectType;
-import org.apache.brooklyn.api.typereg.RegisteredType;
-import org.apache.brooklyn.core.typereg.RegisteredTypeLoadingContexts;
 import org.apache.brooklyn.util.text.Strings;
 
 import com.google.common.base.Optional;
@@ -17,9 +12,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import alien4cloud.model.components.Csar;
-import alien4cloud.model.topology.AbstractPolicy;
-import alien4cloud.model.topology.GenericPolicy;
-import alien4cloud.model.topology.NodeGroup;
 import alien4cloud.model.topology.NodeTemplate;
 import alien4cloud.model.topology.RelationshipTemplate;
 import alien4cloud.model.topology.Topology;
@@ -170,95 +162,6 @@ public class Alien4CloudApplication implements ToscaApplication {
     @Override
     public String getNodeType(String nodeId) {
         return getNodeTemplate(nodeId).getType();
-    }
-
-    @Override
-    public Iterable<String> getNodeGroups() {
-        Map<String, NodeGroup> groups = getTopology()==null ? null : getTopology().getGroups();
-        if (groups == null) {
-            return Collections.emptyList();
-        }
-        return groups.keySet();
-    }
-
-    private Iterable<AbstractPolicy> getPoliciesWithFilter(String groupId, Predicate<AbstractPolicy> predicate) {
-        Map<String, NodeGroup> groups = getTopology().getGroups();
-        if (groups == null || groups.get(groupId) == null || groups.get(groupId).getPolicies() == null) {
-            return Collections.emptyList();
-        }
-        return Iterables.filter(groups.get(groupId).getPolicies(), predicate);
-    }
-
-    private Iterable<AbstractPolicy> getLocationPolicies(String groupId) {
-        return getPoliciesWithFilter(groupId, abstractPolicy -> "brooklyn.location".equals(abstractPolicy.getName()));
-    }
-
-    private Set<String> getGroupMembers(String groupId) {
-        NodeGroup g = getTopology().getGroups().get(groupId);
-        return (g.getMembers() == null || g.getMembers().isEmpty()) ? Collections.emptySet() : g.getMembers();
-    }
-
-    private Iterable<AbstractPolicy> getBrooklynEntities(String groupId, final ManagementContext mgmt, BrooklynObjectType expectedType) {
-        return getPoliciesWithFilter(groupId, abstractPolicy -> {
-            GenericPolicy policy = (GenericPolicy) abstractPolicy;
-            Optional<String> type = getPolicyType(Optional.fromNullable(policy.getType()), policy.getData());
-            return isABrooklynObjectOfType(type, mgmt, expectedType);
-        });
-    }
-
-    /**
-     * Tests if {@code type} is a Policy or Enricher type
-     */
-    private boolean isABrooklynObjectOfType(Optional<String> type, ManagementContext mgmt, BrooklynObjectType expectedType){
-        if(!type.isPresent()) {
-            return false;
-        }
-
-        RegisteredType match = mgmt.getTypeRegistry().get(type.get(), RegisteredTypeLoadingContexts.withSpecSuperType(null, expectedType.getSpecType()));
-        if (match!=null) {
-            return true;
-        }
-
-        try {
-            Class<?> clazz = Class.forName(type.get());   // legacy check, should only be used for testing
-            return expectedType.getInterfaceType().isAssignableFrom(clazz);
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    private Optional<String> getPolicyType(Optional<String> policyType, Map<String, ?> policyData){
-        String type = null;
-        if (policyType.isPresent()) {
-            type = policyType.get();
-        } else if (policyData.containsKey("type")) {
-            type = (String) policyData.get("type");
-        }
-        return Optional.fromNullable(type);
-    }
-
-    private void addPolicies(String groupId, ToscaPolicyDecorator toscaPolicyDecorator, Iterable<AbstractPolicy> policies) {
-        Set<String> groupMembers = getGroupMembers(groupId);
-        for (AbstractPolicy p : policies) {
-            GenericPolicy policy = (GenericPolicy) p;
-            Optional<String> type = getPolicyType(Optional.fromNullable(policy.getType()), policy.getData());
-            toscaPolicyDecorator.decorate(policy.getData(), policy.getName(), type, groupMembers);
-        }
-    }
-
-    @Override
-    public void addLocationPolicies(String groupId, ToscaPolicyDecorator toscaPolicyDecorator){
-        addPolicies(groupId, toscaPolicyDecorator, getLocationPolicies(groupId));
-    }
-
-    @Override
-    public void addBrooklynPolicies(String groupId, BrooklynToscaPolicyDecorator brooklynPolicyDecorator, ManagementContext mgmt) {
-        addPolicies(groupId, brooklynPolicyDecorator, getBrooklynEntities(groupId, mgmt, BrooklynObjectType.POLICY));
-    }
-
-    @Override
-    public void addBrooklynEnrichers(String groupId, BrooklynToscaEnricherDecorator brooklynEnricherDecorator, ManagementContext mgmt) {
-        addPolicies(groupId, brooklynEnricherDecorator, getBrooklynEntities(groupId, mgmt, BrooklynObjectType.ENRICHER));
     }
 
 }

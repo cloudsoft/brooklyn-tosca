@@ -3,8 +3,10 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.inject.Inject;
 
@@ -12,8 +14,11 @@ import org.apache.brooklyn.api.entity.Application;
 import org.apache.brooklyn.api.entity.Entity;
 import org.apache.brooklyn.api.entity.EntitySpec;
 import org.apache.brooklyn.api.mgmt.ManagementContext;
-import org.apache.brooklyn.api.sensor.EnricherSpec;
+import org.apache.brooklyn.api.objs.BrooklynObjectType;
+import org.apache.brooklyn.api.typereg.RegisteredType;
 import org.apache.brooklyn.camp.brooklyn.BrooklynCampConstants;
+import org.apache.brooklyn.camp.brooklyn.BrooklynCampReservedKeys;
+import org.apache.brooklyn.camp.brooklyn.spi.creation.BrooklynEntityDecorationResolver;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.util.collections.MutableMap;
 import org.apache.brooklyn.util.collections.MutableSet;
@@ -25,9 +30,10 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
+import alien4cloud.model.topology.GenericPolicy;
+import alien4cloud.model.topology.NodeGroup;
 import io.cloudsoft.tosca.a4c.brooklyn.spec.EntitySpecFactory;
 import io.cloudsoft.tosca.a4c.brooklyn.spec.EntitySpecModifier;
 
@@ -38,6 +44,7 @@ public class Alien4CloudApplicationSpecsBuilder implements ApplicationSpecsBuild
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationSpecsBuilder.class);
 
     // Beans
+    @SuppressWarnings("rawtypes")
     private EntitySpecFactory entitySpecFactory;
     private Collection<EntitySpecModifier> specModifiers;
 
@@ -122,6 +129,7 @@ public class Alien4CloudApplicationSpecsBuilder implements ApplicationSpecsBuild
     }
 
     private EntitySpec<? extends Entity> createSpec(String nodeId, Alien4CloudApplication toscaApplication) {
+        @SuppressWarnings("unchecked")
         EntitySpec<?> spec = entitySpecFactory.create(nodeId, toscaApplication);
 
         // Applying name from the node template or its ID
@@ -142,19 +150,66 @@ public class Alien4CloudApplicationSpecsBuilder implements ApplicationSpecsBuild
     }
 
     @Override
-    public void addPolicies(EntitySpec<? extends Application> rootSpec, Alien4CloudApplication toscaApplication, Map<String, EntitySpec<?>> specs){
-        Iterable<String> nodeGroups = toscaApplication.getNodeGroups();
-        if(Iterables.isEmpty(nodeGroups)) {
-            return;
-        }
-
-        LocationToscaPolicyDecorator locationPolicyDecorator = new LocationToscaPolicyDecorator(specs, mgmt);
-        BrooklynToscaPolicyDecorator brooklynPolicyDecorator = new BrooklynToscaPolicyDecorator(rootSpec, mgmt);
-        BrooklynToscaEnricherDecorator brooklynEnricherDecorator = new BrooklynToscaEnricherDecorator(rootSpec, mgmt);
-        for (String groupId : nodeGroups) {
-            toscaApplication.addLocationPolicies(groupId, locationPolicyDecorator);
-            toscaApplication.addBrooklynPolicies(groupId, brooklynPolicyDecorator, mgmt);
-            toscaApplication.addBrooklynEnrichers(groupId, brooklynEnricherDecorator, mgmt);
-        }
+    public void addToscaPolicies(EntitySpec<? extends Application> rootSpec, Alien4CloudApplication toscaApplication, Map<String, EntitySpec<?>> specs) {
+        if (toscaApplication.getTopology()==null) return;
+        Map<String, NodeGroup> groups = toscaApplication.getTopology().getGroups();
+        if (groups==null) return;
+        
+        groups.forEach((groupId, g) -> {
+            Set<String> groupMembers = (g.getMembers() == null || g.getMembers().isEmpty()) ? Collections.emptySet() : g.getMembers();
+            g.getPolicies().forEach(p -> addToscaPolicy((GenericPolicy) p, rootSpec, specs, groupMembers));
+        });
     }
+
+    private void addToscaPolicy(GenericPolicy p, EntitySpec<? extends Application> rootSpec, Map<String, EntitySpec<?>> specs, Set<String> groupMembers) {
+        Optional<String> type = getBrooklynObjectTypeName(Optional.fromNullable(p.getType()), p.getData());
+        
+        ToscaPolicyDecorator decorator; 
+        
+        if ("brooklyn.location".equals(p.getName())) {
+            decorator = new LocationToscaPolicyDecorator(specs, mgmt);
+            
+        } else if (type.isPresent()) {
+            RegisteredType match = mgmt.getTypeRegistry().get(type.get());
+            Class<?> clazzLegacyAndTest;
+            
+            if (match==null) {
+                try {
+                    clazzLegacyAndTest = Class.forName(type.get());   // legacy check, should only be used for testing
+                } catch (ClassNotFoundException e) {
+                    /* ignore */
+                    throw new IllegalStateException("TOSCA policy "+p.getName()+" type "+type.get()+" not known in Brooklyn catalog");
+                }
+            } else {
+                clazzLegacyAndTest = null;
+            }
+            
+            Predicate<BrooklynObjectType> check = t -> 
+                match!=null ? match.getSuperTypes().contains(t.getSpecType()) : t.getInterfaceType().isAssignableFrom(clazzLegacyAndTest);
+            
+            if (check.test(BrooklynObjectType.POLICY)) {
+                decorator = new BrooklynAdjunctToscaPolicyDecorator(rootSpec, mgmt, BrooklynCampReservedKeys.BROOKLYN_POLICIES, BrooklynEntityDecorationResolver.PolicySpecResolver::new);
+            } else if (check.test(BrooklynObjectType.ENRICHER)) {
+                decorator = new BrooklynAdjunctToscaPolicyDecorator(rootSpec, mgmt, BrooklynCampReservedKeys.BROOKLYN_ENRICHERS, BrooklynEntityDecorationResolver.EnricherSpecResolver::new);
+            } else {
+                throw new IllegalStateException("TOSCA policy "+p.getName()+" type "+type.get()+" "+match+" not supported for adding to entities");
+            }
+            
+        } else {
+            throw new IllegalStateException("TOSCA policy "+p.getName()+" has unrecognized policy");
+        }
+        
+        decorator.decorate(p.getData(), p.getName(), type, groupMembers);
+    }
+    
+    private Optional<String> getBrooklynObjectTypeName(Optional<String> typeFromToscaModel, Map<String, ?> toscaObjectData){
+        String type = null;
+        if (typeFromToscaModel.isPresent()) {
+            type = typeFromToscaModel.get();
+        } else if (toscaObjectData.containsKey(ToscaPolicyDecorator.POLICY_FLAG_TYPE)) {
+            type = (String) toscaObjectData.get(ToscaPolicyDecorator.POLICY_FLAG_TYPE);
+        }
+        return Optional.fromNullable(type);
+    }
+
 }

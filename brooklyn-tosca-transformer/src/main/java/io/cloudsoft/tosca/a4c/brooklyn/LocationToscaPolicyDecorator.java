@@ -17,11 +17,10 @@ import alien4cloud.tosca.parser.impl.advanced.GroupPolicyParser;
 public class LocationToscaPolicyDecorator extends AbstractToscaPolicyDecorator {
 
     private Map<String, EntitySpec<?>> specs;
-    private ManagementContext mgmt;
 
     LocationToscaPolicyDecorator(Map<String, EntitySpec<?>> specs, ManagementContext mgmt) {
+        super(mgmt);
         this.specs = specs;
-        this.mgmt = mgmt;
     }
 
     public void decorate(Map<String, ?> policyData, String policyName, Optional<String> type, Set<String> groupMembers) {
@@ -38,7 +37,7 @@ public class LocationToscaPolicyDecorator extends AbstractToscaPolicyDecorator {
     private List<LocationSpec<?>> getLocationSpecs(Map<String, ?> policyData) {
         Object data = policyData.containsKey(GroupPolicyParser.VALUE)
                 ? policyData.get(GroupPolicyParser.VALUE)
-                : getPolicyProperties(mgmt, policyData);
+                : getToscaObjectPropertiesExtended(policyData);
         return resolveLocationSpecs(ImmutableMap.of("location", data));
     }
 

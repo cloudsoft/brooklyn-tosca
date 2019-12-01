@@ -9,6 +9,7 @@ public interface ToscaPolicyDecorator {
 
     String POLICY_FLAG_TYPE = "type";
     String POLICY_FLAG_NAME = "name";
+    String POLICY_FLAG_PROPERTIES = "properties";
 
     void decorate(Map<String, ?> policyData, String policyName, Optional<String> type, Set<String> groupMembers);
 }

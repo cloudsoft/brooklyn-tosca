@@ -117,7 +117,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         ApplicationSpecsBuilder specsBuilder = platform.getBean(ApplicationSpecsBuilder.class);
         Map<String, EntitySpec<?>> specs = specsBuilder.getSpecs(toscaApplication);
         rootSpec.children(specs.values());
-        specsBuilder.addPolicies(rootSpec, toscaApplication, specs);
+        specsBuilder.addToscaPolicies(rootSpec, toscaApplication, specs);
 
         log.debug("Created entity from TOSCA spec: " + rootSpec);
         return rootSpec;

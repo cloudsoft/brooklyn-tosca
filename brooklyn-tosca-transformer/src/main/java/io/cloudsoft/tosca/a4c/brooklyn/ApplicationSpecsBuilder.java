@@ -16,5 +16,5 @@ public interface ApplicationSpecsBuilder<A extends ToscaApplication> {
 
     Map<String, EntitySpec<?>> getSpecs(A toscaApplication);
 
-    void addPolicies(EntitySpec<? extends Application> rootSpec, A toscaApplication, Map<String, EntitySpec<?>> specs);
+    void addToscaPolicies(EntitySpec<? extends Application> rootSpec, A toscaApplication, Map<String, EntitySpec<?>> specs);
 }

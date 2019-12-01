@@ -2,8 +2,6 @@ package io.cloudsoft.tosca.a4c.brooklyn;
 
 import java.util.Map;
 
-import org.apache.brooklyn.api.mgmt.ManagementContext;
-
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 
@@ -111,31 +109,4 @@ public interface ToscaApplication {
      */
     String getNodeType(String nodeId);
 
-    /**
-     * @return the node group ids
-     */
-    Iterable<String> getNodeGroups();
-
-    /**
-     * Uses the given toscaPolicyDecorator to decorate an EntitySpec with location policies
-     * @param groupId the id of the group
-     * @param toscaPolicyDecorator the ToscaPolicyDecorator to use
-     */
-    void addLocationPolicies(String groupId, ToscaPolicyDecorator toscaPolicyDecorator);
-
-    /**
-     * Uses the given brooklynPolicyDecorator to decorate an EntitySpec with brooklyn policies
-     * @param groupId the id of the group
-     * @param brooklynPolicyDecorator the BrooklynToscaPolicyDecorator to use
-     * @param mgmt the Brooklyn ManagementContext
-     */
-    void addBrooklynPolicies(String groupId, BrooklynToscaPolicyDecorator brooklynPolicyDecorator, ManagementContext mgmt);
-
-    /**
-     * Uses the given brooklynEnricherDecorator to decorate an EntitySpec with brooklyn enrichers
-     * @param groupId the id of the group
-     * @param brooklynEnricherDecorator the BrooklynToscaEnricherDecorator to use
-     * @param mgmt the Brooklyn ManagementContext
-     */
-    void addBrooklynEnrichers(String groupId, BrooklynToscaEnricherDecorator brooklynEnricherDecorator, ManagementContext mgmt);
 }

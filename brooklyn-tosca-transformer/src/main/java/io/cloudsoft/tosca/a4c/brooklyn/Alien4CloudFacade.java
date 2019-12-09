@@ -156,10 +156,15 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         
         Requirement host = nodeTemplate.getRequirements() != null ? nodeTemplate.getRequirements().get("host") : null;
         if (host != null) {
-            for (RelationshipTemplate r : nodeTemplate.getRelationships().values()) {
-                if (r.getRequirementName().equals("host")) {
-                    return r.getTarget();
+            if (nodeTemplate.getRelationships()==null || nodeTemplate.getRelationships().values()==null) {
+                LOG.warn("Host requirement found but relationships are null: "+host);
+            } else {
+                for (RelationshipTemplate r : nodeTemplate.getRelationships().values()) {
+                    if (r.getRequirementName().equals("host")) {
+                        return r.getTarget();
+                    }
                 }
+                LOG.warn("Host requirement found but no corresponding relationship: "+host);
             }
         }
 

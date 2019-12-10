@@ -341,7 +341,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("key1").toString(), "value1");
     }
 
-    @Test(enabled = true)
+    @Test
     public void testRelationNotOverridePropCollectionFlag()
             throws Exception {
 
@@ -432,7 +432,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         Assert.assertEquals(((DynamicCluster)cluster).getMembers().size(), 3);
     }
 
-    @Test(enabled=false)   // TODO won't work currently, as EntitySpecSupplier assumes CAMP spec
+    @Test(enabled=false)   // TODO should work once d8f73f3a503d559bb08716c89f61413550c3a608 is merged to brooklyn-server, re-enable then
     public void testClusterInstantiatedFromToscaEntitySpec() throws Exception {
         EntitySpec<? extends Application> appSpec = create("classpath://templates/cluster.instantiated.tosca.entity-spec-tosca.yaml");
         CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
@@ -548,6 +548,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertConfigValueContains(customize, "entity(\"Compute\").attributeWhenReady(\"ip_address\")");
     }
 
+    // TODO probably due to the artifact override problem testArtifactsOnCustomTopology
     // FIXME: Rework along with RuntimeEnvironmentModifier
     @Test(enabled = false)
     public void testDeploymentArtifacts() throws Exception {
@@ -583,7 +584,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "#OVERWRITTEN VALUE");
     }
     
-    @Test(enabled = false) // overwritten interfaces need to be conclusive
+    @Test(enabled = false) // overwritten interfaces need to be completely redeclared
     public void testOverwriteInterfaceOnCustom1Topology() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/custom-overwritten-interface.tosca.yaml");
         // Check the basic structure
@@ -602,7 +603,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "export arg1");
     }
 
-    @Test(enabled = false) // known bug with chained evaluation
+    @Test(enabled = false) // known bug with chained evaluation, Alien4CloudFacade.resolveIncludingToscaFunctions calls FunctionEvaluator which assume the value is a scalar
     public void testChainPropertiesOnCustom1Topology() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/chained-property.tosca.yaml");
         // Check the basic structure
@@ -745,7 +746,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(compute.getType(), SameServerEntity.class);
     }
 
-    @Test(enabled = true)
+    @Test
     public void testChainedRelations() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/chained-relations-frontend-backend-db.yml");
         assertNotNull(app);

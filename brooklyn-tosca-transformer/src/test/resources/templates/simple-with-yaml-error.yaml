@@ -10,7 +10,8 @@ template_version: 1.0.0-SNAPSHOT
 description: Sample TOSCA plan referencing scripts to create a web server
 
 topology_template:
-  description: Web Server Sample with Script
+  # DELIBERATE ERROR - spacing yaml
+ description: Web Server Sample with Script
 
   node_templates:
     my_server:

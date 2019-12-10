@@ -32,6 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.cloudsoft.tosca.a4c.brooklyn.AlienPlatformFactory;
 import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaParser;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import io.cloudsoft.tosca.a4c.platform.ToscaPlatform;
 
@@ -174,9 +175,17 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     @Override
     protected double scoreForNullFormat(Object planData, RegisteredType type, RegisteredTypeLoadingContext context) {
         Maybe<Map<?, ?>> yamlMap = RegisteredTypes.getAsYamlMap(planData);
-        if (yamlMap.isAbsent()) return 0;
-        if (yamlMap.get().containsKey("tosca_definitions_version")) return 1;
-        if (yamlMap.get().containsKey("csar_link")) return 1;
+        if (yamlMap.isPresentAndNonNull()) {
+            return ToscaParser.isToscaScore(yamlMap.get());
+        }
+        if (planData==null) {
+            return 0;
+        }
+        double unparseableScore = ToscaParser.isToscaScore(planData.toString());
+        if (unparseableScore>0) {
+            // we'll give an error, but it's likely to be TOSCA so speak up
+            return 0.5 + unparseableScore * 0.25;
+        }
         return 0;
     }
 

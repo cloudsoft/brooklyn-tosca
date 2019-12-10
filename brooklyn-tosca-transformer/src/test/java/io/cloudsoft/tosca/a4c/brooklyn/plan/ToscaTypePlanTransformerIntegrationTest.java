@@ -143,6 +143,17 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     }
 
     @Test
+    public void testSimpleWithPlanTransformErrorInYaml() throws Exception {
+        try {
+            EntityManagementUtils.createEntitySpecForApplication(mgmt, new ResourceUtils(mgmt).getResourceAsString(
+                "classpath://templates/simple-with-yaml-error.yaml")); 
+            Asserts.shouldHaveFailedPreviously();
+        } catch (Exception e) {  // e.getCause().getCause().printStackTrace();
+            Asserts.assertThat(e.toString(), StringPredicates.containsAllLiterals("YAML", "TOSCA"));
+        }
+    }
+
+    @Test
     public void testParentChild() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/parent-child.yaml");
         assertNotNull(app);
@@ -789,9 +800,10 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     @Test
     public void testCsarBomBundleSameZip() throws Exception {
         LocalManagementContext osgiMgmt = newOsgiMgmt();
-        @SuppressWarnings("unused")
         OsgiBundleInstallationResult br = ((ManagementContextInternal)osgiMgmt).getOsgiManager().get().install(
             ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-bom-bundle-same-zip.zip")).get();
+        Assert.assertEquals(br.getBundle().getSymbolicName(), "csar-bom-bundle-same-zip");
+        br.getTypesInstalled().stream().anyMatch(t -> t.getId().equals("csar-bom-bundle-same-zip:1.0.0-SNAPSHOT"));
         
         RegisteredType registeredType = osgiMgmt.getTypeRegistry().get("csar-bom-bundle-same-zip");
 
@@ -809,4 +821,28 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         
         Entities.destroyAll(osgiMgmt);
     }
+    
+    @Test
+    public void testCsarWithError() throws Exception {
+        LocalManagementContext osgiMgmt = newOsgiMgmt();
+        OsgiBundleInstallationResult br = ((ManagementContextInternal)osgiMgmt).getOsgiManager().get().install(
+            ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-error.zip")).get();
+        Assert.assertEquals(br.getBundle().getSymbolicName(), "csar-with-error");
+        br.getTypesInstalled().stream().anyMatch(t -> t.getId().equals("csar-with-error:1.0.0-SNAPSHOT"));
+        
+        RegisteredType registeredType = osgiMgmt.getTypeRegistry().get("csar-with-error");
+
+        ToscaTypePlanTransformer osgiTransformer = new ToscaTypePlanTransformer();
+        osgiTransformer.setManagementContext(osgiMgmt);
+
+        try {
+            osgiTransformer.createSpec(registeredType, null);
+            Asserts.shouldHaveFailedPreviously();
+        } catch (UserFacingException e) {
+            Asserts.assertThat(e.toString(), StringPredicates.containsAllLiterals("REQUIREMENT_TARGET_NOT_FOUND", "TOSCA"));
+        }
+        
+        Entities.destroyAll(osgiMgmt);
+    }
+
 }

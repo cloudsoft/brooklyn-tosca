@@ -51,7 +51,7 @@ public class ToscaParser {
                 obj = Yamls.parseAll(plan).iterator().next();
             } catch (Exception e) {
                 Exceptions.propagateIfFatal(e);
-                if (isTosca(plan)) {
+                if (isToscaScore(plan)>0) {
                     error = new UserFacingException("Plan looks like it's meant to be TOSCA but it is not valid YAML", e);
                     log.debug("Invalid TOSCA YAML: "+error, error);
                 } else {
@@ -74,7 +74,7 @@ public class ToscaParser {
                 return;
             }
 
-            if (isTosca((Map<?,?>)obj)) {
+            if (isToscaScore((Map<?,?>)obj)>0) {
                 isTosca = true;
                 return;
             }
@@ -89,20 +89,21 @@ public class ToscaParser {
             error = new UserFacingException("Plan does not look like TOSCA or csar_link: parses as YAML map but not one this TOSCA engine understands");
         }
 
-        private static boolean isTosca(Map<?,?> obj) {
-            return isTosca(obj, (map,s) -> map.containsKey(s));
-        }
-        private static boolean isTosca(String obj) {
-            return isTosca(obj, (plan,s) -> plan.contains(s));
-        }
-        private static <T> boolean isTosca(T obj, BiFunction<T,String,Boolean> contains) {
-            if (contains.apply(obj, "topology_template")) return true;
-            if (contains.apply(obj, "topology_name")) return true;
-            if (contains.apply(obj, "node_types")) return true;
-            if (contains.apply(obj, "tosca_definitions_version")) return true;
-            log.trace("Not TOSCA - no recognized keys");
-            return false;
-        }
+    }
+    
+    public static double isToscaScore(Map<?,?> obj) {
+        return isToscaScore(obj, (map,s) -> map.containsKey(s));
+    }
+    public static double isToscaScore(String obj) {
+        return isToscaScore(obj, (plan,s) -> plan.contains(s));
+    }
+    public static <T> double isToscaScore(T obj, BiFunction<T,String,Boolean> contains) {
+        if (contains.apply(obj, "tosca_definitions_version")) return 1;
+        if (contains.apply(obj, "topology_template")) return 0.9;
+        if (contains.apply(obj, "topology_name")) return 0.5;
+        if (contains.apply(obj, "node_types")) return 0.5;
+        log.trace("Not TOSCA - no recognized keys");
+        return 0;
     }
 
     public ToscaParser(Uploader uploader) {

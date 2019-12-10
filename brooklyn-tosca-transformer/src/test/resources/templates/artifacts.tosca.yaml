@@ -1,0 +1,38 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+template_name: custom1-artifact
+template_version: 0.1.0-SNAPSHOT
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+node_types:
+  foo:
+    derived_from: tosca.nodes.Database
+    interfaces:
+      Standard:
+        create: classpath://templates/custom1/scripts/create.sh
+        configure: classpath://templates/custom1/scripts/configure.sh
+        start: classpath://templates/custom1/scripts/start.sh
+        stop: classpath://templates/custom1/scripts/stop.sh    
+    artifacts:
+      - my_art: classpath://templates/family-chat.war1
+        type: tosca.artifacts.File
+        
+        
+topology_template:
+  node_templates:
+  
+    Host:
+      type: tosca.nodes.Compute
+  
+    Foo1:
+      type: foo
+      requirements:
+        - host: Host
+      artifacts:
+        my_art2: 
+        #classpath://templates/family-chat.war2
+#            type: tosca.artifacts.File
+#            file: classpath://templates/family-chat.war2
+            implementation: classpath://templates/family-chat.war2

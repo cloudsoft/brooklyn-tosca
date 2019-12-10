@@ -69,6 +69,7 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
                     .pdp()
                     .applyInterpreters(inputToPdpParse);
             value = resolvedConfigMap.get("dsl");
+            // TODO if it fails log a warning -- eg entitySpec with root.war that doesn't exist
 
             if (spec!=null) {
                 value = transformSpecialFlags(mgmt, spec, value);

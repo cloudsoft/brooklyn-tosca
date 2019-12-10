@@ -22,7 +22,6 @@ import org.apache.brooklyn.util.exceptions.UserFacingException;
 import org.apache.brooklyn.util.stream.Streams;
 import org.apache.brooklyn.util.text.Strings;
 import org.apache.brooklyn.util.yaml.Yamls;
-import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,7 +179,6 @@ public class ToscaParser {
         }
         
         OsgiManager osgiMgr = ((ManagementContextInternal)osgiCtx.getManagementContext()).getOsgiManager().get();
-        Bundle b = osgiMgr.findBundle(catalogBundle).get();
         ManagedBundle mb = osgiMgr.getManagedBundle(catalogBundle.getVersionedName());
         File fn = osgiMgr.getBundleFile(mb);
         if (fn==null) {

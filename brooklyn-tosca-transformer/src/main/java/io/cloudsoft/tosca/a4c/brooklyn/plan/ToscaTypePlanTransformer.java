@@ -115,6 +115,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
                 .configure(TOSCA_DELEGATE_ID, toscaApplication.getDelegateId())
                 .configure(TOSCA_DEPLOYMENT_ID, toscaApplication.getDeploymentId());
 
+        @SuppressWarnings("deprecation")
         ApplicationSpecsBuilder specsBuilder = platform.getBean(ApplicationSpecsBuilder.class);
         Map<String, EntitySpec<?>> specs = specsBuilder.getSpecs(toscaApplication);
         rootSpec.children(specs.values());
@@ -130,6 +131,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         assertAvailable();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
+            @SuppressWarnings("deprecation")
             ToscaApplication tApp = platform.parse(planYaml, CatalogUtils.newClassLoadingContext(mgmt, type, context!=null && context.getLoader()!=null ? context.getLoader() :
                 // deprecated pojo load used only for csar link integration test
                 JavaBrooklynClassLoadingContext.create(getClass().getClassLoader())));

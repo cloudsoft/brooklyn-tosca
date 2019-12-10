@@ -27,6 +27,7 @@ import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 public abstract class AbstractSpecModifier implements EntitySpecModifier {
 
+    @SuppressWarnings("unused")
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSpecModifier.class);
 
     protected final ManagementContext mgmt;
@@ -42,7 +43,7 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
         return (ToscaFacade<ToscaApplication>) alien4CloudFacade;
     }
 
-    protected Optional<Object> resolveBrooklynDslValue(Object unresolvedValue, Optional<TypeToken> desiredType, @Nullable EntitySpec<?> spec) {
+    protected Optional<Object> resolveBrooklynDslValue(Object unresolvedValue, @SuppressWarnings("rawtypes") Optional<TypeToken> desiredType, @Nullable EntitySpec<?> spec) {
         return resolveBrooklynDslValue(unresolvedValue, desiredType, mgmt, spec);
     }
     
@@ -52,7 +53,7 @@ public abstract class AbstractSpecModifier implements EntitySpecModifier {
             MutableSet.of()).apply(v);
     }
 
-    public static Optional<Object> resolveBrooklynDslValue(Object originalValue, Optional<TypeToken> desiredType, @Nullable ManagementContext mgmt, @Nullable EntitySpec<?> spec) {
+    public static Optional<Object> resolveBrooklynDslValue(Object originalValue, @SuppressWarnings("rawtypes") Optional<TypeToken> desiredType, @Nullable ManagementContext mgmt, @Nullable EntitySpec<?> spec) {
         if (originalValue == null) {
             return Optional.absent();
         }

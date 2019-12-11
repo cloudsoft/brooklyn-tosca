@@ -323,17 +323,21 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private Map<String, Operation> getStandardInterfaceOperationsMap(String nodeId, Alien4CloudApplication toscaApplication) {
         Map<String, Operation> operations = MutableMap.of();
         NodeTemplate nodeTemplate = toscaApplication.getNodeTemplate(nodeId);
-        IndexedArtifactToscaElement indexedNodeTemplate = getIndexedNodeTemplate(nodeId, toscaApplication);
+        
+//        IndexedArtifactToscaElement indexedNodeTemplate = getIndexedNodeTemplate(nodeId, toscaApplication);
         List<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-        operations.putAll(getInterfaceOperationsMap(indexedNodeTemplate, validInterfaceNames));
+//        operations.putAll(getInterfaceOperationsMap(indexedNodeTemplate, validInterfaceNames));
 
+        // returns from the type not the node
         Optional<Interface> optionalNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
                 nodeTemplate.getInterfaces(), validInterfaceNames);
 
-        // TODO merge operations
         if (optionalNodeTemplateInterface.isPresent()) {
-            operations.putAll(optionalNodeTemplateInterface.get().getOperations());
+            // merge is now done at build time (though possibly that's not ideal?)
+//            operations.putAll(optionalNodeTemplateInterface.get().getOperations());
+            return optionalNodeTemplateInterface.get().getOperations();
         }
+        // return empty default
         return operations;
     }
 

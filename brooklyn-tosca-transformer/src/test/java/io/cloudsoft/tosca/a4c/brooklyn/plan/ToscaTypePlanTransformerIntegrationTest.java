@@ -602,7 +602,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "#OVERWRITTEN VALUE");
     }
     
-    @Test(enabled = false) // overwritten interfaces need to be completely redeclared
+    @Test  // fixed with f61c53254a1b088e129242743881ec62d9470cb8 in A4C and locally
     public void testOverwriteInterfaceOnCustom1Topology() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/custom-overwritten-interface.tosca.yaml");
         // Check the basic structure
@@ -617,8 +617,11 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         EntitySpec<?> custom1 = Iterators.getOnlyElement(compute.getChildren().iterator());
         assertEquals(custom1.getType(), VanillaSoftwareProcess.class);
 
-        // Check that the inputs have been set as exports on the scripts
+        log.info("SoftwareProcess:\n  flags="+custom1.getFlags() + "\n  config="+custom1.getConfig());
+        // Check that the inputs have been set as exports on the scripts, and the script is still set
         assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "export arg1");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "export arg2");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "echo configure arg1"); // in configure.sh
     }
 
     @Test(enabled = false) // known bug with chained evaluation, Alien4CloudFacade.resolveIncludingToscaFunctions calls FunctionEvaluator which assume the value is a scalar

@@ -250,6 +250,21 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     }
 
     @Test
+    public void testBaseTypeFromBrooklynViaYamlLinked() throws Exception {
+        addCatalogItems(ResourceUtils.create(this).getResourceAsString("classpath://templates/tomcat-node/types-from-tosca-yaml-linked.bom"));
+        addCatalogItems(ResourceUtils.create(this).getResourceAsString("classpath://templates/tomcat-node/tomcat-node.bom"));
+        EntitySpec<? extends Application> app = create("classpath://templates/tomcat-node/tomcat-from-brooklyn.tosca.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+        EntitySpec<?> tomcatServer = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
+        assertEquals(tomcatServer.getConfig().get(ConfigKeys.newStringConfigKey("root.war")),
+                "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
+                        "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
+                        "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
+    }
+
+    @Test
     public void testFullJcloudsLocationDescription() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/full-location.jclouds.tosca.yaml");
         assertNotNull(app);

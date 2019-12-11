@@ -45,7 +45,7 @@ public class ToscaParser {
 
         // will set either error or obj, isTosca=true, or csarLink!=null (but not both),
         // or both null meaning it's YAML but not TOSCA
-        public PlanTypeChecker(String plan) {
+        public PlanTypeChecker(String plan, BrooklynClassLoadingContext context) {
             try {
                 obj = Yamls.parseAll(plan).iterator().next();
             } catch (Exception e) {
@@ -83,6 +83,13 @@ public class ToscaParser {
                 if (csarLink!=null) {
                     return;
                 }
+                
+                String toscaLink = (String) ((Map<?,?>)obj).get("tosca_link");
+                if (toscaLink!=null) {
+                    ResourceUtils resLoader = context!=null ? new ResourceUtils(context) : new ResourceUtils(this);
+                    obj = Yamls.parseAll(resLoader.getResourceAsString(toscaLink)).iterator().next();
+                    isTosca = true;
+                }
             }
             
             error = new UserFacingException("Plan does not look like TOSCA or csar_link: parses as YAML map but not one this TOSCA engine understands");
@@ -111,7 +118,7 @@ public class ToscaParser {
 
     public ParsingResult<Csar> parse(String plan, BrooklynClassLoadingContext context) {
         ParsingResult<Csar> tp;
-        PlanTypeChecker type = new PlanTypeChecker(plan);
+        PlanTypeChecker type = new PlanTypeChecker(plan, context);
         
         if (type.error!=null) {
             throw Exceptions.propagate(type.error);

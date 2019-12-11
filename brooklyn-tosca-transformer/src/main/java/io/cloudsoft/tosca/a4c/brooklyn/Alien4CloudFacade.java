@@ -300,7 +300,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     }
 
     private Optional<Map<String, DeploymentArtifact>> getArtifactsMap(String nodeId, Alien4CloudApplication toscaApplication) {
-        Map<String, DeploymentArtifact> artifacts = getIndexedNodeTemplate(nodeId, toscaApplication).getArtifacts();
+        Map<String, DeploymentArtifact> artifacts = toscaApplication.getNodeTemplate(nodeId).getArtifacts();
         if (artifacts == null || artifacts.isEmpty()) {
             return Optional.absent();
         }
@@ -330,6 +330,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         Optional<Interface> optionalNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
                 nodeTemplate.getInterfaces(), validInterfaceNames);
 
+        // TODO merge operations
         if (optionalNodeTemplateInterface.isPresent()) {
             operations.putAll(optionalNodeTemplateInterface.get().getOperations());
         }
@@ -551,6 +552,11 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     }
 
     @Override
+    public String getArtifactRef(String nodeId, Alien4CloudApplication toscaApplication, String artifactId) {
+        return getArtifact(nodeId, toscaApplication, artifactId).get().getArtifactRef();
+    }
+    
+    @Override
     public Optional<Path> getArtifactPath(String nodeId, Alien4CloudApplication toscaApplication, String artifactId) {
         Optional<DeploymentArtifact> optionalArtifact = getArtifact(nodeId, toscaApplication, artifactId);
         if (!optionalArtifact.isPresent()) return Optional.absent();
@@ -561,7 +567,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             LOG.warn("CSAR " + artifactId + ":" + artifact.getArchiveVersion() + " does not exist");
             return Optional.absent();
         } else {
-            return Optional.of(Paths.get(csarPath.get().getParent().toAbsolutePath().toString(), "expanded", artifact.getArtifactName()));
+            return Optional.of(Paths.get(csarPath.get().getParent().toAbsolutePath().toString(), "expanded", artifact.getArtifactRef()));
         }
     }
 

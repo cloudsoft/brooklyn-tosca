@@ -27,6 +27,8 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @return the Path to the artifact with the given id
      */
     Optional<Path> getArtifactPath(String nodeId, A toscaApplication, String artifactId);
+    
+    String getArtifactRef(String nodeId, A toscaApplication, String artifactId);
 
     /**
      * @param nodeId the node id

@@ -16,7 +16,7 @@ node_types:
         start: classpath://templates/custom1/scripts/start.sh
         stop: classpath://templates/custom1/scripts/stop.sh    
     artifacts:
-      - my_art: classpath://templates/family-chat.war1
+      - my_art: classpath://templates/family-chat.to_be_overridden
         type: tosca.artifacts.File
         
         
@@ -31,8 +31,5 @@ topology_template:
       requirements:
         - host: Host
       artifacts:
-        my_art2: 
-        #classpath://templates/family-chat.war2
-#            type: tosca.artifacts.File
-#            file: classpath://templates/family-chat.war2
-            implementation: classpath://templates/family-chat.war2
+        my_art: 
+            implementation: classpath://templates/family-chat.war

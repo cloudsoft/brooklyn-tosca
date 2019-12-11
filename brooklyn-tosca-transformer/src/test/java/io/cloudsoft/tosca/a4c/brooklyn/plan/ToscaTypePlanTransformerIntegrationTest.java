@@ -563,8 +563,11 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertConfigValueContains(customize, "entity(\"Compute\").attributeWhenReady(\"ip_address\")");
     }
 
-    // TODO probably due to the artifact override problem testArtifactsOnCustomTopology
-    // FIXME: Rework along with RuntimeEnvironmentModifier
+    // the artifact is copied to the target machine and available as an environment variable in Brooklyn SoftwareProces scripts
+    // and by extension within TOSCA SoftwareComponent nodes.  there is no extra config key set because there is no specified
+    // mechanism for artifacts to be made available in other places.  there is also no support for the get_artifact function,
+    // though LOCAL_FILE could easily be made to work. other paths would be harder to support as the system needs to register
+    // where those should be written.
     @Test(enabled = false)
     public void testDeploymentArtifacts() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/deployment-artifact.tosca.yaml");
@@ -637,7 +640,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "export arg1");
     }
     
-    @Test(enabled = false) //known error in A4C -- TopologyServiceCore.buildNodeTemplate -- that artifacts when overridden prefer the parent
+    @Test  // works since ac59c0c64ea5784adcdf11a7baad6b1a6a30ca34 on alien4cloud (cloudsoft repo)
     public void testArtifactsOnCustomTopology() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/artifacts.tosca.yaml");
         // Check the basic structure
@@ -653,9 +656,14 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(custom1.getType(), VanillaSoftwareProcess.class);
 
         log.info("flags: "+custom1.getConfig());
-        Asserts.assertThat(ConfigBag.newInstance(custom1.getConfig()).get(VanillaSoftwareProcess.PRE_INSTALL_FILES),
-            m -> m!=null && m.toString().contains("my_art"));
-        Asserts.assertNotNull(ConfigBag.newInstance(custom1.getConfig()).get(VanillaSoftwareProcess.SHELL_ENVIRONMENT.subKey("my_art")));
+        
+        Map<String, String> files = ConfigBag.newInstance(custom1.getConfig()).get(VanillaSoftwareProcess.PRE_INSTALL_FILES);
+        Asserts.assertThat(files, m -> m.containsKey("classpath://templates/family-chat.war"));
+        Asserts.assertStringContains(files.get("classpath://templates/family-chat.war").toString(), "/my_art");
+        
+        Object my_art = ConfigBag.newInstance(custom1.getConfig()).get(VanillaSoftwareProcess.SHELL_ENVIRONMENT.subKey("my_art"));
+        Asserts.assertNotNull(my_art);
+        Asserts.assertStringContains(my_art.toString(), "attributeWhenReady", "install.dir", "my_art");
     }
     
     @Test

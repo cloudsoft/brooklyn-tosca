@@ -16,6 +16,7 @@ import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.methods.BrooklynDslCommon;
 import org.apache.brooklyn.entity.software.base.SoftwareProcess;
 import org.apache.brooklyn.util.collections.MutableMap;
+import org.apache.brooklyn.util.net.Urls;
 import org.apache.brooklyn.util.text.Identifiers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,8 @@ import io.cloudsoft.tosca.a4c.brooklyn.ToscaFacade;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
+
+import alien4cloud.model.components.DeploymentArtifact;
 
 // TODO: Rename to highlight that it is handling artifacts.
 @Component
@@ -53,26 +56,27 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
         final String directoryPrefix = Identifiers.makeRandomJavaId(6);
 
         for (final String artifactId : artifacts) {
-            Optional<Path> optionalResourcesRootPath = getToscaFacade().getArtifactPath(nodeId, toscaApplication, artifactId);
-            if(!optionalResourcesRootPath.isPresent()) {
+            String artifactRef = getToscaFacade().getArtifactRef(nodeId, toscaApplication, artifactId);
+            if (artifactRef==null) {
+                LOG.warn("No reference/implementation for artifact "+artifactId+" in "+nodeId+" / "+entitySpec+"; skipping");
                 continue;
             }
-
-            // We know that formatString will return a BrooklynDslDeferredSupplier as the 2nd argument is not yet resolved
+            
+            @SuppressWarnings("unchecked")
             BrooklynDslDeferredSupplier<String> deferredInstallDir = (BrooklynDslDeferredSupplier<String>) BrooklynDslCommon.formatString("%s/%s/%s", BrooklynDslCommon.attributeWhenReady("install.dir"), directoryPrefix, artifactId);
             entitySpec.configure(SoftwareProcess.SHELL_ENVIRONMENT.subKey(artifactId), deferredInstallDir);
-
-            // Copy all files in resource.
-            try {
-                Files.walkFileTree(optionalResourcesRootPath.get(), new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        filesToCopy.put(file.toAbsolutePath().toString(), String.format("%s/%s/%s", directoryPrefix, artifactId, file.getFileName().toString()));
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            }  catch (IOException e) {
-                LOG.warn("Cannot parse CSAR resources", e);
+            
+            if (Urls.isUrlWithProtocol(artifactRef)) {
+                // brooklyn convention, use classpath:// URLs which resolve against the bundles
+                filesToCopy.put(artifactRef, String.format("%s/%s", directoryPrefix, artifactId));
+                
+            } else {
+                // tosca convention, take from the CSAR
+                Optional<Path> optionalResourcesRootPath = getToscaFacade().getArtifactPath(nodeId, toscaApplication, artifactId);
+                if (!optionalResourcesRootPath.isPresent()) {
+                    throw new IllegalStateException("Cannot find artifact "+artifactId+"; note that the containing CSAR must be explicitly set on the artifact");
+                }
+                filesToCopy.put(optionalResourcesRootPath.get().toFile().getAbsolutePath(), String.format("%s/%s", directoryPrefix, artifactId));
             }
         }
 

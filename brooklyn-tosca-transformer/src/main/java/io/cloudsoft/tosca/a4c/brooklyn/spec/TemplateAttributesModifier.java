@@ -26,8 +26,8 @@ public class TemplateAttributesModifier extends AbstractSpecModifier {
     }
 
     public void apply(EntitySpec<?> entitySpec, String nodeId, ToscaApplication toscaApplication) {
-        LOG.info("Generating EntityInitializers for static attributes on " + entitySpec);
         Map<String, Object> resolvedAttributes = getToscaFacade().getResolvedAttributes(nodeId, toscaApplication);
+        LOG.info("Generating EntityInitializers for static attributes on " + entitySpec+": "+resolvedAttributes);
         for (final Map.Entry<String, Object> attribute : resolvedAttributes.entrySet()) {
             entitySpec.addInitializer(new StaticSensor<>(ConfigBag.newInstance()
                     .configure(StaticSensor.SENSOR_NAME, attribute.getKey())

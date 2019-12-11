@@ -46,12 +46,12 @@ public class Alien4CloudEntitySpecFactory implements EntitySpecFactory<Alien4Clo
             spec = EntitySpec.create(SameServerEntity.class);
         } else {
             try {
-                LOG.info("Found Brooklyn entity that match node type: " + type);
                 spec = EntitySpec.create((Class<? extends Entity>) Class.forName(type));
+                LOG.warn("Found non-registered type but Brooklyn class that matches node type (should be a registered type): {} -> {}", type, spec);
 
             } catch (ClassNotFoundException e) {
-                LOG.info("Cannot find any Brooklyn catalog item nor Brooklyn entities that match node type: " +
-                        type + ". Defaulting to a VanillaSoftwareProcess");
+                LOG.warn("Cannot find any Brooklyn catalog item nor Brooklyn entities that match node type: " +
+                        type + ". Defaulting to a VanillaSoftwareProcess. Should be explicitly set.");
                 spec = EntitySpec.create(VanillaSoftwareProcess.class);
             }
         }

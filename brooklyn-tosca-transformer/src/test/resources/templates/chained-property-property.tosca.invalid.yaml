@@ -14,7 +14,6 @@ node_types:
         type: string
       p2:
         type: string
-    attributes:
     interfaces:
       Standard:
         create: classpath://templates/custom1/scripts/create.sh

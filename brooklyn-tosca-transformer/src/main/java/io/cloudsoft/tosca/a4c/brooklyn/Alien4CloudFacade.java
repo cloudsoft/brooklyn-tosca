@@ -231,7 +231,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return propertyMap;
     }
 
-    private Optional<Object> resolveToscaScalarValue(IValue v) {
+    private Optional<Object> getToscaScalarValueUnlessItsAFunction(IValue v) {
         if (v instanceof ScalarPropertyValue) {
             return Optional.<Object>fromNullable(((ScalarPropertyValue) v).getValue());
         }
@@ -247,15 +247,15 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private Optional<Object> resolveToscaScalarValueInMap(Map<String, ? extends IValue> props, String key) {
         IValue v = props.get(key);
         if (v == null) {
-            LOG.warn("No value available for {}", key);
+            LOG.trace("No value available for {}", key);
             return Optional.absent();
         }
 
-        return resolveToscaScalarValue(v);
+        return getToscaScalarValueUnlessItsAFunction(v);
     }
 
     private Optional<Object> resolveIncludingToscaFunctions(IValue v,  IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
-        Optional<Object> value = resolveToscaScalarValue(v);
+        Optional<Object> value = getToscaScalarValueUnlessItsAFunction(v);
         if (!value.isPresent()) {
             if (v instanceof FunctionPropertyValue) {
                 FunctionPropertyValue functionPropertyValue = (FunctionPropertyValue) v;
@@ -269,7 +269,9 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
                         break;
                     case ToscaFunctionConstants.GET_INPUT:
                     case ToscaFunctionConstants.GET_OPERATION_OUTPUT:
+                        // also "get_artifact" in recent TOSCA spec
                     default:
+                        LOG.warn("TOSCA DSL function "+functionPropertyValue.getFunction()+" not supported, for "+v+" in "+template);
                         value = Optional.absent();
                 }
             }
@@ -280,7 +282,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
     private Optional<Object> resolveKeyIncludingToscaFunctions(Map<String, ? extends IValue> props, String key, IPaaSTemplate<? extends IndexedInheritableToscaElement> template, Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates, Map<String, String> keywordMap) {
         IValue v = props.get(key);
         if (v == null) {
-            LOG.warn("No value available for {}", key);
+            LOG.trace("No value available for {}", key);
             return Optional.absent();
         }
         return resolveIncludingToscaFunctions(v, template, builtPaaSNodeTemplates, keywordMap);
@@ -425,9 +427,10 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return getTemplatePropertyObjects(relationshipTemplate, paasNodeTemplate, builtPaaSNodeTemplates, toscaApplication.getKeywordMap(nodeTemplate, relationshipTemplate));
     }
 
-    private Object resolveAttribute(Map.Entry<String, IValue> attribute, Alien4CloudApplication toscaApplication, String nodeId, PaaSNodeTemplate paaSNodeTemplate, Map<String, PaaSNodeTemplate> allNodes) {
+    private Object resolveAttributeOrNullPossiblyWarning(Map.Entry<String, IValue> attribute, Alien4CloudApplication toscaApplication, String nodeId, PaaSNodeTemplate paaSNodeTemplate, Map<String, PaaSNodeTemplate> allNodes) {
         Map<String, PaaSNodeTemplate> builtPaaSNodeTemplates = getAllNodes(toscaApplication);
         PaaSNodeTemplate paasNodeTemplate = builtPaaSNodeTemplates.get(nodeId);
+        // TODO can we get attribute value set in the node template?
         IValue attributeValue = attribute.getValue();
         if (attributeValue instanceof AttributeDefinition) {
             String defaultValue = ((AttributeDefinition) attribute.getValue()).getDefault();
@@ -488,11 +491,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
             final Map<String, IValue> attributes = getIndexedNodeTemplate(nodeId, toscaApplication).getAttributes();
             for (Map.Entry<String, IValue> attribute : attributes.entrySet()) {
                 String key = attribute.getKey().replaceAll("\\s+", ".");
-                Object value = resolveAttribute(attribute, toscaApplication, nodeId, optionalPaaSNodeTemplate.get(), allNodes);
-                if (value == null) {
-                    LOG.warn("Unable to resolve value for attribute {}", key);
-                    continue;
-                }
+                Object value = resolveAttributeOrNullPossiblyWarning(attribute, toscaApplication, nodeId, optionalPaaSNodeTemplate.get(), allNodes);
                 resolvedAttributes.put(key, value);
             }
         }
@@ -619,20 +618,26 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
 
         public Optional<Object> makeScript(@Nullable ManagementContext mgmt) {
             if (!lifeCycleMapping.containsKey(opKey)) {
-                LOG.warn("Could not translate operation, {}, for node template, {}.", opKey, toscaApplication.getNodeName(nodeId).orNull());
+                if (LOG.isTraceEnabled()) {
+                    // normal if lifecycle not defined
+                    LOG.trace("Could not translate operation, {}, for node template, {}.", opKey, toscaApplication.getNodeName(nodeId).orNull());
+                }
                 return Optional.absent();
             }
 
             Operation op = getOperation();
             ImplementationArtifact artifact = op.getImplementationArtifact();
             if (artifact == null) {
-                LOG.warn("Unsupported operation implementation for " + op.getDescription() + ":  artifact has no impl");
+                if (LOG.isTraceEnabled()) {
+                    // normal, at least for relationships
+                    LOG.trace("Unsupported operation implementation for " + op.getDescription() + " on "+nodeId+":  lifecycle is defined but no artifact set");
+                }
                 return Optional.absent();
             }
 
             String ref = artifact.getArtifactRef();
             if (ref == null) {
-                LOG.warn("Unsupported operation implementation for " + op.getDescription() + ": " + artifact + " has no ref");
+                LOG.warn("Unsupported operation implementation for " + op.getDescription() + " on "+nodeId+": " + artifact + " is defined but has no ref");
                 return Optional.absent();
             }
             return Optional.of(getScript(artifact, op, mgmt));

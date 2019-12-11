@@ -602,7 +602,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "#OVERWRITTEN VALUE");
     }
     
-    @Test  // fixed with f61c53254a1b088e129242743881ec62d9470cb8 in A4C and locally
+    @Test  // fixed with f61c53254a1b088e129242743881ec62d9470cb8 in A4C (cloudsoft repo) and locally
     public void testOverwriteInterfaceOnCustom1Topology() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/custom-overwritten-interface.tosca.yaml");
         // Check the basic structure
@@ -624,15 +624,20 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "echo configure arg1"); // in configure.sh
     }
 
-    @Test(enabled = false) // known bug with chained evaluation, Alien4CloudFacade.resolveIncludingToscaFunctions calls FunctionEvaluator which assume the value is a scalar
-    public void testChainPropertiesOnCustom1Topology() throws Exception {
-        EntitySpec<? extends Application> app = create("classpath://templates/chained-property.tosca.yaml");
+    // quite restrictive what is supported in A4C:
+    // attribute can only be set on node type, not in node template.
+    // it can only define a static _default_ or a subset of functions, operation output or concat.
+    // access to other attributes or properties has to be nested.
+    // this test demonstrates one path which works.
+    @Test
+    public void testChainAttributePropertyOnCustom1Topology() throws Exception {
+        EntitySpec<? extends Application> appSpec = create("classpath://templates/chained-attribute-property.tosca.yaml");
         // Check the basic structure
-        assertNotNull(app, "spec");
-        assertEquals(app.getType(), BasicApplication.class);
+        assertNotNull(appSpec, "spec");
+        assertEquals(appSpec.getType(), BasicApplication.class);
 
-        assertEquals(app.getChildren().size(), 1, "Expected exactly one child of root application");
-        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(appSpec.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> compute = Iterators.getOnlyElement(appSpec.getChildren().iterator());
         assertEquals(compute.getType(), SameServerEntity.class);
 
         assertEquals(compute.getChildren().size(), 1, "Expected exactly one grandchild of root application");
@@ -640,7 +645,29 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(custom1.getType(), VanillaSoftwareProcess.class);
 
         // Check that the inputs have been set as exports on the scripts
-        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "export arg1");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "arg1");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "attributeWhenReady");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "a1");
+        
+        // and deploy and ensure we get the attribute
+        
+        Application appInst = this.mgmt.getEntityManager().createEntity(appSpec);
+        Entity custom1I = Iterables.getOnlyElement( Iterables.getOnlyElement( appInst.getChildren() ).getChildren() );
+        Dumper.dumpInfo(custom1I);
+        EntityAsserts.assertAttributeEqualsEventually(custom1I, Sensors.newStringSensor("a1"), "bar" );
+        String customCmd = custom1I.config().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
+        Asserts.assertStringContains(customCmd, "arg1", "bar");
+        Asserts.assertStringDoesNotContain(customCmd, "attributeWhenReady", "a1");
+    }
+    
+    @Test
+    public void testChainPropertyPropertyOnCustom1TopologyNiceError() throws Exception {
+        try {
+            create("classpath://templates/chained-property-property.tosca.invalid.yaml");
+            Asserts.shouldHaveFailedPreviously();
+        } catch (Exception e) {
+            Asserts.assertStringContainsIgnoreCase(e.toString(), "property", "attribute");
+        }
     }
     
     @Test  // works since ac59c0c64ea5784adcdf11a7baad6b1a6a30ca34 on alien4cloud (cloudsoft repo)

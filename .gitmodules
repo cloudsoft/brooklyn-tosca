@@ -1,3 +1,3 @@
 [submodule "alien4cloud"]
 	path = alien4cloud
-	url = git@github.com:cloudsoft/alien4cloud.git
+	url = ../alien4cloud.git

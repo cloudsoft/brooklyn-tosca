@@ -49,11 +49,11 @@
                                 <artifactItem>
                                     <groupId>alien4cloud</groupId>
                                     <artifactId>alien4cloud-ui</artifactId>
-                                    <version>${alien.version}</version>
+                                    <version>${alien.base.version}</version>
                                     <type>war</type>
                                     <classifier>standalone</classifier>
 
-                                    <destFileName>alien4cloud-ui-${alien.version}.war</destFileName>
+                                    <destFileName>alien4cloud-ui-${alien.base.version}.war</destFileName>
                                     <outputDirectory>${project.build.directory}/overlay/alien4cloud-standalone
                                     </outputDirectory>
                                 </artifactItem>

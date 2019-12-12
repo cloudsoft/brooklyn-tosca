@@ -59,6 +59,11 @@ node_types:
     requirements:
       - dbConnection: tosca.nodes.Root
         type: brooklyn.relationships.Configure
+# syntax according to spec doc
+#      - dbConnection: 
+#          node: tosca.nodes.Root
+#          relationship:
+#            type: brooklyn.relationships.Configure
 
   org.apache.brooklyn.entity.database.mysql.MySqlNode:
     derived_from: tosca.nodes.Root
@@ -84,7 +89,6 @@ topology_template:
       requirements:
         - dbConnection:
             node: mysql_server
-            relationship: brooklyn.relationships.Configure
             properties:
               prop.collection: java.sysprops
               prop.name: brooklyn.example.db.url

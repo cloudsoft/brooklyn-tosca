@@ -1,0 +1,39 @@
+tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+
+template_name: custom1-overwritten-operation
+template_version: 0.1.0-SNAPSHOT
+
+imports:
+  - tosca-normative-types:1.0.0.wd06-SNAPSHOT
+
+node_types:
+  foo:
+    derived_from: tosca.nodes.Database
+    properties:
+      p1:
+        type: string
+      p2:
+        type: string
+    interfaces:
+      Standard:
+        create: classpath://templates/custom1/scripts/create.sh
+        configure:
+          inputs:
+            arg1: { get_property: [ SELF, p1 ] }
+          implementation: classpath://templates/custom1/scripts/configure.sh
+        start: classpath://templates/custom1/scripts/start.sh
+        stop: classpath://templates/custom1/scripts/stop.sh      
+        
+topology_template:
+  node_templates:
+  
+    Host:
+      type: tosca.nodes.Compute
+  
+    Foo1:
+      type: foo
+      properties:
+        p1: { get_property: [ SELF, p2 ] }
+        p2: bar
+      requirements:
+        - host: Host

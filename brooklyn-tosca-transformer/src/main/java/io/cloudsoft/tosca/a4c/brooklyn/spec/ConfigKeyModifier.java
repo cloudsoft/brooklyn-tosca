@@ -63,6 +63,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
     }
 
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void configureWithResolvedConfigKey(FlagUtils.FlagConfigKeyAndValueRecord r, EntitySpec spec, Set<String> keyNamesUsed) {
         try {
             Optional<Object> resolvedValue = resolveBrooklynDslValue(r.getConfigKeyMaybeValue().get(), Optional.of(r.getConfigKey().getTypeToken()), spec);
@@ -112,10 +113,12 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
         }
     }
     
+    @SuppressWarnings("rawtypes")
     private Map combineCurrentAndResolvedValueMaps(Map<?,?> currentValue, Map<?,?> resolvedVaue) {
         return MutableMap.<Object, Object>copyOf(currentValue).add(resolvedVaue);
     }
 
+    @SuppressWarnings("rawtypes")
     private List combineCurrentAndResolvedValueList(List<?> currentValue, List<?> resolvedVaue) {
         MutableList<Object> result = MutableList.<Object>copyOf(currentValue);
         result.addAll(resolvedVaue);
@@ -141,6 +144,7 @@ public abstract class ConfigKeyModifier extends AbstractSpecModifier {
             // (that's why we check whether it is used)
             if (!keyNamesUsed.contains(key)) {
                 Object v = bag.getStringKey(key);
+                @SuppressWarnings("rawtypes")
                 Optional<Object> vr = resolveBrooklynDslValue(v, Optional.<TypeToken>absent(), spec);
                 if (vr.isPresent()) {
                     v = vr.get();

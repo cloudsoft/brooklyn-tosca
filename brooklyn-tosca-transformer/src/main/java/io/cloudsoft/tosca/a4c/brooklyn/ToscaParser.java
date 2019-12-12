@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
 import org.apache.brooklyn.api.typereg.ManagedBundle;
@@ -18,11 +19,9 @@ import org.apache.brooklyn.core.typereg.UnsupportedTypePlanException;
 import org.apache.brooklyn.util.core.ResourceUtils;
 import org.apache.brooklyn.util.exceptions.Exceptions;
 import org.apache.brooklyn.util.exceptions.UserFacingException;
-import org.apache.brooklyn.util.net.Urls;
 import org.apache.brooklyn.util.stream.Streams;
 import org.apache.brooklyn.util.text.Strings;
 import org.apache.brooklyn.util.yaml.Yamls;
-import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,47 +38,78 @@ public class ToscaParser {
 
     private static class PlanTypeChecker {
 
-        Object obj;
+        Exception error = null;
+        Object obj = null;
         boolean isTosca = false;
         String csarLink;
 
-        public PlanTypeChecker(String plan) {
+        // will set either error or obj, isTosca=true, or csarLink!=null (but not both),
+        // or both null meaning it's YAML but not TOSCA
+        public PlanTypeChecker(String plan, BrooklynClassLoadingContext context) {
             try {
                 obj = Yamls.parseAll(plan).iterator().next();
             } catch (Exception e) {
                 Exceptions.propagateIfFatal(e);
-                log.trace("Not YAML", e);
-                return;
-            }
-            if (!(obj instanceof Map)) {
-                log.trace("Not a map");
-                // is it a one-line URL?
-                plan = plan.trim();
-                if (!plan.contains("\n") && Urls.isUrlWithProtocol(plan)) {
-                    csarLink = plan;
+                if (isToscaScore(plan)>0) {
+                    error = new UserFacingException("Plan looks like it's meant to be TOSCA but it is not valid YAML", e);
+                    log.debug("Invalid TOSCA YAML: "+error, error);
+                } else {
+                    error = new UserFacingException("Plan does not look like TOSCA and is not valid YAML");
+                    log.trace("Not YAML", e);
                 }
                 return;
             }
+            if (!(obj instanceof Map)) {
+                // don't support just a URL pointing to CSAR (we used to) -- it needs to be a map with key csar_link
+                error = new UserFacingException("Plan does not look like TOSCA: parses as YAML but not as a map");
+//                log.trace("Not a map");
+//                // is it a one-line URL?
+//                plan = plan.trim();
+//                if (!plan.contains("\n") && Urls.isUrlWithProtocol(plan)) {
+//                    csarLink = plan;
+//                } else {
+//                    
+//                }
+                return;
+            }
 
-            if (isTosca((Map<?,?>)obj)) {
+            if (isToscaScore((Map<?,?>)obj)>0) {
                 isTosca = true;
                 return;
             }
 
             if (((Map<?,?>)obj).size()==1) {
                 csarLink = (String) ((Map<?,?>)obj).get("csar_link");
-                return;
+                if (csarLink!=null) {
+                    return;
+                }
+                
+                String toscaLink = (String) ((Map<?,?>)obj).get("tosca_link");
+                if (toscaLink!=null) {
+                    ResourceUtils resLoader = context!=null ? new ResourceUtils(context) : new ResourceUtils(this);
+                    obj = Yamls.parseAll(resLoader.getResourceAsString(toscaLink)).iterator().next();
+                    isTosca = true;
+                }
             }
+            
+            error = new UserFacingException("Plan does not look like TOSCA or csar_link: parses as YAML map but not one this TOSCA engine understands");
         }
 
-        private static boolean isTosca(Map<?,?> obj) {
-            if (obj.containsKey("topology_template")) return true;
-            if (obj.containsKey("topology_name")) return true;
-            if (obj.containsKey("node_types")) return true;
-            if (obj.containsKey("tosca_definitions_version")) return true;
-            log.trace("Not TOSCA - no recognized keys");
-            return false;
-        }
+    }
+    
+    public static double isToscaScore(Map<?,?> obj) {
+        return isToscaScore(obj, (map,s) -> map.containsKey(s));
+    }
+    public static double isToscaScore(String obj) {
+        return isToscaScore(obj, (plan,s) -> plan.contains(s));
+    }
+    public static <T> double isToscaScore(T obj, BiFunction<T,String,Boolean> contains) {
+        if (contains.apply(obj, "tosca_definitions_version")) return 1;
+        if (contains.apply(obj, "topology_template")) return 0.9;
+        if (contains.apply(obj, "topology_name")) return 0.5;
+        if (contains.apply(obj, "node_types")) return 0.5;
+        log.trace("Not TOSCA - no recognized keys");
+        return 0;
     }
 
     public ToscaParser(Uploader uploader) {
@@ -88,11 +118,15 @@ public class ToscaParser {
 
     public ParsingResult<Csar> parse(String plan, BrooklynClassLoadingContext context) {
         ParsingResult<Csar> tp;
-        PlanTypeChecker type = new PlanTypeChecker(plan);
-        if (!type.isTosca) {
-            if (type.csarLink == null) {
-                throw new UnsupportedTypePlanException("Does not look like TOSCA");
-            }
+        PlanTypeChecker type = new PlanTypeChecker(plan, context);
+        
+        if (type.error!=null) {
+            throw Exceptions.propagate(type.error);
+            
+        } else if (type.isTosca) {
+            tp = uploader.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
+            
+        } else if (type.csarLink != null) {
             ResourceUtils resLoader = context!=null ? new ResourceUtils(context) : new ResourceUtils(this); 
             InputStream resourceFromUrl;
             if (".".equals(type.csarLink)) {
@@ -112,16 +146,15 @@ public class ToscaParser {
                     }
                 }
             }
-            // TODO either we need to be able to look up the CSAR ZIP after upload, or
-            // we have to annotate it with context and csarLink of this file
             tp = uploader.uploadArchive(resourceFromUrl, "submitted-tosca-archive");
-
+            
         } else {
-            tp = uploader.uploadSingleYaml(Streams.newInputStreamWithContents(plan), "submitted-tosca-plan");
+            // one of the above cases should be true, shouldn't come here...
+            throw new UnsupportedTypePlanException("Does not look like TOSCA");
         }
 
         if (ArchiveUploadService.hasError(tp, ParsingErrorLevel.ERROR)) {
-            throw new UserFacingException("Could not parse TOSCA plan: "
+            throw new UserFacingException("Could not parse TOSCA plan: "+"\n  "
                     + Strings.join(tp.getContext().getParsingErrors(), "\n  "));
         }
 
@@ -153,7 +186,6 @@ public class ToscaParser {
         }
         
         OsgiManager osgiMgr = ((ManagementContextInternal)osgiCtx.getManagementContext()).getOsgiManager().get();
-        Bundle b = osgiMgr.findBundle(catalogBundle).get();
         ManagedBundle mb = osgiMgr.getManagedBundle(catalogBundle.getVersionedName());
         File fn = osgiMgr.getBundleFile(mb);
         if (fn==null) {

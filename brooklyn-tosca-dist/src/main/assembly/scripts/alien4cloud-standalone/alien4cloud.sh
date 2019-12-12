@@ -9,8 +9,8 @@ if [ ! -x "$JAVA" ] ; then
   exit 1
 fi
 
-if [[ ! `ls alien4cloud-ui-${alien.version}.war 2> /dev/null` ]] ; then
-  if [[ ! `ls alien4cloud-standalone/alien4cloud-ui-${alien.version}.war 2> /dev/null` ]] ; then
+if [[ ! `ls alien4cloud-ui-${alien.base.version}.war 2> /dev/null` ]] ; then
+  if [[ ! `ls alien4cloud-standalone/alien4cloud-ui-${alien.base.version}.war 2> /dev/null` ]] ; then
     echo Command must be run from the directory where the WAR is installed or its parent.
     exit 4
   fi
@@ -23,5 +23,5 @@ fi
 
 #    java -jar target/dependency/jetty-runner.jar target/*.war
 $JAVA ${JAVA_OPTS} \
-    -jar alien4cloud-ui-${alien.version}.war \
+    -jar alien4cloud-ui-${alien.base.version}.war \
     "$@"

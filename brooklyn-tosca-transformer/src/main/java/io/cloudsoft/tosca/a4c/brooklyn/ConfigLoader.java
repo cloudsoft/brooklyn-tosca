@@ -16,7 +16,7 @@ public class ConfigLoader {
     @SuppressWarnings("unchecked")
     public static Iterable<String> getDefaultTypes() {
         String input = new ResourceUtils(ConfigLoader.class.getClassLoader()).getResourceAsString(CONFIG_URL);
-        return (List) Yamls.getAt(input, ImmutableList.of("defaultTypes"));
+        return (List<String>) Yamls.getAt(input, ImmutableList.of("defaultTypes"));
     }
 
 }

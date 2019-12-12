@@ -7,7 +7,6 @@ import javax.annotation.Nullable;
 
 import org.apache.brooklyn.api.mgmt.ManagementContext;
 import org.apache.brooklyn.api.mgmt.classloading.BrooklynClassLoadingContext;
-import org.apache.brooklyn.api.typereg.RegisteredTypeLoadingContext;
 import org.apache.brooklyn.camp.brooklyn.spi.dsl.BrooklynDslDeferredSupplier;
 import org.apache.brooklyn.config.ConfigKey;
 
@@ -28,6 +27,8 @@ public interface ToscaFacade<A extends ToscaApplication> {
      * @return the Path to the artifact with the given id
      */
     Optional<Path> getArtifactPath(String nodeId, A toscaApplication, String artifactId);
+    
+    String getArtifactRef(String nodeId, A toscaApplication, String artifactId);
 
     /**
      * @param nodeId the node id

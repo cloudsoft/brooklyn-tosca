@@ -50,7 +50,12 @@ import org.apache.brooklyn.entity.webapp.tomcat.TomcatServer;
 import org.apache.brooklyn.policy.autoscaling.AutoScalerPolicy;
 import org.apache.brooklyn.test.Asserts;
 import org.apache.brooklyn.util.core.ResourceUtils;
+import org.apache.brooklyn.util.core.config.ConfigBag;
+import org.apache.brooklyn.util.exceptions.UserFacingException;
 import org.apache.brooklyn.util.stream.Streams;
+import org.apache.brooklyn.util.text.StringPredicates;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -70,6 +75,8 @@ import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
+    private static final Logger log = LoggerFactory.getLogger(ToscaTypePlanTransformerIntegrationTest.class);
+    
     private static String DATABASE_DEPENDENCY_INJECTION(boolean resolveExternal) {
         return "$brooklyn:formatString(\"jdbc:" +
             "%s%s?user=%s\\\\&password=%s\", entity(\"mysql_server\")" +
@@ -112,6 +119,40 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
                 "# launch in background (ensuring no streams open), and record PID to file");
         assertFlagValueContains(hostedSoftwareComponent, VanillaSoftwareProcess.STOP_COMMAND.getName(),
                 "kill -9 `cat ${PID_FILE:-pid.txt}`");
+    }
+    
+    @Test
+    public void testSimpleWithToscaParseError() throws Exception {
+        try {
+            create("classpath://templates/simple-with-error.yaml");
+            Asserts.shouldHaveFailedPreviously();
+        } catch (UserFacingException e) {
+            Asserts.assertThat(e.toString(), StringPredicates.containsAllLiterals("REQUIREMENT_TARGET_NOT_FOUND", "TOSCA"));
+        }
+    }
+
+    @Test
+    public void testSimpleWithPlanTransformError() throws Exception {
+        try {
+            EntityManagementUtils.createEntitySpecForApplication(mgmt, new ResourceUtils(mgmt).getResourceAsString(
+                "classpath://templates/simple-with-error.yaml")); 
+            Asserts.shouldHaveFailedPreviously();
+        } catch (Exception e) {
+            Asserts.assertThat(e.toString(), StringPredicates.containsAllLiterals("REQUIREMENT_TARGET_NOT_FOUND", "TOSCA"));
+        }
+    }
+
+    @Test
+    public void testSimpleWithPlanTransformErrorInYaml() throws Exception {
+        try {
+            EntityManagementUtils.createEntitySpecForApplication(mgmt, new ResourceUtils(mgmt).getResourceAsString(
+                "classpath://templates/simple-with-yaml-error.yaml")); 
+            Asserts.shouldHaveFailedPreviously();
+        } catch (Exception e) {
+            log.info("Caught error as expected: "+e);
+            Asserts.assertThat(e.toString(), StringPredicates.containsAllLiterals("YAML", "TOSCA"));
+            Asserts.assertStringDoesNotContain(e.toString(), "REQUIREMENT_TARGET_NOT_FOUND");
+        }
     }
 
     @Test
@@ -198,6 +239,21 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     @Test
     public void testBaseTypeFromBrooklynViaYaml() throws Exception {
         addCatalogItems(ResourceUtils.create(this).getResourceAsString("classpath://templates/tomcat-node/types-from-tosca-yaml.bom"));
+        addCatalogItems(ResourceUtils.create(this).getResourceAsString("classpath://templates/tomcat-node/tomcat-node.bom"));
+        EntitySpec<? extends Application> app = create("classpath://templates/tomcat-node/tomcat-from-brooklyn.tosca.yaml");
+        assertNotNull(app);
+        assertEquals(app.getChildren().size(), 1);
+        EntitySpec<?> tomcatServer = EntitySpecs
+                .findChildEntitySpecByPlanId(app, "tomcat_server");
+        assertEquals(tomcatServer.getConfig().get(ConfigKeys.newStringConfigKey("root.war")),
+                "http://search.maven.org/remotecontent?filepath=io/brooklyn/example/" +
+                        "brooklyn-example-hello-world-sql-webapp/0.6.0/" +
+                        "brooklyn-example-hello-world-sql-webapp-0.6.0.war");
+    }
+
+    @Test
+    public void testBaseTypeFromBrooklynViaYamlLinked() throws Exception {
+        addCatalogItems(ResourceUtils.create(this).getResourceAsString("classpath://templates/tomcat-node/types-from-tosca-yaml-linked.bom"));
         addCatalogItems(ResourceUtils.create(this).getResourceAsString("classpath://templates/tomcat-node/tomcat-node.bom"));
         EntitySpec<? extends Application> app = create("classpath://templates/tomcat-node/tomcat-from-brooklyn.tosca.yaml");
         assertNotNull(app);
@@ -302,7 +358,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(((Map<?,?>) tomcatServer.getConfig().get(TomcatServer.JAVA_SYSPROPS)).get("key1").toString(), "value1");
     }
 
-    @Test(enabled = true)
+    @Test
     public void testRelationNotOverridePropCollectionFlag()
             throws Exception {
 
@@ -393,17 +449,16 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         Assert.assertEquals(((DynamicCluster)cluster).getMembers().size(), 3);
     }
 
-//    // TODO won't work currently, as EntitySpecSupplier assumes CAMP spec
-//    @Test
-//    public void testClusterInstantiatedFromToscaEntitySpec() throws Exception {
-//        EntitySpec<? extends Application> appSpec = create("classpath://templates/cluster.instantiated.tosca.entity-spec-tosca.yaml");
-//        CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
-//        Application app = appCreation.blockUntilComplete().get();
-//        Dumper.dumpInfo(app);
-//        Entity cluster = Iterables.getOnlyElement( app.getChildren() );
-//        EntityAsserts.assertAttributeEquals(cluster, Attributes.SERVICE_UP, true);
-//        Assert.assertEquals(((DynamicCluster)cluster).getMembers().size(), 3);
-//    }
+    @Test(enabled=false)   // TODO should work once d8f73f3a503d559bb08716c89f61413550c3a608 is merged to brooklyn-server, re-enable then
+    public void testClusterInstantiatedFromToscaEntitySpec() throws Exception {
+        EntitySpec<? extends Application> appSpec = create("classpath://templates/cluster.instantiated.tosca.entity-spec-tosca.yaml");
+        CreationResult<? extends Application, Void> appCreation = EntityManagementUtils.createStarting(mgmt, appSpec);
+        Application app = appCreation.blockUntilComplete().get();
+        Dumper.dumpInfo(app);
+        Entity cluster = Iterables.getOnlyElement( app.getChildren() );
+        EntityAsserts.assertAttributeEquals(cluster, Attributes.SERVICE_UP, true);
+        Assert.assertEquals(((DynamicCluster)cluster).getMembers().size(), 3);
+    }
 
     @Test
     public void testAddingBrooklynPolicyToApplicationSpec() throws Exception {
@@ -510,7 +565,11 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertConfigValueContains(customize, "entity(\"Compute\").attributeWhenReady(\"ip_address\")");
     }
 
-    // FIXME: Rework along with RuntimeEnvironmentModifier
+    // the artifact is copied to the target machine and available as an environment variable in Brooklyn SoftwareProces scripts
+    // and by extension within TOSCA SoftwareComponent nodes.  there is no extra config key set because there is no specified
+    // mechanism for artifacts to be made available in other places.  there is also no support for the get_artifact function,
+    // though LOCAL_FILE could easily be made to work. other paths would be harder to support as the system needs to register
+    // where those should be written.
     @Test(enabled = false)
     public void testDeploymentArtifacts() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/deployment-artifact.tosca.yaml");
@@ -544,8 +603,102 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         // Check that the inputs have been set as exports on the scripts
         assertFlagValueContains(mysql, VanillaSoftwareProcess.LAUNCH_COMMAND.getName(), "#OVERWRITTEN VALUE");
     }
+    
+    @Test  // fixed with f61c53254a1b088e129242743881ec62d9470cb8 in A4C (cloudsoft repo) and locally
+    public void testOverwriteInterfaceOnCustom1Topology() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/custom-overwritten-interface.tosca.yaml");
+        // Check the basic structure
+        assertNotNull(app, "spec");
+        assertEquals(app.getType(), BasicApplication.class);
 
-    @Test(enabled = false) //failing to parse tosca
+        assertEquals(app.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(compute.getType(), SameServerEntity.class);
+
+        assertEquals(compute.getChildren().size(), 1, "Expected exactly one grandchild of root application");
+        EntitySpec<?> custom1 = Iterators.getOnlyElement(compute.getChildren().iterator());
+        assertEquals(custom1.getType(), VanillaSoftwareProcess.class);
+
+        log.info("SoftwareProcess:\n  flags="+custom1.getFlags() + "\n  config="+custom1.getConfig());
+        // Check that the inputs have been set as exports on the scripts, and the script is still set
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "export arg1");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "export arg2");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "echo configure arg1"); // in configure.sh
+    }
+
+    // quite restrictive what is supported in A4C:
+    // attribute can only be set on node type, not in node template.
+    // it can only define a static _default_ or a subset of functions, operation output or concat.
+    // access to other attributes or properties has to be nested.
+    // this test demonstrates one path which works.
+    @Test
+    public void testChainAttributePropertyOnCustom1Topology() throws Exception {
+        EntitySpec<? extends Application> appSpec = create("classpath://templates/chained-attribute-property.tosca.yaml");
+        // Check the basic structure
+        assertNotNull(appSpec, "spec");
+        assertEquals(appSpec.getType(), BasicApplication.class);
+
+        assertEquals(appSpec.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> compute = Iterators.getOnlyElement(appSpec.getChildren().iterator());
+        assertEquals(compute.getType(), SameServerEntity.class);
+
+        assertEquals(compute.getChildren().size(), 1, "Expected exactly one grandchild of root application");
+        EntitySpec<?> custom1 = Iterators.getOnlyElement(compute.getChildren().iterator());
+        assertEquals(custom1.getType(), VanillaSoftwareProcess.class);
+
+        // Check that the inputs have been set as exports on the scripts
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "arg1");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "attributeWhenReady");
+        assertFlagValueContains(custom1, VanillaSoftwareProcess.CUSTOMIZE_COMMAND.getName(), "a1");
+        
+        // and deploy and ensure we get the attribute
+        
+        Application appInst = this.mgmt.getEntityManager().createEntity(appSpec);
+        Entity custom1I = Iterables.getOnlyElement( Iterables.getOnlyElement( appInst.getChildren() ).getChildren() );
+        Dumper.dumpInfo(custom1I);
+        EntityAsserts.assertAttributeEqualsEventually(custom1I, Sensors.newStringSensor("a1"), "bar" );
+        String customCmd = custom1I.config().get(VanillaSoftwareProcess.CUSTOMIZE_COMMAND);
+        Asserts.assertStringContains(customCmd, "arg1", "bar");
+        Asserts.assertStringDoesNotContain(customCmd, "attributeWhenReady", "a1");
+    }
+    
+    @Test
+    public void testChainPropertyPropertyOnCustom1TopologyNiceError() throws Exception {
+        try {
+            create("classpath://templates/chained-property-property.tosca.invalid.yaml");
+            Asserts.shouldHaveFailedPreviously();
+        } catch (Exception e) {
+            Asserts.assertStringContainsIgnoreCase(e.toString(), "property", "attribute");
+        }
+    }
+    
+    @Test  // works since ac59c0c64ea5784adcdf11a7baad6b1a6a30ca34 on alien4cloud (cloudsoft repo)
+    public void testArtifactsOnCustomTopology() throws Exception {
+        EntitySpec<? extends Application> app = create("classpath://templates/artifacts.tosca.yaml");
+        // Check the basic structure
+        assertNotNull(app, "spec");
+        assertEquals(app.getType(), BasicApplication.class);
+
+        assertEquals(app.getChildren().size(), 1, "Expected exactly one child of root application");
+        EntitySpec<?> compute = Iterators.getOnlyElement(app.getChildren().iterator());
+        assertEquals(compute.getType(), SameServerEntity.class);
+
+        assertEquals(compute.getChildren().size(), 1, "Expected exactly one grandchild of root application");
+        EntitySpec<?> custom1 = Iterators.getOnlyElement(compute.getChildren().iterator());
+        assertEquals(custom1.getType(), VanillaSoftwareProcess.class);
+
+        log.info("flags: "+custom1.getConfig());
+        
+        Map<String, String> files = ConfigBag.newInstance(custom1.getConfig()).get(VanillaSoftwareProcess.PRE_INSTALL_FILES);
+        Asserts.assertThat(files, m -> m.containsKey("classpath://templates/family-chat.war"));
+        Asserts.assertStringContains(files.get("classpath://templates/family-chat.war").toString(), "/my_art");
+        
+        Object my_art = ConfigBag.newInstance(custom1.getConfig()).get(VanillaSoftwareProcess.SHELL_ENVIRONMENT.subKey("my_art"));
+        Asserts.assertNotNull(my_art);
+        Asserts.assertStringContains(my_art.toString(), "attributeWhenReady", "install.dir", "my_art");
+    }
+    
+    @Test
     public void testEntitiesOnSameNodeBecomeSameServerEntities() throws Exception {
         EntitySpec<? extends Application> spec = create("classpath://templates/tomcat-mysql-on-one-compute.yaml");
 
@@ -575,8 +728,8 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         EntityAsserts.assertAttributeEqualsEventually(entity, Sensors.newStringSensor("my_message"), "Message: It Works!");
     }
 
-    @Test(enabled = false)
-    // TODO: est fails due to unknown problem creating topology when running in Liunx
+    @Test
+    // TODO old comment that this fails on Linux, due to unknown problem creating topology -- but that might be fixed
     public void testConcatFunctionWithGetAttributeInTopology() throws Exception {
         EntitySpec<? extends Application> spec = create("classpath://templates/concat-with-get-attribute.tosca.yaml");
 
@@ -648,7 +801,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         assertEquals(compute.getType(), SameServerEntity.class);
     }
 
-    @Test(enabled = true)
+    @Test
     public void testChainedRelations() throws Exception {
         EntitySpec<? extends Application> app = create("classpath://templates/chained-relations-frontend-backend-db.yml");
         assertNotNull(app);
@@ -705,12 +858,15 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         LocalManagementContext osgiMgmt = newOsgiMgmt();
         OsgiBundleInstallationResult br = ((ManagementContextInternal)osgiMgmt).getOsgiManager().get().install(
             ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-bom-bundle-same-zip.zip")).get();
+        Assert.assertEquals(br.getBundle().getSymbolicName(), "csar-bom-bundle-same-zip");
+        br.getTypesInstalled().stream().anyMatch(t -> t.getId().equals("csar-bom-bundle-same-zip:1.0.0-SNAPSHOT"));
         
         RegisteredType registeredType = osgiMgmt.getTypeRegistry().get("csar-bom-bundle-same-zip");
 
         ToscaTypePlanTransformer osgiTransformer = new ToscaTypePlanTransformer();
         osgiTransformer.setManagementContext(osgiMgmt);
 
+        @SuppressWarnings("unchecked")
         EntitySpec<? extends Application> app = (EntitySpec<? extends Application>) osgiTransformer.createSpec(registeredType, null);
         
         EntitySpec<?> server = Iterables.getOnlyElement(app.getChildren());
@@ -721,4 +877,28 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
         
         Entities.destroyAll(osgiMgmt);
     }
+    
+    @Test
+    public void testCsarWithError() throws Exception {
+        LocalManagementContext osgiMgmt = newOsgiMgmt();
+        OsgiBundleInstallationResult br = ((ManagementContextInternal)osgiMgmt).getOsgiManager().get().install(
+            ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-error.zip")).get();
+        Assert.assertEquals(br.getBundle().getSymbolicName(), "csar-with-error");
+        br.getTypesInstalled().stream().anyMatch(t -> t.getId().equals("csar-with-error:1.0.0-SNAPSHOT"));
+        
+        RegisteredType registeredType = osgiMgmt.getTypeRegistry().get("csar-with-error");
+
+        ToscaTypePlanTransformer osgiTransformer = new ToscaTypePlanTransformer();
+        osgiTransformer.setManagementContext(osgiMgmt);
+
+        try {
+            osgiTransformer.createSpec(registeredType, null);
+            Asserts.shouldHaveFailedPreviously();
+        } catch (UserFacingException e) {
+            Asserts.assertThat(e.toString(), StringPredicates.containsAllLiterals("REQUIREMENT_TARGET_NOT_FOUND", "TOSCA"));
+        }
+        
+        Entities.destroyAll(osgiMgmt);
+    }
+
 }

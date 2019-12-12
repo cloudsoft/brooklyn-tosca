@@ -1,0 +1,8 @@
+brooklyn.catalog:
+  bundle: csar-with-error
+  version: 1.0.0-SNAPSHOT
+  items:
+    - id: csar-with-error
+      itemType: template
+      item: 
+        csar_link: .

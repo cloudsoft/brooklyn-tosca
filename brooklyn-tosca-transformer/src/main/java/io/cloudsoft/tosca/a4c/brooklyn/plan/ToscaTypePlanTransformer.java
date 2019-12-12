@@ -32,6 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.cloudsoft.tosca.a4c.brooklyn.AlienPlatformFactory;
 import io.cloudsoft.tosca.a4c.brooklyn.ApplicationSpecsBuilder;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
+import io.cloudsoft.tosca.a4c.brooklyn.ToscaParser;
 import io.cloudsoft.tosca.a4c.platform.Alien4CloudToscaPlatform;
 import io.cloudsoft.tosca.a4c.platform.ToscaPlatform;
 
@@ -114,6 +115,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
                 .configure(TOSCA_DELEGATE_ID, toscaApplication.getDelegateId())
                 .configure(TOSCA_DEPLOYMENT_ID, toscaApplication.getDeploymentId());
 
+        @SuppressWarnings("deprecation")
         ApplicationSpecsBuilder specsBuilder = platform.getBean(ApplicationSpecsBuilder.class);
         Map<String, EntitySpec<?>> specs = specsBuilder.getSpecs(toscaApplication);
         rootSpec.children(specs.values());
@@ -129,6 +131,7 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
         assertAvailable();
         try {
             Alien4CloudToscaPlatform.grantAdminAuth();
+            @SuppressWarnings("deprecation")
             ToscaApplication tApp = platform.parse(planYaml, CatalogUtils.newClassLoadingContext(mgmt, type, context!=null && context.getLoader()!=null ? context.getLoader() :
                 // deprecated pojo load used only for csar link integration test
                 JavaBrooklynClassLoadingContext.create(getClass().getClassLoader())));
@@ -174,9 +177,21 @@ public class ToscaTypePlanTransformer extends AbstractTypePlanTransformer {
     @Override
     protected double scoreForNullFormat(Object planData, RegisteredType type, RegisteredTypeLoadingContext context) {
         Maybe<Map<?, ?>> yamlMap = RegisteredTypes.getAsYamlMap(planData);
-        if (yamlMap.isAbsent()) return 0;
-        if (yamlMap.get().containsKey("tosca_definitions_version")) return 1;
-        if (yamlMap.get().containsKey("csar_link")) return 1;
+        if (yamlMap.isPresentAndNonNull()) {
+            if (yamlMap.get().containsKey("csar_link") || yamlMap.get().containsKey("tosca_link")) {
+                return 1;
+            } else {
+                return ToscaParser.isToscaScore(yamlMap.get());
+            }
+        }
+        if (planData==null) {
+            return 0;
+        }
+        double unparseableScore = ToscaParser.isToscaScore(planData.toString());
+        if (unparseableScore>0) {
+            // we'll give an error, but it's likely to be TOSCA so speak up
+            return 0.5 + unparseableScore * 0.25;
+        }
         return 0;
     }
 

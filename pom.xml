@@ -17,6 +17,10 @@
     <name>Brooklyn TOSCA parent project</name>
 
     <modules>
+        <module>alien4cloud/alien4cloud-common</module>
+        <module>alien4cloud/alien4cloud-security</module>
+        <module>alien4cloud/alien4cloud-core</module>
+
         <module>a4c-brooklyn-plugin</module>
         <module>brooklyn-tosca-common</module>
         <module>brooklyn-tosca-transformer</module>
@@ -27,7 +31,8 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <alien.version>1.1.0-SM8.cloudsoft</alien.version>
+        <alien.base.version>1.1.0-SM8</alien.base.version>
+        <alien.custom.version>1.1.0-SM8.cloudsoft</alien.custom.version>
         <spring.version>4.1.4.RELEASE</spring.version>
         <mockito-core.version>2.7.12</mockito-core.version>
         <brooklyn.version>1.0.0-SNAPSHOT</brooklyn.version>  <!-- BROOKLYN_VERSION -->
@@ -119,7 +124,7 @@
             <dependency>
                 <groupId>alien4cloud</groupId>
                 <artifactId>alien4cloud-core</artifactId>
-                <version>${alien.version}</version>
+                <version>${alien.custom.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>

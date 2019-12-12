@@ -322,25 +322,20 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         return Optional.fromNullable(getArtifactsMap(nodeId, toscaApplication).get().get(artifactId));
     }
 
+    private static final List<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
     private Map<String, Operation> getStandardInterfaceOperationsMap(String nodeId, Alien4CloudApplication toscaApplication) {
-        Map<String, Operation> operations = MutableMap.of();
         NodeTemplate nodeTemplate = toscaApplication.getNodeTemplate(nodeId);
+        // or could getIndexedNodeTemplate(nodeId, toscaApplication) -- but above seems easier
         
-//        IndexedArtifactToscaElement indexedNodeTemplate = getIndexedNodeTemplate(nodeId, toscaApplication);
-        List<String> validInterfaceNames = ImmutableList.of("tosca.interfaces.node.lifecycle.Standard", "Standard", "standard");
-//        operations.putAll(getInterfaceOperationsMap(indexedNodeTemplate, validInterfaceNames));
-
-        // returns from the type not the node
         Optional<Interface> optionalNodeTemplateInterface = NodeTemplates.findInterfaceOfNodeTemplate(
                 nodeTemplate.getInterfaces(), validInterfaceNames);
 
         if (optionalNodeTemplateInterface.isPresent()) {
-            // merge is now done at build time (though possibly that's not ideal?)
-//            operations.putAll(optionalNodeTemplateInterface.get().getOperations());
+            // merge is now done at build time so we no longer need to look at node types
             return optionalNodeTemplateInterface.get().getOperations();
         }
-        // return empty default
-        return operations;
+        
+        return MutableMap.of();
     }
 
     private Map<String, Operation> getConfigureInterfaceOperationsMap(Alien4CloudApplication toscaApplication, ToscaApplication.Relationship relationship) {
@@ -567,7 +562,7 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         DeploymentArtifact artifact = optionalArtifact.get();
         Optional<Path> csarPath = getCsarPath(artifact);
         if (!csarPath.isPresent()) {
-            LOG.warn("CSAR " + artifactId + ":" + artifact.getArchiveVersion() + " does not exist");
+            LOG.warn("CSAR " + artifact.getArchiveName() + ":" + artifact.getArchiveVersion() + " for artifact "+artifactId+" does not exist");
             return Optional.absent();
         } else {
             return Optional.of(Paths.get(csarPath.get().getParent().toAbsolutePath().toString(), "expanded", artifact.getArtifactRef()));

@@ -53,3 +53,6 @@ topology_template:
           implementation: configs
           type: tosca.artifacts.File
           description: configs
+          # added to explicitly specify since it might be coming from imports
+          archive_name: mysql-type
+          archive_version: 2.0.0-SNAPSHOT

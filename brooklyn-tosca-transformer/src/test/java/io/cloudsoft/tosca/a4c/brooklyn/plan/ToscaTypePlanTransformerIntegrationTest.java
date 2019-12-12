@@ -148,8 +148,10 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
             EntityManagementUtils.createEntitySpecForApplication(mgmt, new ResourceUtils(mgmt).getResourceAsString(
                 "classpath://templates/simple-with-yaml-error.yaml")); 
             Asserts.shouldHaveFailedPreviously();
-        } catch (Exception e) {  // e.getCause().getCause().printStackTrace();
+        } catch (Exception e) {
+            log.info("Caught error as expected: "+e);
             Asserts.assertThat(e.toString(), StringPredicates.containsAllLiterals("YAML", "TOSCA"));
+            Asserts.assertStringDoesNotContain(e.toString(), "REQUIREMENT_TARGET_NOT_FOUND");
         }
     }
 

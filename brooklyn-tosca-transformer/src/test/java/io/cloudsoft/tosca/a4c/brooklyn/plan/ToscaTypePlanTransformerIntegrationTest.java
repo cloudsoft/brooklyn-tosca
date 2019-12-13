@@ -740,6 +740,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
 
     @Test
     // TODO old comment that this fails on Linux, due to unknown problem creating topology -- but that might be fixed
+    // TODO properties should be republished as attributes
     public void testConcatFunctionWithGetAttributeInTopology() throws Exception {
         EntitySpec<? extends Application> spec = create("classpath://templates/concat-with-get-attribute.tosca.yaml");
 

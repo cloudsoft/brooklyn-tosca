@@ -26,6 +26,7 @@ public class TemplateAttributesModifier extends AbstractSpecModifier {
     }
 
     public void apply(EntitySpec<?> entitySpec, String nodeId, ToscaApplication toscaApplication) {
+        // TODO set attributes for all properties
         Map<String, Object> resolvedAttributes = getToscaFacade().getResolvedAttributes(nodeId, toscaApplication);
         LOG.info("Generating EntityInitializers for static attributes on " + entitySpec+": "+resolvedAttributes);
         for (final Map.Entry<String, Object> attribute : resolvedAttributes.entrySet()) {

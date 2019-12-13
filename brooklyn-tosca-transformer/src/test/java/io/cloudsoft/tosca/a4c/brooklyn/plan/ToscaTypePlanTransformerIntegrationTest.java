@@ -699,6 +699,16 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     }
     
     @Test
+    public void testArtifactsOnCustomTopologyToscaSyntax() throws Exception {
+        try {
+            create("classpath://templates/artifacts.csar.tosca.yaml");
+            Asserts.shouldHaveFailedPreviously();
+        } catch (Exception e) {
+            Asserts.expectedFailureContains(e, "Cannot find artifact my_art", "(/templates/family-chat.war)");
+        }
+    }
+    
+    @Test
     public void testEntitiesOnSameNodeBecomeSameServerEntities() throws Exception {
         EntitySpec<? extends Application> spec = create("classpath://templates/tomcat-mysql-on-one-compute.yaml");
 

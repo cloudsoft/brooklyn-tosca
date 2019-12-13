@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import alien4cloud.application.ApplicationService;
 import alien4cloud.component.ICSARRepositorySearchService;
@@ -41,6 +42,7 @@ import alien4cloud.deployment.DeploymentTopologyService;
 import alien4cloud.model.application.Application;
 import alien4cloud.model.components.AbstractPropertyValue;
 import alien4cloud.model.components.AttributeDefinition;
+import alien4cloud.model.components.CSARDependency;
 import alien4cloud.model.components.ComplexPropertyValue;
 import alien4cloud.model.components.ConcatPropertyValue;
 import alien4cloud.model.components.Csar;
@@ -560,13 +562,24 @@ public class Alien4CloudFacade implements ToscaFacade<Alien4CloudApplication> {
         if (!optionalArtifact.isPresent()) return Optional.absent();
 
         DeploymentArtifact artifact = optionalArtifact.get();
-        Optional<Path> csarPath = getCsarPath(artifact);
-        if (!csarPath.isPresent()) {
-            LOG.warn("CSAR " + artifact.getArchiveName() + ":" + artifact.getArchiveVersion() + " for artifact "+artifactId+" does not exist");
-            return Optional.absent();
-        } else {
-            return Optional.of(Paths.get(csarPath.get().getParent().toAbsolutePath().toString(), "expanded", artifact.getArtifactRef()));
+        Set<Optional<Path>> csarPaths = Sets.newLinkedHashSet();
+        csarPaths.add(getCsarPath(artifact));
+        for (CSARDependency d: toscaApplication.getTopology().getDependencies()) {
+            csarPaths.add(getCsarPath(d.getName(), d.getVersion()));
         }
+
+        for (Optional<Path> csarPath: csarPaths) {
+            if (csarPath.isPresent()) {
+                // found the path to the CSAR, check if file is there; if not, traverse dependencies
+                Path candidate = Paths.get(csarPath.get().getParent().toAbsolutePath().toString(), "expanded", artifact.getArtifactRef());
+                if (candidate.toFile().exists()) {
+                    return Optional.of(candidate);
+                }
+            }
+        }
+        
+        LOG.warn("Cannot find artifact '"+artifact.getArtifactRef()+"' in "+csarPaths);
+        return Optional.absent();
     }
 
     private Alien4CloudApplication newToscaApplication(Csar csar) {

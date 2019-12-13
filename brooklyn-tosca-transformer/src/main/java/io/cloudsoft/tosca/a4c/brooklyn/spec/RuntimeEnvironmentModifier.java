@@ -74,7 +74,9 @@ public class RuntimeEnvironmentModifier extends AbstractSpecModifier {
                 // tosca convention, take from the CSAR
                 Optional<Path> optionalResourcesRootPath = getToscaFacade().getArtifactPath(nodeId, toscaApplication, artifactId);
                 if (!optionalResourcesRootPath.isPresent()) {
-                    throw new IllegalStateException("Cannot find artifact "+artifactId+"; note that the containing CSAR must be explicitly set on the artifact");
+                    throw new IllegalStateException("Cannot find artifact "+artifactId+" ("+artifactRef+"); "
+                        + "you can use paths (TOSCA) syntax, in which case the artifact must be "
+                        + "in the CSAR or one of its explicit imported dependencies; or you can a URL (Brooklyn) including classpath:// but that will look only in Brooklyn bundles that are used by the Brooklyn blueprint (it will not look in TOSCA CSARs unless they are also listed as libraries for a Brooklyn blueprint)");
                 }
                 filesToCopy.put(optionalResourcesRootPath.get().toFile().getAbsolutePath(), String.format("%s/%s", directoryPrefix, artifactId));
             }

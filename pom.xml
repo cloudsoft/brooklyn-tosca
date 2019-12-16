@@ -17,9 +17,7 @@
     <name>Brooklyn TOSCA parent project</name>
 
     <modules>
-        <module>alien4cloud/alien4cloud-common</module>
-        <module>alien4cloud/alien4cloud-security</module>
-        <module>alien4cloud/alien4cloud-core</module>
+        <module>alien4cloud</module>
 
         <module>a4c-brooklyn-plugin</module>
         <module>brooklyn-tosca-common</module>

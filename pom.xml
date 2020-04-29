@@ -53,6 +53,17 @@
             </releases>
         </repository>
         <repository>
+            <id>cloudsoft-releases</id>
+            <url>https://artifactory.cloudsoftcorp.com/artifactory/libs-release-local/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+<!--
+        <repository>
             <id>repo.opensource.fastconnect.org</id>
             <url>http://fastconnect.org/maven/content/repositories/opensource</url>
         </repository>
@@ -60,6 +71,7 @@
             <id>repo.opensource.snapshot.fastconnect.org</id>
             <url>http://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
         </repository>
+-->
         <repository>  <!-- needed for social/github and maybe others? -->
             <id>spring-milestones</id>
             <name>Spring Milestones</name>

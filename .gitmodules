@@ -1,4 +1,4 @@
 [submodule "alien4cloud"]
 	path = alien4cloud
 	url = ../alien4cloud.git
-	commit = adc7c36
+	commit = 90413c99

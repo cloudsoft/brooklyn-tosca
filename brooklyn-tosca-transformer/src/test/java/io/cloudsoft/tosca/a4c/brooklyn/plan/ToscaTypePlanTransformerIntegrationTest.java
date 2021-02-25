@@ -898,7 +898,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     public void testCsarBomBundleSameZip() throws Exception {
         LocalManagementContext osgiMgmt = newOsgiMgmt();
         OsgiBundleInstallationResult br = ((ManagementContextInternal)osgiMgmt).getOsgiManager().get().install(
-            ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-bom-bundle-same-zip.zip")).get();
+                () -> ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-bom-bundle-same-zip.zip")).get();
         Assert.assertEquals(br.getBundle().getSymbolicName(), "csar-bom-bundle-same-zip");
         br.getTypesInstalled().stream().anyMatch(t -> t.getId().equals("csar-bom-bundle-same-zip:1.0.0-SNAPSHOT"));
         
@@ -923,7 +923,7 @@ public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrat
     public void testCsarWithError() throws Exception {
         LocalManagementContext osgiMgmt = newOsgiMgmt();
         OsgiBundleInstallationResult br = ((ManagementContextInternal)osgiMgmt).getOsgiManager().get().install(
-            ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-error.zip")).get();
+                () -> ResourceUtils.create(this).getResourceFromUrl("classpath://templates/csar-error.zip")).get();
         Assert.assertEquals(br.getBundle().getSymbolicName(), "csar-with-error");
         br.getTypesInstalled().stream().anyMatch(t -> t.getId().equals("csar-with-error:1.0.0-SNAPSHOT"));
         

@@ -74,6 +74,7 @@ import io.cloudsoft.tosca.a4c.Alien4CloudIntegrationTest;
 import io.cloudsoft.tosca.a4c.brooklyn.ToscaApplication;
 import io.cloudsoft.tosca.a4c.brooklyn.util.EntitySpecs;
 
+@Test(groups="Broken")  // TOSCA support is awaiting release of TOSCA-13
 public class ToscaTypePlanTransformerIntegrationTest extends Alien4CloudIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(ToscaTypePlanTransformerIntegrationTest.class);

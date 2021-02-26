@@ -36,3 +36,6 @@ runtime
 *.out
 
 .checkstyle
+
+.java-version
+
